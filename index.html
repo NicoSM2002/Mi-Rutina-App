@@ -950,7 +950,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   <div class="role-main-title">Mi Rutina</div>
   <div class="role-main-sub">Plan de entrenamiento personalizado</div>
   <div class="role-cards">
-    <button class="role-card" onclick="show('profile')">
+    <button class="role-card" onclick="show('athlete-login')">
       <div class="role-card-icon athlete">🏋️</div>
       <div class="role-card-text">
         <div class="role-card-title">Soy el atleta</div>
@@ -966,6 +966,23 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
       </div>
       <div class="role-card-arrow">→</div>
     </button>
+  </div>
+</div>
+
+<!-- ══ ATHLETE LOGIN ══ -->
+<div class="screen" id="athlete-login">
+  <div class="tlogin-back">
+    <button class="back-btn" onclick="show('role-select')">← Volver</button>
+  </div>
+  <div class="tlogin-body">
+    <div class="tlogin-icon" style="background:linear-gradient(135deg,var(--ac),var(--acl))">🏋️</div>
+    <div class="tlogin-title">Acceso Atleta</div>
+    <div class="tlogin-sub">Ingresá tu usuario para continuar</div>
+    <input class="tlogin-input" id="athlete-username" type="text"
+      placeholder="Usuario" autocomplete="off" autocapitalize="none"
+      onkeydown="if(event.key==='Enter') athleteLogin()">
+    <button class="tlogin-btn" style="background:linear-gradient(135deg,var(--ac),var(--acl));box-shadow:0 4px 16px rgba(99,102,241,.3)" onclick="athleteLogin()">Entrar →</button>
+    <div class="tlogin-error" id="athlete-error"></div>
   </div>
 </div>
 
@@ -1745,7 +1762,20 @@ function handleOverlayClick(e) {
 }
 
 /* ── trainer portal ── */
+const ATHLETE_USERS = { nsaravia: 'profile' };
 const TRAINER_USERS = { entrenador: true };
+
+function athleteLogin() {
+  const user = document.getElementById('athlete-username').value.trim().toLowerCase();
+  const errEl = document.getElementById('athlete-error');
+  if (!ATHLETE_USERS[user]) {
+    errEl.textContent = 'Usuario no encontrado.';
+    return;
+  }
+  errEl.textContent = '';
+  document.getElementById('athlete-username').value = '';
+  show(ATHLETE_USERS[user]);
+}
 let trainerClientId = null;
 let trainerData = { completions:[], meals:[] };
 let activeTrainerTab = 'rutinas';
