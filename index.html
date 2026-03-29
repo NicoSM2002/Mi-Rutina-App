@@ -705,6 +705,204 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   font-size:15px; font-weight:600; color:var(--t2); cursor:pointer;
 }
 
+/* ══════════════════════════════
+   ROLE SELECT
+══════════════════════════════ */
+#role-select {
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:40px 24px calc(var(--sab) + 40px);
+}
+.role-logo {
+  width:72px; height:72px; border-radius:20px;
+  background:linear-gradient(135deg, var(--ac), var(--cy));
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:20px;
+  box-shadow:0 8px 32px rgba(99,102,241,.35);
+}
+.role-main-title {
+  font-size:26px; font-weight:900; color:var(--t1);
+  letter-spacing:-.6px; margin-bottom:6px; text-align:center;
+}
+.role-main-sub {
+  font-size:13px; color:var(--t2); margin-bottom:40px; text-align:center;
+}
+.role-cards {
+  display:flex; flex-direction:column; gap:14px; width:100%; max-width:340px;
+}
+.role-card {
+  width:100%; background:var(--s1); border:1px solid var(--b);
+  border-radius:20px; padding:22px 20px;
+  display:flex; align-items:center; gap:16px;
+  cursor:pointer; text-align:left;
+  transition:border-color .15s, background .15s;
+}
+.role-card:active { background:var(--s2); border-color:var(--ac); }
+.role-card-icon {
+  width:48px; height:48px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0;
+}
+.role-card-icon.athlete { background:rgba(99,102,241,.15); }
+.role-card-icon.trainer { background:rgba(34,211,238,.15); }
+.role-card-text { flex:1; }
+.role-card-title { font-size:16px; font-weight:800; color:var(--t1); margin-bottom:3px; }
+.role-card-sub { font-size:12px; color:var(--t2); font-weight:500; }
+.role-card-arrow { font-size:18px; color:var(--t2); }
+
+/* ══════════════════════════════
+   TRAINER LOGIN
+══════════════════════════════ */
+#trainer-login {
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  padding:calc(var(--sat) + 20px) 24px calc(var(--sab) + 40px);
+}
+.tlogin-back { margin-bottom:32px; }
+.tlogin-body {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+.tlogin-icon {
+  width:64px; height:64px; border-radius:18px;
+  background:linear-gradient(135deg, var(--cy), var(--ac));
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; margin-bottom:18px;
+  box-shadow:0 6px 24px rgba(34,211,238,.3);
+}
+.tlogin-title { font-size:22px; font-weight:900; color:var(--t1); margin-bottom:6px; }
+.tlogin-sub { font-size:13px; color:var(--t2); margin-bottom:36px; text-align:center; }
+.tlogin-input {
+  width:100%; max-width:320px; background:var(--s1); border:1px solid var(--b);
+  border-radius:14px; padding:15px 18px; color:var(--t1);
+  font-family:'Inter',sans-serif; font-size:16px; outline:none;
+  -webkit-appearance:none; margin-bottom:12px; text-align:center;
+}
+.tlogin-input:focus { border-color:var(--cy); }
+.tlogin-btn {
+  width:100%; max-width:320px; padding:16px;
+  background:linear-gradient(135deg, var(--cy), var(--ac));
+  border:none; border-radius:14px; font-family:'Inter',sans-serif;
+  font-size:16px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 16px rgba(34,211,238,.3);
+}
+.tlogin-btn:active { opacity:.85; }
+.tlogin-error {
+  margin-top:12px; font-size:13px; color:#f87171; text-align:center;
+  min-height:20px;
+}
+
+/* ══════════════════════════════
+   TRAINER PORTAL
+══════════════════════════════ */
+#trainer-portal {
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+#trainer-portal::-webkit-scrollbar { display:none; }
+.tportal-header {
+  background:var(--s1); border-bottom:1px solid var(--b);
+  padding:calc(var(--sat) + 16px) 16px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.tportal-title { font-size:17px; font-weight:800; color:var(--t1); }
+.tportal-body { padding:20px 16px; }
+.client-card {
+  background:var(--s1); border:1px solid var(--b); border-radius:16px;
+  padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer;
+  transition:border-color .15s;
+}
+.client-card:active { border-color:var(--ac); }
+.client-avatar {
+  width:44px; height:44px; border-radius:12px;
+  background:linear-gradient(135deg, var(--ac), var(--cy));
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800; color:#fff; flex-shrink:0;
+}
+.client-name { font-size:15px; font-weight:700; color:var(--t1); }
+.client-meta { font-size:12px; color:var(--t2); margin-top:2px; }
+.client-arrow { margin-left:auto; color:var(--t2); font-size:18px; }
+
+/* ══════════════════════════════
+   TRAINER CLIENT DASHBOARD
+══════════════════════════════ */
+#trainer-client {
+  background:var(--bg);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.tclient-header {
+  background:var(--s1); border-bottom:1px solid var(--b);
+  padding:calc(var(--sat) + 16px) 16px 0;
+  flex-shrink:0;
+}
+.tclient-header-top {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.tclient-name { font-size:17px; font-weight:800; color:var(--t1); }
+.tclient-tabs {
+  display:flex; gap:0; border-bottom:none;
+}
+.tclient-tab {
+  flex:1; padding:12px; background:transparent; border:none;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:700;
+  color:var(--t2); cursor:pointer; border-bottom:2px solid transparent;
+  transition:color .15s, border-color .15s;
+}
+.tclient-tab.active { color:var(--cy); border-bottom-color:var(--cy); }
+.tclient-content {
+  flex:1; overflow-y:auto; padding:16px;
+  -webkit-overflow-scrolling:touch;
+}
+.tclient-content::-webkit-scrollbar { display:none; }
+.tdata-empty {
+  text-align:center; color:var(--t2); font-size:14px;
+  padding:60px 20px;
+}
+.tdata-empty-icon { font-size:40px; margin-bottom:12px; }
+.trecord-card {
+  background:var(--s1); border:1px solid var(--b); border-radius:16px;
+  padding:16px; margin-bottom:12px;
+}
+.trecord-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.trecord-day { font-size:15px; font-weight:800; color:var(--t1); }
+.trecord-date { font-size:11px; color:var(--t2); }
+.trecord-week {
+  display:inline-block; font-size:10px; font-weight:700;
+  color:var(--acl); background:rgba(99,102,241,.15);
+  border-radius:6px; padding:3px 8px; margin-bottom:8px;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.trecord-notes {
+  font-size:13px; color:var(--t2); line-height:1.6;
+  border-left:2px solid var(--b); padding-left:10px; margin-top:8px;
+}
+.tmeal-slot { margin-bottom:12px; }
+.tmeal-slot-label {
+  font-size:11px; font-weight:700; color:var(--t2);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;
+}
+.tmeal-slot-text { font-size:13px; color:var(--t1); line-height:1.5; }
+.tmeal-slot-photo {
+  width:100%; border-radius:10px; margin-top:8px; display:block;
+}
+.tmeal-analysis {
+  background:rgba(99,102,241,.08); border-radius:8px;
+  padding:10px 12px; margin-top:8px;
+  font-size:12px; color:var(--t2); line-height:1.7;
+  white-space:pre-wrap;
+}
+.tmeal-analysis-label {
+  font-size:10px; font-weight:700; color:var(--acl);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;
+}
+
 /* Nota */
 .nota-card {
   margin-top:16px; background:var(--s1); border:1px solid var(--b);
@@ -734,6 +932,94 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   </div>
   <div class="splash-title">Mi Rutina</div>
   <div class="splash-sub">Plan de entrenamiento personalizado</div>
+</div>
+
+<!-- ══ ROLE SELECT ══ -->
+<div class="screen" id="role-select">
+  <div class="role-logo">
+    <svg width="38" height="38" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#fff">
+        <rect x="60" y="220" width="60" height="72" rx="12"/>
+        <rect x="392" y="220" width="60" height="72" rx="12"/>
+        <rect x="100" y="200" width="48" height="112" rx="10"/>
+        <rect x="364" y="200" width="48" height="112" rx="10"/>
+        <rect x="140" y="236" width="232" height="40" rx="8"/>
+      </g>
+    </svg>
+  </div>
+  <div class="role-main-title">Mi Rutina</div>
+  <div class="role-main-sub">Plan de entrenamiento personalizado</div>
+  <div class="role-cards">
+    <button class="role-card" onclick="show('profile')">
+      <div class="role-card-icon athlete">🏋️</div>
+      <div class="role-card-text">
+        <div class="role-card-title">Soy el atleta</div>
+        <div class="role-card-sub">Accedé a tu rutina y comidas</div>
+      </div>
+      <div class="role-card-arrow">→</div>
+    </button>
+    <button class="role-card" onclick="show('trainer-login')">
+      <div class="role-card-icon trainer">📋</div>
+      <div class="role-card-text">
+        <div class="role-card-title">Portal Entrenador</div>
+        <div class="role-card-sub">Revisá el progreso de tus clientes</div>
+      </div>
+      <div class="role-card-arrow">→</div>
+    </button>
+  </div>
+</div>
+
+<!-- ══ TRAINER LOGIN ══ -->
+<div class="screen" id="trainer-login">
+  <div class="tlogin-back">
+    <button class="back-btn" onclick="show('role-select')">← Volver</button>
+  </div>
+  <div class="tlogin-body">
+    <div class="tlogin-icon">📋</div>
+    <div class="tlogin-title">Portal Entrenador</div>
+    <div class="tlogin-sub">Ingresá tu usuario para continuar</div>
+    <input class="tlogin-input" id="trainer-username" type="text"
+      placeholder="Usuario" autocomplete="off" autocapitalize="none"
+      onkeydown="if(event.key==='Enter') trainerLogin()">
+    <button class="tlogin-btn" onclick="trainerLogin()">Entrar →</button>
+    <div class="tlogin-error" id="trainer-error"></div>
+  </div>
+</div>
+
+<!-- ══ TRAINER PORTAL ══ -->
+<div class="screen" id="trainer-portal">
+  <div class="tportal-header">
+    <button class="back-btn" onclick="show('role-select')">← Salir</button>
+    <div class="tportal-title">Portal Entrenador</div>
+  </div>
+  <div class="tportal-body">
+    <div class="section-label" style="margin-bottom:12px">Mis clientes</div>
+    <div class="client-card" onclick="openTrainerClient('nicolas','Nicolás Saravia')">
+      <div class="client-avatar">NS</div>
+      <div>
+        <div class="client-name">Nicolás Saravia</div>
+        <div class="client-meta">Plan: Hipertrofia Muscular</div>
+      </div>
+      <div class="client-arrow">→</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TRAINER CLIENT DASHBOARD ══ -->
+<div class="screen" id="trainer-client">
+  <div class="tclient-header">
+    <div class="tclient-header-top">
+      <button class="back-btn" onclick="show('trainer-portal')">← Clientes</button>
+      <div class="tclient-name" id="tclient-name">Nicolás Saravia</div>
+    </div>
+    <div class="tclient-tabs">
+      <button class="tclient-tab active" id="tab-rutinas" onclick="setTrainerTab('rutinas')">💪 Rutinas</button>
+      <button class="tclient-tab" id="tab-comidas" onclick="setTrainerTab('comidas')">🍽️ Comidas</button>
+    </div>
+  </div>
+  <div class="tclient-content" id="tclient-content">
+    <div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando datos…</div>
+  </div>
 </div>
 
 <!-- ══ PROFILE ══ -->
@@ -896,7 +1182,7 @@ function show(id) {
 function showRoutine() { show('routine'); render(); }
 function showProfile()  { show('profile'); }
 function showMeals()    { show('meals'); renderMeals(); }
-window.addEventListener('load', () => { setTimeout(() => show('profile'), 2600); });
+window.addEventListener('load', () => { setTimeout(() => show('role-select'), 2600); });
 
 /* ── state ── */
 let currentWeek = 1;
@@ -1456,6 +1742,105 @@ function addTime(s) {
 
 function handleOverlayClick(e) {
   if (e.target === document.getElementById('timer-overlay')) cancelTimer();
+}
+
+/* ── trainer portal ── */
+const TRAINER_USERS = { entrenador: true };
+let trainerClientId = null;
+let trainerData = { completions:[], meals:[] };
+let activeTrainerTab = 'rutinas';
+
+function trainerLogin() {
+  const user = document.getElementById('trainer-username').value.trim().toLowerCase();
+  const errEl = document.getElementById('trainer-error');
+  if (!TRAINER_USERS[user]) {
+    errEl.textContent = 'Usuario no encontrado.';
+    return;
+  }
+  errEl.textContent = '';
+  document.getElementById('trainer-username').value = '';
+  show('trainer-portal');
+}
+
+async function openTrainerClient(clientId, clientName) {
+  trainerClientId = clientId;
+  document.getElementById('tclient-name').textContent = clientName;
+  document.getElementById('tclient-content').innerHTML =
+    '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando datos…</div>';
+  activeTrainerTab = 'rutinas';
+  document.getElementById('tab-rutinas').classList.add('active');
+  document.getElementById('tab-comidas').classList.remove('active');
+  show('trainer-client');
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-data', client: clientId })
+    });
+    trainerData = await res.json();
+  } catch {
+    trainerData = { completions:[], meals:[] };
+  }
+  renderTrainerTab();
+}
+
+function setTrainerTab(tab) {
+  activeTrainerTab = tab;
+  document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
+  document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
+  renderTrainerTab();
+}
+
+function renderTrainerTab() {
+  const el = document.getElementById('tclient-content');
+  if (activeTrainerTab === 'rutinas') {
+    const records = trainerData.completions || [];
+    if (!records.length) {
+      el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">💪</div>Aún no hay rutinas completadas.</div>';
+      return;
+    }
+    el.innerHTML = records.map(r => `
+      <div class="trecord-card">
+        <div class="trecord-header">
+          <div class="trecord-day">${r.dayLabel || r.day}</div>
+          <div class="trecord-date">${r.date || ''}</div>
+        </div>
+        <div class="trecord-week">Semana ${r.week}</div>
+        ${r.notes ? `<div class="trecord-notes">${r.notes}</div>` : ''}
+      </div>`).join('');
+  } else {
+    const records = trainerData.meals || [];
+    if (!records.length) {
+      el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">🍽️</div>Aún no hay reportes de comidas.</div>';
+      return;
+    }
+    const slots = [
+      { key:'desayuno', label:'☀️ Desayuno' },
+      { key:'mediasNueves', label:'🍎 Medias nueves' },
+      { key:'almuerzo', label:'🍽️ Almuerzo' },
+      { key:'onces', label:'☕ Onces' },
+      { key:'comida', label:'🌙 Cena' },
+    ];
+    el.innerHTML = records.map(r => {
+      const slotsHtml = slots.filter(s => r.meals?.[s.key]?.trim() || r.photos?.[s.key] || r.analyses?.[s.key])
+        .map(s => `
+          <div class="tmeal-slot">
+            <div class="tmeal-slot-label">${s.label}</div>
+            ${r.meals?.[s.key] ? `<div class="tmeal-slot-text">${r.meals[s.key]}</div>` : ''}
+            ${r.photos?.[s.key] ? `<img class="tmeal-slot-photo" src="${r.photos[s.key]}">` : ''}
+            ${r.analyses?.[s.key] ? `<div class="tmeal-analysis"><div class="tmeal-analysis-label">🤖 Análisis nutricional</div>${r.analyses[s.key]}</div>` : ''}
+          </div>`).join('');
+      return `
+        <div class="trecord-card">
+          <div class="trecord-header">
+            <div class="trecord-day">${r.dayLabel || r.day}</div>
+            <div class="trecord-date">${r.date || ''}</div>
+          </div>
+          ${slotsHtml}
+        </div>`;
+    }).join('');
+  }
 }
 
 /* ── meals ── */
