@@ -1,4 +1,4 @@
-const CACHE = 'rutina-v2-r1';
+const CACHE = 'rutina-v2-r2';
 const FILES = ['./manifest.json','./icon.svg'];
 
 self.addEventListener('install', e => {
