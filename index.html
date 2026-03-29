@@ -540,6 +540,68 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 }
 .chat-send:disabled { opacity:.4; cursor:default; }
 
+/* ── COMPLETE BTN ── */
+.complete-wrap {
+  padding:20px 16px calc(var(--sab) + 28px);
+}
+.complete-btn {
+  width:100%; padding:17px;
+  background:linear-gradient(135deg, var(--gr) 0%, #059669 100%);
+  border:none; border-radius:16px;
+  font-family:'Inter',sans-serif; font-size:16px; font-weight:800;
+  color:#fff; cursor:pointer; letter-spacing:-.3px;
+  box-shadow:0 4px 20px rgba(52,211,153,.3);
+  transition:opacity .15s;
+}
+.complete-btn:active { opacity:.85; }
+
+/* ── COMPLETE OVERLAY ── */
+.complete-overlay {
+  position:fixed; inset:0; z-index:250;
+  background:rgba(10,11,20,.8);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none;
+  transition:opacity .25s ease;
+}
+.complete-overlay.show { opacity:1; pointer-events:all; }
+.complete-sheet {
+  width:100%; background:var(--s1); border:1px solid var(--b);
+  border-radius:28px 28px 0 0;
+  padding:28px 24px calc(var(--sab) + 28px);
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.34,1.3,.64,1);
+}
+.complete-overlay.show .complete-sheet { transform:translateY(0); }
+.complete-sheet-title {
+  font-size:20px; font-weight:900; color:var(--t1); margin-bottom:4px;
+}
+.complete-sheet-sub {
+  font-size:13px; color:var(--t2); margin-bottom:20px;
+}
+.complete-notes {
+  width:100%; background:var(--s2); border:1px solid var(--b); border-radius:12px;
+  padding:13px 14px; color:var(--t1); font-family:'Inter',sans-serif;
+  font-size:16px; outline:none; resize:none; height:100px;
+  -webkit-appearance:none; margin-bottom:16px;
+}
+.complete-notes::placeholder { color:var(--t2); }
+.complete-notes:focus { border-color:var(--gr); }
+.complete-sheet-btns { display:flex; gap:10px; }
+.complete-confirm {
+  flex:1; padding:15px; border-radius:14px; border:none;
+  background:linear-gradient(135deg, var(--gr), #059669);
+  font-family:'Inter',sans-serif; font-size:15px; font-weight:800;
+  color:#fff; cursor:pointer; transition:opacity .15s;
+}
+.complete-confirm:active { opacity:.8; }
+.complete-cancel {
+  padding:15px 20px; border-radius:14px; border:1px solid var(--b);
+  background:var(--s2); font-family:'Inter',sans-serif;
+  font-size:15px; font-weight:600; color:var(--t2); cursor:pointer;
+}
+
 /* Nota */
 .nota-card {
   margin-top:16px; background:var(--s1); border:1px solid var(--b);
@@ -643,6 +705,19 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   </div>
   <div class="r-content" id="content"></div>
   <button class="chat-fab" onclick="openChat()" title="Preguntarle a Claude">🤖</button>
+</div>
+
+<!-- ══ COMPLETE OVERLAY ══ -->
+<div class="complete-overlay" id="complete-overlay">
+  <div class="complete-sheet">
+    <div class="complete-sheet-title">¡Rutina completada! 💪</div>
+    <div class="complete-sheet-sub" id="complete-sub">Lunes — Semana 1</div>
+    <textarea class="complete-notes" id="complete-notes" placeholder="Notas opcionales: ¿Cómo te sentiste? ¿Subiste algún peso? ¿Algo que destacar?"></textarea>
+    <div class="complete-sheet-btns">
+      <button class="complete-cancel" onclick="closeComplete()">Cancelar</button>
+      <button class="complete-confirm" id="complete-confirm" onclick="confirmComplete()">Enviar al entrenador</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ CHAT OVERLAY ══ -->
@@ -1139,6 +1214,7 @@ function render() {
   });
 
   html += `<div class="nota-card"><h4>💬 Nota del entrenador</h4><p>${day.nota}</p></div>`;
+  html += `<div class="complete-wrap"><button class="complete-btn" onclick="openComplete()">✅ Completar rutina del día</button></div>`;
   document.getElementById('content').innerHTML = html;
 }
 
@@ -1253,6 +1329,53 @@ function addTime(s) {
 
 function handleOverlayClick(e) {
   if (e.target === document.getElementById('timer-overlay')) cancelTimer();
+}
+
+/* ── complete ── */
+const DAY_NAMES = {
+  lunes:'Lunes — Pecho & Bíceps', martes:'Martes — Espalda & Tríceps',
+  miercoles:'Miércoles — Pierna', jueves:'Jueves — Hombros', viernes:'Viernes — Brazo Completo'
+};
+
+function openComplete() {
+  document.getElementById('complete-sub').textContent = `${DAY_NAMES[currentDay] || currentDay} · Semana ${currentWeek}`;
+  document.getElementById('complete-notes').value = '';
+  document.getElementById('complete-overlay').classList.add('show');
+}
+function closeComplete() {
+  document.getElementById('complete-overlay').classList.remove('show');
+}
+
+async function confirmComplete() {
+  const btn = document.getElementById('complete-confirm');
+  const notes = document.getElementById('complete-notes').value.trim();
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'complete',
+        day: currentDay,
+        week: currentWeek,
+        context: buildContext(),
+        notes: notes
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '✅ ¡Enviado!';
+      setTimeout(() => closeComplete(), 1500);
+    } else {
+      btn.textContent = 'Error, intentá de nuevo';
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = 'Error de conexión';
+    btn.disabled = false;
+  }
 }
 
 /* ── chat ── */
