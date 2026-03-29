@@ -150,7 +150,11 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 .prog-label { color:var(--t2); font-weight:500; }
 .prog-val { font-weight:800; color:var(--gr); letter-spacing:-.3px; }
 
-.cta-wrap { padding:4px 16px calc(var(--sab) + 24px); }
+.cta-wrap {
+  position:sticky; bottom:0;
+  padding:12px 16px calc(var(--sab) + 16px);
+  background:linear-gradient(to bottom, transparent, var(--bg) 30%);
+}
 .cta-btn {
   width:100%; padding:19px;
   background:linear-gradient(135deg, var(--ac) 0%, #818cf8 100%);
