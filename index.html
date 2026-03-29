@@ -360,6 +360,85 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   background:var(--bg);
 }
 
+/* ── TIMER ── */
+.circuit-rest {
+  font-size:11px; color:var(--t2); margin-left:auto;
+  cursor:pointer; padding:5px 10px; border-radius:8px;
+  border:1px solid var(--b); background:var(--bg);
+  font-family:'Inter',sans-serif; font-weight:600;
+  transition:background .15s, border-color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.circuit-rest:active { background:var(--b); }
+
+.timer-overlay {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(10,11,20,.75);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none;
+  transition:opacity .25s ease;
+}
+.timer-overlay.show { opacity:1; pointer-events:all; }
+
+.timer-sheet {
+  width:100%;
+  background:var(--s2); border:1px solid var(--b);
+  border-radius:28px 28px 0 0;
+  padding:28px 32px calc(var(--sab) + 36px);
+  text-align:center;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.34,1.3,.64,1);
+}
+.timer-overlay.show .timer-sheet { transform:translateY(0); }
+
+.timer-label {
+  font-size:12px; font-weight:700; color:var(--t2);
+  text-transform:uppercase; letter-spacing:1.2px; margin-bottom:24px;
+}
+.timer-ring-wrap {
+  position:relative; width:180px; height:180px; margin:0 auto 24px;
+  display:flex; align-items:center; justify-content:center;
+}
+.timer-ring {
+  position:absolute; inset:0; width:100%; height:100%;
+  transform:rotate(-90deg);
+}
+.timer-track {
+  fill:none; stroke:var(--b); stroke-width:8;
+}
+.timer-arc {
+  fill:none; stroke:var(--ac); stroke-width:8;
+  stroke-linecap:round;
+  stroke-dasharray:502;
+  stroke-dashoffset:0;
+  transition:stroke-dashoffset .9s linear, stroke .3s;
+}
+.timer-arc.done { stroke:var(--gr); }
+.timer-num {
+  font-size:60px; font-weight:900; color:var(--t1);
+  letter-spacing:-3px; line-height:1;
+  position:relative; z-index:1;
+}
+.timer-num.done { color:var(--gr); }
+
+.timer-btns {
+  display:flex; gap:10px; justify-content:center;
+}
+.timer-btn {
+  padding:13px 28px; border-radius:12px; border:none;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:700;
+  cursor:pointer; transition:opacity .15s;
+}
+.timer-btn:active { opacity:.7; }
+.timer-btn-add {
+  background:var(--s1); border:1px solid var(--b); color:var(--t1);
+}
+.timer-btn-cancel {
+  background:var(--s1); border:1px solid var(--b); color:var(--t2);
+}
+
 /* Nota */
 .nota-card {
   margin-top:16px; background:var(--s1); border:1px solid var(--b);
@@ -462,6 +541,24 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
     </div>
   </div>
   <div class="r-content" id="content"></div>
+</div>
+
+<!-- ══ TIMER OVERLAY ══ -->
+<div class="timer-overlay" id="timer-overlay" onclick="handleOverlayClick(event)">
+  <div class="timer-sheet" id="timer-sheet">
+    <div class="timer-label">Descanso</div>
+    <div class="timer-ring-wrap">
+      <svg class="timer-ring" viewBox="0 0 180 180">
+        <circle class="timer-track" cx="90" cy="90" r="80"/>
+        <circle class="timer-arc" id="timer-arc" cx="90" cy="90" r="80"/>
+      </svg>
+      <div class="timer-num" id="timer-num">60</div>
+    </div>
+    <div class="timer-btns">
+      <button class="timer-btn timer-btn-add" onclick="addTime(30)">+30s</button>
+      <button class="timer-btn timer-btn-cancel" onclick="cancelTimer()">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -871,7 +968,7 @@ function render() {
       <div class="circuit-hdr">
         <span class="circuit-num">${c.label}</span>
         <span class="circuit-badge">4 SERIES</span>
-        <span class="circuit-rest">⏱ ${c.rest}</span>
+        <button class="circuit-rest" onclick="startTimer(${parseInt(c.rest)})">⏱ ${c.rest}</button>
       </div>
       <div class="ex-cards">`;
 
@@ -963,6 +1060,74 @@ function togglePhoto(id, src) {
   };
   el.appendChild(img);
   img.src = src;
+}
+
+/* ── timer ── */
+const CIRCUMFERENCE = 2 * Math.PI * 80; // r=80
+let timerInterval = null;
+let timerSecs = 0;
+let timerTotal = 0;
+
+function startTimer(seconds) {
+  if (timerInterval) clearInterval(timerInterval);
+  timerSecs = seconds;
+  timerTotal = seconds;
+  const arc = document.getElementById('timer-arc');
+  arc.classList.remove('done');
+  document.getElementById('timer-num').classList.remove('done');
+  arc.style.strokeDasharray = CIRCUMFERENCE;
+  updateTimerDisplay();
+  document.getElementById('timer-overlay').classList.add('show');
+  timerInterval = setInterval(() => {
+    timerSecs--;
+    updateTimerDisplay();
+    if (timerSecs <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerDone();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timer-num').textContent = timerSecs > 0 ? timerSecs : '✓';
+  const progress = Math.max(timerSecs, 0) / timerTotal;
+  document.getElementById('timer-arc').style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+}
+
+function timerDone() {
+  document.getElementById('timer-arc').classList.add('done');
+  document.getElementById('timer-num').classList.add('done');
+  if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 300]);
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1100].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq; osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.22;
+      gain.gain.setValueAtTime(.25, t);
+      gain.gain.exponentialRampToValueAtTime(.001, t + .4);
+      osc.start(t); osc.stop(t + .4);
+    });
+  } catch(e) {}
+  setTimeout(() => cancelTimer(), 2000);
+}
+
+function cancelTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  document.getElementById('timer-overlay').classList.remove('show');
+}
+
+function addTime(s) {
+  timerSecs += s;
+  timerTotal += s;
+  updateTimerDisplay();
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('timer-overlay')) cancelTimer();
 }
 
 /* ── service worker ── */
