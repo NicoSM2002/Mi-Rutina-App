@@ -439,6 +439,101 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   background:var(--s1); border:1px solid var(--b); color:var(--t2);
 }
 
+/* ── CHAT ── */
+.chat-fab {
+  position:fixed; bottom:calc(var(--sab) + 24px); right:20px; z-index:150;
+  width:52px; height:52px; border-radius:16px; border:none; cursor:pointer;
+  background:linear-gradient(135deg, var(--ac), var(--cy));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; box-shadow:0 4px 20px rgba(99,102,241,.45);
+  transition:transform .15s, box-shadow .15s;
+}
+.chat-fab:active { transform:scale(.92); box-shadow:0 2px 10px rgba(99,102,241,.3); }
+
+.chat-overlay {
+  position:fixed; inset:0; z-index:250;
+  background:rgba(10,11,20,.8);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none;
+  transition:opacity .25s ease;
+}
+.chat-overlay.show { opacity:1; pointer-events:all; }
+
+.chat-sheet {
+  width:100%; height:82vh;
+  background:var(--s1); border:1px solid var(--b);
+  border-radius:28px 28px 0 0;
+  display:flex; flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.34,1.3,.64,1);
+  overflow:hidden;
+}
+.chat-overlay.show .chat-sheet { transform:translateY(0); }
+
+.chat-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--b);
+  flex-shrink:0;
+}
+.chat-header-left { display:flex; align-items:center; gap:10px; }
+.chat-avatar {
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg, var(--ac), var(--cy));
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+}
+.chat-title { font-size:15px; font-weight:700; color:var(--t1); }
+.chat-sub { font-size:11px; color:var(--t2); margin-top:1px; }
+.chat-close {
+  width:32px; height:32px; border-radius:8px; border:none;
+  background:var(--b); color:var(--t2); font-size:16px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+
+.chat-messages {
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:12px;
+  -webkit-overflow-scrolling:touch;
+}
+.chat-msg {
+  max-width:85%; padding:11px 14px;
+  border-radius:16px; font-size:13px; line-height:1.6; font-weight:400;
+}
+.chat-msg.user {
+  align-self:flex-end;
+  background:var(--ac); color:#fff;
+  border-bottom-right-radius:4px;
+}
+.chat-msg.assistant {
+  align-self:flex-start;
+  background:var(--s2); color:var(--t1); border:1px solid var(--b);
+  border-bottom-left-radius:4px;
+}
+.chat-msg.typing { color:var(--t2); font-style:italic; }
+
+.chat-input-row {
+  display:flex; gap:8px; padding:12px 16px calc(var(--sab) + 16px);
+  border-top:1px solid var(--b); flex-shrink:0;
+}
+.chat-input {
+  flex:1; background:var(--s2); border:1px solid var(--b); border-radius:12px;
+  padding:11px 14px; color:var(--t1); font-family:'Inter',sans-serif;
+  font-size:14px; outline:none; resize:none; max-height:100px;
+  -webkit-appearance:none;
+}
+.chat-input::placeholder { color:var(--t2); }
+.chat-input:focus { border-color:var(--ac); }
+.chat-send {
+  width:44px; height:44px; border-radius:12px; border:none; cursor:pointer;
+  background:var(--ac); color:#fff; font-size:18px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:opacity .15s;
+}
+.chat-send:disabled { opacity:.4; cursor:default; }
+
 /* Nota */
 .nota-card {
   margin-top:16px; background:var(--s1); border:1px solid var(--b);
@@ -541,6 +636,32 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
     </div>
   </div>
   <div class="r-content" id="content"></div>
+</div>
+
+<!-- ══ CHAT FAB ══ -->
+<button class="chat-fab" onclick="openChat()" title="Preguntarle a Claude">🤖</button>
+
+<!-- ══ CHAT OVERLAY ══ -->
+<div class="chat-overlay" id="chat-overlay">
+  <div class="chat-sheet">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <div class="chat-title">Asistente de Entrenamiento</div>
+          <div class="chat-sub">Preguntá sobre tu rutina</div>
+        </div>
+      </div>
+      <button class="chat-close" onclick="closeChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-msg assistant">¡Hola Nico! 💪 Soy tu asistente de entrenamiento. Preguntame lo que quieras sobre tu rutina — técnica, pesos, descansos, lo que sea.</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chat-input" rows="1" placeholder="Escribí tu pregunta…" onkeydown="chatKeydown(event)"></textarea>
+      <button class="chat-send" id="chat-send" onclick="sendChat()">↑</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ TIMER OVERLAY ══ -->
@@ -1129,6 +1250,80 @@ function addTime(s) {
 function handleOverlayClick(e) {
   if (e.target === document.getElementById('timer-overlay')) cancelTimer();
 }
+
+/* ── chat ── */
+const WORKER_URL = 'https://mirutina.nicolas-f07.workers.dev';
+let chatHistory = [];
+
+function openChat() {
+  document.getElementById('chat-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('chat-input').focus(), 400);
+}
+function closeChat() {
+  document.getElementById('chat-overlay').classList.remove('show');
+}
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const sendBtn = document.getElementById('chat-send');
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  appendMsg('user', text);
+  chatHistory.push({ role:'user', content: text });
+
+  const typing = appendMsg('assistant', '…', 'typing');
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ messages: chatHistory })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'No pude obtener respuesta.';
+    typing.textContent = reply;
+    typing.classList.remove('typing');
+    chatHistory.push({ role:'assistant', content: reply });
+  } catch(err) {
+    typing.textContent = 'Error de conexión. Verificá tu internet.';
+    typing.classList.remove('typing');
+    chatHistory.pop();
+  }
+
+  sendBtn.disabled = false;
+  scrollChat();
+}
+
+function appendMsg(role, text, extra = '') {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}${extra ? ' '+extra : ''}`;
+  div.textContent = text;
+  document.getElementById('chat-messages').appendChild(div);
+  scrollChat();
+  return div;
+}
+
+function scrollChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/* auto-resize textarea */
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('chat-input');
+  inp.addEventListener('input', () => {
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 100) + 'px';
+  });
+});
 
 /* ── service worker ── */
 if ('serviceWorker' in navigator) {
