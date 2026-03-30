@@ -1012,6 +1012,48 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;
 }
 
+/* ── ROUTINE EDITOR ── */
+.re-day-bar { display:flex; gap:6px; overflow-x:auto; padding:0 0 14px; scrollbar-width:none; }
+.re-day-bar::-webkit-scrollbar { display:none; }
+.re-circuit-card { background:var(--s1); border:1px solid var(--b); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+.re-circuit-hdr { padding:10px 14px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; }
+.c1 .re-circuit-hdr { color:var(--acl); background:rgba(99,102,241,.08); }
+.c2 .re-circuit-hdr { color:var(--gr); background:rgba(52,211,153,.07); }
+.c3 .re-circuit-hdr { color:var(--am); background:rgba(251,191,36,.07); }
+.re-exercise { border-top:1px solid var(--b); padding:12px 14px; }
+.re-ex-week { margin-bottom:10px; }
+.re-ex-week:last-child { margin-bottom:0; }
+.re-week-label { font-size:10px; font-weight:700; color:var(--t3); text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; }
+.re-name-row { display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+.re-name-btn { flex:1; background:var(--s2); border:1px solid var(--b); border-radius:10px; padding:9px 12px; color:var(--t1); font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.re-name-btn:active { background:var(--b); }
+.re-change-btn { background:var(--bg); border:1px solid var(--ac); border-radius:8px; padding:9px 10px; color:var(--acl); font-family:'Inter',sans-serif; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; }
+.re-wr-row { display:flex; gap:8px; }
+.re-wr-col { flex:1; }
+.re-input { width:100%; background:var(--s2); border:1px solid var(--b); border-radius:10px; padding:9px 10px; color:var(--t1); font-family:'Inter',sans-serif; font-size:15px; font-weight:700; outline:none; -webkit-appearance:none; text-align:center; }
+.re-input:focus { border-color:var(--ac); }
+.re-input-label { font-size:10px; color:var(--t2); text-align:center; margin-top:4px; }
+.re-nota { width:100%; background:var(--s2); border:1px solid var(--b); border-radius:12px; padding:12px 14px; color:var(--t1); font-family:'Inter',sans-serif; font-size:14px; outline:none; resize:none; -webkit-appearance:none; margin-top:8px; font-size:16px; }
+.re-save-btn { width:100%; padding:16px; background:linear-gradient(135deg,var(--am),#f59e0b); border:none; border-radius:14px; font-family:'Inter',sans-serif; font-size:16px; font-weight:800; color:#1a1000; cursor:pointer; margin-top:14px; }
+.re-save-btn:active { opacity:.85; }
+.re-save-btn:disabled { opacity:.5; }
+
+/* ── EXERCISE PICKER ── */
+.expicker-overlay { position:fixed; inset:0; z-index:350; background:rgba(10,11,20,.95); display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .2s; }
+.expicker-overlay.show { opacity:1; pointer-events:all; }
+.expicker-header { padding:calc(var(--sat)+16px) 16px 12px; border-bottom:1px solid var(--b); flex-shrink:0; }
+.expicker-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.expicker-title { font-size:16px; font-weight:800; color:var(--t1); }
+.expicker-close { width:32px; height:32px; border-radius:8px; border:none; background:var(--b); color:var(--t2); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.expicker-search { width:100%; background:var(--s1); border:1px solid var(--b); border-radius:12px; padding:12px 14px; color:var(--t1); font-family:'Inter',sans-serif; font-size:16px; outline:none; -webkit-appearance:none; }
+.expicker-search::placeholder { color:var(--t2); }
+.expicker-list { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch; }
+.expicker-item { background:var(--s1); border:1px solid var(--b); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color .15s; }
+.expicker-item:active { border-color:var(--ac); background:var(--s2); }
+.expicker-gif { width:52px; height:52px; border-radius:8px; object-fit:cover; background:var(--bg); flex-shrink:0; }
+.expicker-name { font-size:13px; font-weight:700; color:var(--t1); }
+.expicker-muscle { font-size:11px; color:var(--t2); margin-top:2px; text-transform:capitalize; }
+
 /* Nota */
 .nota-card {
   margin-top:16px; background:var(--s1); border:1px solid var(--b);
@@ -1139,6 +1181,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
     <div class="tclient-tabs">
       <button class="tclient-tab active" id="tab-rutinas" onclick="setTrainerTab('rutinas')">💪 Rutinas</button>
       <button class="tclient-tab" id="tab-comidas" onclick="setTrainerTab('comidas')">🍽️ Comidas</button>
+      <button class="tclient-tab" id="tab-editar" onclick="setTrainerTab('editar')">✏️ Editar</button>
     </div>
   </div>
   <div class="tclient-content" id="tclient-content">
@@ -1246,6 +1289,19 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   </div>
 </div>
 
+<!-- ══ EXERCISE PICKER ══ -->
+<div class="expicker-overlay" id="expicker-overlay">
+  <div class="expicker-header">
+    <div class="expicker-top">
+      <div class="expicker-title">Elegir ejercicio</div>
+      <button class="expicker-close" onclick="closeExercisePicker()">✕</button>
+    </div>
+    <input class="expicker-search" id="expicker-search" placeholder="Buscar ejercicio o músculo…"
+      oninput="renderPickerList(this.value)" autocomplete="off" autocapitalize="none">
+  </div>
+  <div class="expicker-list" id="expicker-list"></div>
+</div>
+
 <!-- ══ COMPLETE OVERLAY ══ -->
 <div class="complete-overlay" id="complete-overlay">
   <div class="complete-sheet">
@@ -1321,7 +1377,7 @@ const MUSC = {
   isquio:'mb-isquio', gluteo:'mb-gluteo', pantorrilla:'mb-pantorrilla', trapecio:'mb-trapecio'
 };
 
-const data = {
+const FALLBACK_DATA = {
   lunes: {
     title:'Pecho & Bíceps',
     sub:'S1: Smith + poleas · S2: Mancuernas libres + variación de curl',
@@ -1667,6 +1723,7 @@ const data = {
     nota:'Los brazos son tu punto fuerte: +5.5cm desde julio. S2 cambia a la posición elongada para tríceps (cable sobre cabeza) y bíceps (araña). El curl inverso activa el braquiorradial que los curls normales no alcanzan.'
   }
 };
+let data = JSON.parse(JSON.stringify(FALLBACK_DATA));
 
 /* ── week / day ── */
 function setWeek(w) {
@@ -1889,6 +1946,12 @@ function athleteLogin() {
 let trainerClientId = null;
 let trainerData = { completions:[], meals:[] };
 let activeTrainerTab = 'rutinas';
+let editorData = null;
+let editorDay = 'lunes';
+let editorPickerTarget = null;
+let _pickerCatalog = [];
+const TRAINER_TOKEN = 'ent2026';
+const MUSC_LABELS = { pecho:'Pecho', espalda:'Espalda', biceps:'Bíceps', triceps:'Tríceps', hombros:'Hombros', cuadriceps:'Cuádriceps', isquio:'Isquiotibiales', gluteo:'Glúteo', pantorrilla:'Pantorrilla', trapecio:'Trapecio' };
 
 function trainerLogin() {
   const user = document.getElementById('trainer-username').value.trim().toLowerCase();
@@ -1910,6 +1973,9 @@ async function openTrainerClient(clientId, clientName) {
   activeTrainerTab = 'rutinas';
   document.getElementById('tab-rutinas').classList.add('active');
   document.getElementById('tab-comidas').classList.remove('active');
+  document.getElementById('tab-editar').classList.remove('active');
+  editorData = JSON.parse(JSON.stringify(data));
+  editorDay = 'lunes';
   show('trainer-client');
 
   try {
@@ -1929,11 +1995,13 @@ function setTrainerTab(tab) {
   activeTrainerTab = tab;
   document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
   document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
+  document.getElementById('tab-editar').classList.toggle('active', tab === 'editar');
   renderTrainerTab();
 }
 
 function renderTrainerTab() {
   const el = document.getElementById('tclient-content');
+  if (activeTrainerTab === 'editar') { renderRoutineEditor(); return; }
   if (activeTrainerTab === 'rutinas') {
     const records = trainerData.completions || [];
     if (!records.length) {
@@ -2427,6 +2495,164 @@ function scrollChat() {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+/* ── LOAD ROUTINE FROM KV ── */
+async function loadRoutine() {
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-routine', client:'nicolas' })
+    });
+    const json = await res.json();
+    if (json.routine && Object.keys(json.routine).length) {
+      data = json.routine;
+    }
+  } catch(e) { /* keep FALLBACK_DATA */ }
+}
+
+/* ── ROUTINE EDITOR ── */
+function renderRoutineEditor() {
+  const el = document.getElementById('tclient-content');
+  if (!editorData) editorData = JSON.parse(JSON.stringify(data));
+  const day = editorData[editorDay];
+  const days = ['lunes','martes','miercoles','jueves','viernes'];
+  const dayLabels = { lunes:'Lun', martes:'Mar', miercoles:'Mié', jueves:'Jue', viernes:'Vie' };
+  let html = `<div class="re-day-bar">`;
+  days.forEach(d => {
+    html += `<button class="day-chip${d===editorDay?' active':''}" onclick="setEditorDay('${d}')">${dayLabels[d]}</button>`;
+  });
+  html += `</div>`;
+  day.circuits.forEach((circuit, ci) => {
+    html += `<div class="re-circuit-card ${circuit.cls}"><div class="re-circuit-hdr">${circuit.label}</div>`;
+    circuit.exercises.forEach((ex, ei) => {
+      html += `<div class="re-exercise">
+        <div class="re-ex-week">
+          <div class="re-week-label">Semana 1</div>
+          <div class="re-name-row">
+            <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},1)">${ex.name}</button>
+            <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},1)">Cambiar</button>
+          </div>
+          <div class="re-wr-row">
+            <div class="re-wr-col"><input class="re-input" value="${ex.w1||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'w1',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
+            <div class="re-wr-col"><input class="re-input" value="${ex.reps||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'reps',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
+          </div>
+        </div>
+        <div class="re-ex-week">
+          <div class="re-week-label">Semana 2</div>
+          <div class="re-name-row">
+            <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},2)">${ex.name2||ex.name}</button>
+            <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},2)">Cambiar</button>
+          </div>
+          <div class="re-wr-row">
+            <div class="re-wr-col"><input class="re-input" value="${ex.w2||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'w2',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
+            <div class="re-wr-col"><input class="re-input" value="${ex.reps2||ex.reps||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'reps2',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
+          </div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `<div class="section-label" style="margin-top:16px;margin-bottom:6px">Nota del entrenador</div>
+    <textarea class="re-nota" rows="3" oninput="updateEditorNota('${editorDay}',this.value)">${day.nota||''}</textarea>
+    <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>`;
+  el.innerHTML = html;
+}
+
+function setEditorDay(day) {
+  editorDay = day;
+  renderRoutineEditor();
+}
+
+function updateEditorField(day, ci, ei, field, value) {
+  editorData[day].circuits[ci].exercises[ei][field] = value;
+}
+
+function updateEditorNota(day, value) {
+  editorData[day].nota = value;
+}
+
+function buildExerciseCatalog(query) {
+  const catalog = [];
+  const seen = new Set();
+  for (const day of Object.values(FALLBACK_DATA)) {
+    for (const circuit of day.circuits || []) {
+      for (const ex of circuit.exercises || []) {
+        if (!seen.has(ex.name)) {
+          seen.add(ex.name);
+          catalog.push({ name:ex.name, muscle:ex.muscle, img:ex.img, tip:ex.tip||'' });
+        }
+        if (ex.name2 && !seen.has(ex.name2)) {
+          seen.add(ex.name2);
+          catalog.push({ name:ex.name2, muscle:ex.muscle, img:ex.img2||ex.img, tip:ex.tip2||ex.tip||'' });
+        }
+      }
+    }
+  }
+  if (!query) return catalog;
+  const q = query.toLowerCase();
+  return catalog.filter(e => e.name.toLowerCase().includes(q) || (MUSC_LABELS[e.muscle]||e.muscle).toLowerCase().includes(q));
+}
+
+function openExercisePicker(ci, ei, week) {
+  editorPickerTarget = { day:editorDay, ci, ei, week };
+  renderPickerList('');
+  document.getElementById('expicker-search').value = '';
+  document.getElementById('expicker-overlay').classList.add('show');
+}
+
+function closeExercisePicker() {
+  document.getElementById('expicker-overlay').classList.remove('show');
+}
+
+function renderPickerList(query) {
+  _pickerCatalog = buildExerciseCatalog(query);
+  const list = document.getElementById('expicker-list');
+  list.innerHTML = _pickerCatalog.map((ex, idx) => `
+    <div class="expicker-item" onclick="selectExerciseByIdx(${idx})">
+      <img class="expicker-gif" src="${ex.img}" alt="${ex.name}">
+      <div>
+        <div class="expicker-name">${ex.name}</div>
+        <div class="expicker-muscle">${MUSC_LABELS[ex.muscle]||ex.muscle}</div>
+      </div>
+    </div>`).join('');
+}
+
+function selectExerciseByIdx(idx) {
+  const ex = _pickerCatalog[idx];
+  const { day, ci, ei, week } = editorPickerTarget;
+  if (week === 1) {
+    editorData[day].circuits[ci].exercises[ei].name = ex.name;
+    editorData[day].circuits[ci].exercises[ei].img = ex.img;
+    editorData[day].circuits[ci].exercises[ei].tip = ex.tip;
+  } else {
+    editorData[day].circuits[ci].exercises[ei].name2 = ex.name;
+    editorData[day].circuits[ci].exercises[ei].img2 = ex.img;
+    editorData[day].circuits[ci].exercises[ei].tip2 = ex.tip;
+  }
+  closeExercisePicker();
+  renderRoutineEditor();
+}
+
+async function saveRoutineFromEditor() {
+  const btn = document.getElementById('re-save-btn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'save-routine', token:TRAINER_TOKEN, routine:editorData })
+    });
+    const json = await res.json();
+    if (json.ok) {
+      data = JSON.parse(JSON.stringify(editorData));
+      btn.textContent = '✅ Guardado';
+      setTimeout(() => { btn.disabled=false; btn.textContent='Guardar rutina'; }, 2000);
+    } else {
+      btn.textContent = 'Error al guardar'; btn.disabled = false;
+    }
+  } catch(e) {
+    btn.textContent = 'Error al guardar'; btn.disabled = false;
+  }
+}
+
 /* auto-resize textarea */
 document.addEventListener('DOMContentLoaded', () => {
   const inp = document.getElementById('chat-input');
@@ -2434,6 +2660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inp.style.height = 'auto';
     inp.style.height = Math.min(inp.scrollHeight, 100) + 'px';
   });
+  loadRoutine();
 });
 
 /* ── service worker ── */
