@@ -643,6 +643,95 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 .meals-send-btn:active { opacity:.85; }
 .meals-send-btn:disabled { opacity:.5; cursor:default; }
 
+/* ── NUTRITION SUMMARY ── */
+.nutrition-overlay {
+  position:fixed; inset:0; z-index:300;
+  background:rgba(10,11,20,.85);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none;
+  transition:opacity .25s ease;
+}
+.nutrition-overlay.show { opacity:1; pointer-events:all; }
+.nutrition-sheet {
+  width:100%; max-height:88vh;
+  background:var(--s1); border:1px solid var(--b);
+  border-radius:28px 28px 0 0;
+  display:flex; flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.34,1.3,.64,1);
+  overflow:hidden;
+}
+.nutrition-overlay.show .nutrition-sheet { transform:translateY(0); }
+.nutrition-header {
+  padding:22px 20px 16px;
+  border-bottom:1px solid var(--b);
+  display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.nutrition-header-left { }
+.nutrition-header-title { font-size:17px; font-weight:900; color:var(--t1); }
+.nutrition-header-sub { font-size:12px; color:var(--t2); margin-top:2px; }
+.nutrition-close {
+  width:32px; height:32px; border-radius:8px; border:none;
+  background:var(--b); color:var(--t2); font-size:16px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.nutrition-body { overflow-y:auto; padding:20px; -webkit-overflow-scrolling:touch; }
+.nutrition-body::-webkit-scrollbar { display:none; }
+
+.nutri-totals {
+  display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:20px;
+}
+.nutri-total-card {
+  background:var(--s2); border:1px solid var(--b); border-radius:14px;
+  padding:12px 8px; text-align:center;
+}
+.nutri-total-val {
+  font-size:18px; font-weight:900; letter-spacing:-.5px; line-height:1;
+}
+.nutri-total-label {
+  font-size:9px; color:var(--t2); margin-top:5px;
+  text-transform:uppercase; letter-spacing:.6px; font-weight:600;
+}
+.nutri-bar-wrap { margin-bottom:20px; }
+.nutri-bar-label {
+  font-size:11px; font-weight:700; color:var(--t2);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;
+}
+.nutri-bar {
+  height:10px; border-radius:99px; background:var(--b);
+  overflow:hidden; margin-bottom:6px; display:flex;
+}
+.nutri-bar-seg { height:100%; transition:width .6s ease; }
+.nutri-bar-legend {
+  display:flex; gap:14px; flex-wrap:wrap;
+}
+.nutri-legend-item {
+  display:flex; align-items:center; gap:5px;
+  font-size:11px; color:var(--t2); font-weight:500;
+}
+.nutri-legend-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+}
+
+.nutri-meals-title {
+  font-size:11px; font-weight:700; color:var(--t2);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;
+}
+.nutri-meal-row {
+  background:var(--s2); border:1px solid var(--b); border-radius:12px;
+  padding:12px 14px; margin-bottom:8px;
+}
+.nutri-meal-row-top {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:6px;
+}
+.nutri-meal-name { font-size:13px; font-weight:700; color:var(--t1); }
+.nutri-meal-kcal { font-size:13px; font-weight:800; color:var(--am); }
+.nutri-meal-macros { font-size:11px; color:var(--t2); }
+
 /* ── COMPLETE BTN ── */
 .complete-wrap {
   padding:20px 16px calc(var(--sab) + 28px);
@@ -1133,6 +1222,20 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   <div class="meals-content" id="meals-content"></div>
   <div class="meals-send-wrap">
     <button class="meals-send-btn" id="meals-send-btn" onclick="sendMeals()">Enviar al entrenador →</button>
+  </div>
+</div>
+
+<!-- ══ NUTRITION SUMMARY OVERLAY ══ -->
+<div class="nutrition-overlay" id="nutrition-overlay">
+  <div class="nutrition-sheet">
+    <div class="nutrition-header">
+      <div class="nutrition-header-left">
+        <div class="nutrition-header-title">📊 Resumen Nutricional</div>
+        <div class="nutrition-header-sub" id="nutri-day-label">Lunes</div>
+      </div>
+      <button class="nutrition-close" onclick="closeNutrition()">✕</button>
+    </div>
+    <div class="nutrition-body" id="nutrition-body"></div>
   </div>
 </div>
 
@@ -2020,7 +2123,8 @@ async function sendMeals() {
       setTimeout(() => {
         btn.disabled = false;
         btn.textContent = 'Enviar al entrenador →';
-      }, 2500);
+        showNutritionSummary(dayLabel, data.analyses || {}, mealsData[currentMealDay]);
+      }, 800);
     } else {
       btn.textContent = 'Error, intentá de nuevo';
       btn.disabled = false;
@@ -2029,6 +2133,105 @@ async function sendMeals() {
     btn.textContent = 'Error de conexión';
     btn.disabled = false;
   }
+}
+
+/* ── nutrition summary ── */
+const SLOT_LABELS = { desayuno:'☀️ Desayuno', mediasNueves:'🍎 Medias nueves', almuerzo:'🍽️ Almuerzo', onces:'☕ Onces', comida:'🌙 Cena' };
+
+function parseAnalysis(text) {
+  if (!text) return null;
+  const cal  = text.match(/CAL[ORÍ]+AS?:\s*~?([\d]+)/i)?.[1];
+  const prot = text.match(/PROTE[ÍI]NA:\s*~?([\d]+)/i)?.[1];
+  const carb = text.match(/CARBOS?:\s*~?([\d]+)/i)?.[1];
+  const fat  = text.match(/GRASAS?:\s*~?([\d]+)/i)?.[1];
+  const det  = text.match(/DETALLE:\s*(.+)/i)?.[1];
+  return cal ? { cal: +cal, prot: +prot||0, carb: +carb||0, fat: +fat||0, det: det||'' } : null;
+}
+
+function showNutritionSummary(dayLabel, analyses, meals) {
+  const slots = ['desayuno','mediasNueves','almuerzo','onces','comida'];
+  const parsed = {};
+  let totalCal=0, totalProt=0, totalCarb=0, totalFat=0, hasAny=false;
+
+  slots.forEach(s => {
+    if (analyses[s]) {
+      const p = parseAnalysis(analyses[s]);
+      if (p) { parsed[s]=p; totalCal+=p.cal; totalProt+=p.prot; totalCarb+=p.carb; totalFat+=p.fat; hasAny=true; }
+    }
+  });
+
+  document.getElementById('nutri-day-label').textContent = dayLabel;
+
+  let html = '';
+
+  if (hasAny) {
+    const total = totalProt*4 + totalCarb*4 + totalFat*9 || 1;
+    const pPct = Math.round(totalProt*4/total*100);
+    const cPct = Math.round(totalCarb*4/total*100);
+    const fPct = 100 - pPct - cPct;
+
+    html += `
+    <div class="nutri-totals">
+      <div class="nutri-total-card">
+        <div class="nutri-total-val" style="color:var(--am)">~${totalCal}</div>
+        <div class="nutri-total-label">kcal</div>
+      </div>
+      <div class="nutri-total-card">
+        <div class="nutri-total-val" style="color:var(--ac)">~${totalProt}g</div>
+        <div class="nutri-total-label">Proteína</div>
+      </div>
+      <div class="nutri-total-card">
+        <div class="nutri-total-val" style="color:var(--gr)">~${totalCarb}g</div>
+        <div class="nutri-total-label">Carbos</div>
+      </div>
+      <div class="nutri-total-card">
+        <div class="nutri-total-val" style="color:var(--cy)">~${totalFat}g</div>
+        <div class="nutri-total-label">Grasas</div>
+      </div>
+    </div>
+    <div class="nutri-bar-wrap">
+      <div class="nutri-bar-label">Distribución de macros</div>
+      <div class="nutri-bar">
+        <div class="nutri-bar-seg" style="width:${pPct}%;background:var(--ac)"></div>
+        <div class="nutri-bar-seg" style="width:${cPct}%;background:var(--gr)"></div>
+        <div class="nutri-bar-seg" style="width:${fPct}%;background:var(--cy)"></div>
+      </div>
+      <div class="nutri-bar-legend">
+        <div class="nutri-legend-item"><div class="nutri-legend-dot" style="background:var(--ac)"></div>Proteína ${pPct}%</div>
+        <div class="nutri-legend-item"><div class="nutri-legend-dot" style="background:var(--gr)"></div>Carbos ${cPct}%</div>
+        <div class="nutri-legend-item"><div class="nutri-legend-dot" style="background:var(--cy)"></div>Grasas ${fPct}%</div>
+      </div>
+    </div>
+    <div class="nutri-meals-title">Desglose por comida</div>
+    ${slots.filter(s => parsed[s]).map(s => `
+      <div class="nutri-meal-row">
+        <div class="nutri-meal-row-top">
+          <div class="nutri-meal-name">${SLOT_LABELS[s]}</div>
+          <div class="nutri-meal-kcal">~${parsed[s].cal} kcal</div>
+        </div>
+        <div class="nutri-meal-macros">P: ~${parsed[s].prot}g · C: ~${parsed[s].carb}g · G: ~${parsed[s].fat}g</div>
+        ${parsed[s].det ? `<div style="font-size:11px;color:var(--t2);margin-top:4px;line-height:1.5">${parsed[s].det}</div>` : ''}
+      </div>`).join('')}`;
+  } else {
+    // No photos analyzed — show just text summary
+    const filledSlots = slots.filter(s => mealsData[currentMealDay][s]?.trim());
+    if (filledSlots.length) {
+      html += `<div class="nutri-meals-title">Comidas del día</div>`;
+      html += filledSlots.map(s => `
+        <div class="nutri-meal-row">
+          <div class="nutri-meal-name">${SLOT_LABELS[s]}</div>
+          <div style="font-size:13px;color:var(--t2);margin-top:4px">${mealsData[currentMealDay][s]}</div>
+        </div>`).join('');
+      html += `<div style="margin-top:16px;font-size:12px;color:var(--t2);text-align:center;line-height:1.6">Agregá fotos a tus comidas para obtener el análisis nutricional automático 📷</div>`;
+    }
+  }
+
+  document.getElementById('nutrition-body').innerHTML = html;
+  document.getElementById('nutrition-overlay').classList.add('show');
+}
+
+function closeNutrition() {
+  document.getElementById('nutrition-overlay').classList.remove('show');
 }
 
 /* ── complete ── */
