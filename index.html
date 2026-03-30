@@ -843,12 +843,15 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 /* ══════════════════════════════
    TRAINER LOGIN
 ══════════════════════════════ */
-#trainer-login {
+#trainer-login, #athlete-login {
   background:var(--bg);
   display:flex; flex-direction:column;
-  padding:calc(var(--sat) + 20px) 24px calc(var(--sab) + 40px);
+  padding:24px; position:relative;
 }
-.tlogin-back { margin-bottom:32px; }
+.tlogin-back {
+  position:absolute;
+  top:calc(var(--sat) + 16px); left:16px;
+}
 .tlogin-body {
   flex:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
