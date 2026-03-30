@@ -184,11 +184,13 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   display:flex; align-items:center; gap:12px; margin-bottom:12px;
 }
 .back-btn {
-  background:none; border:none; color:var(--acl);
-  font-family:'Inter',sans-serif; font-size:14px;
-  font-weight:600; cursor:pointer; padding:4px 0;
-  display:flex; align-items:center; gap:4px;
+  background:var(--s1); border:1px solid var(--b); color:var(--t1);
+  font-family:'Inter',sans-serif; font-size:13px;
+  font-weight:700; cursor:pointer; padding:8px 14px;
+  border-radius:10px; display:flex; align-items:center; gap:6px;
+  transition:background .15s;
 }
+.back-btn:active { background:var(--b); }
 .r-title { font-size:17px; font-weight:800; color:var(--t1); }
 
 /* Segmented week control */
@@ -855,6 +857,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 .tlogin-body {
   flex:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
+  padding:0 32px;
 }
 .tlogin-icon {
   width:64px; height:64px; border-radius:18px;
@@ -866,14 +869,14 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 .tlogin-title { font-size:22px; font-weight:900; color:var(--t1); margin-bottom:6px; }
 .tlogin-sub { font-size:13px; color:var(--t2); margin-bottom:36px; text-align:center; }
 .tlogin-input {
-  width:100%; max-width:320px; background:var(--s1); border:1px solid var(--b);
+  width:100%; background:var(--s1); border:1px solid var(--b);
   border-radius:14px; padding:15px 18px; color:var(--t1);
   font-family:'Inter',sans-serif; font-size:16px; outline:none;
   -webkit-appearance:none; margin-bottom:12px; text-align:center;
 }
 .tlogin-input:focus { border-color:var(--cy); }
 .tlogin-btn {
-  width:100%; max-width:320px; padding:16px;
+  width:100%; padding:16px;
   background:linear-gradient(135deg, var(--cy), var(--ac));
   border:none; border-radius:14px; font-family:'Inter',sans-serif;
   font-size:16px; font-weight:800; color:#fff; cursor:pointer;
@@ -1064,7 +1067,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <!-- ══ ATHLETE LOGIN ══ -->
 <div class="screen" id="athlete-login">
   <div class="tlogin-back">
-    <button class="back-btn" onclick="show('role-select')">← Volver</button>
+    <button class="back-btn" onclick="show('role-select')">‹ Volver</button>
   </div>
   <div class="tlogin-body">
     <div class="tlogin-icon" style="background:linear-gradient(135deg,var(--ac),var(--acl))">🏋️</div>
@@ -1081,7 +1084,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <!-- ══ TRAINER LOGIN ══ -->
 <div class="screen" id="trainer-login">
   <div class="tlogin-back">
-    <button class="back-btn" onclick="show('role-select')">← Volver</button>
+    <button class="back-btn" onclick="show('role-select')">‹ Volver</button>
   </div>
   <div class="tlogin-body">
     <div class="tlogin-icon">📋</div>
@@ -1098,7 +1101,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <!-- ══ TRAINER PORTAL ══ -->
 <div class="screen" id="trainer-portal">
   <div class="tportal-header">
-    <button class="back-btn" onclick="show('role-select')">← Salir</button>
+    <button class="back-btn" onclick="show('role-select')">‹ Salir</button>
     <div class="tportal-title">Portal Entrenador</div>
   </div>
   <div class="tportal-body">
@@ -1118,7 +1121,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <div class="screen" id="trainer-client">
   <div class="tclient-header">
     <div class="tclient-header-top">
-      <button class="back-btn" onclick="show('trainer-portal')">← Clientes</button>
+      <button class="back-btn" onclick="show('trainer-portal')">‹ Clientes</button>
       <div class="tclient-name" id="tclient-name">Nicolás Saravia</div>
     </div>
     <div class="tclient-tabs">
@@ -1134,6 +1137,9 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <!-- ══ PROFILE ══ -->
 <div class="screen" id="profile">
   <div class="profile-hero">
+    <div style="position:absolute;top:calc(var(--sat)+12px);left:16px;z-index:2">
+      <button class="back-btn" onclick="show('role-select')">‹ Inicio</button>
+    </div>
     <div class="profile-name">Juan <em>Nicolás</em> Saravia</div>
     <div class="profile-goal">Plan de Entrenamiento · Objetivo: Hipertrofia Muscular</div>
   </div>
@@ -1177,7 +1183,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <div class="screen" id="routine">
   <div class="r-header">
     <div class="r-header-top">
-      <button class="back-btn" onclick="showProfile()">← Perfil</button>
+      <button class="back-btn" onclick="showProfile()">‹ Perfil</button>
       <div class="r-title">Mi Rutina</div>
     </div>
     <div class="week-seg">
@@ -1200,7 +1206,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 <div class="screen" id="meals">
   <div class="meals-header">
     <div class="meals-header-top">
-      <button class="back-btn" onclick="showProfile()">← Perfil</button>
+      <button class="back-btn" onclick="showProfile()">‹ Perfil</button>
       <div class="meals-title">🍽️ Mis Comidas</div>
     </div>
     <div class="meals-days-bar">
