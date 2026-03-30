@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0a0b14">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
   --sat: env(safe-area-inset-top);
@@ -31,7 +31,7 @@
   --t3:  #5a5c7a;
 }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; background:var(--bg); color:var(--t1); }
+html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; background:var(--bg); color:var(--t1); }
 
 /* ── SCREENS ── */
 .screen { position:fixed; inset:0; opacity:0; pointer-events:none; transition:opacity .4s ease; }
@@ -56,8 +56,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 @keyframes popIn { 0%{opacity:0;transform:scale(.35)} 100%{opacity:1;transform:scale(1)} }
 .splash-title {
   font-size:30px; font-weight:900; color:var(--t1); letter-spacing:-1px;
-  font-family:'Barlow Condensed',sans-serif;
-  animation: fadeUp .6s ease .5s forwards; opacity:0;
+    animation: fadeUp .6s ease .5s forwards; opacity:0;
 }
 .splash-sub {
   font-size:13px; color:var(--t2); font-weight:500; letter-spacing:.3px;
@@ -100,8 +99,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 }
 .profile-name {
   font-size:28px; font-weight:900; color:var(--t1); letter-spacing:-.8px; line-height:1.15;
-  font-family:'Barlow Condensed',sans-serif;
-  position:relative; z-index:1;
+    position:relative; z-index:1;
 }
 .profile-name em { font-style:normal; color:var(--acl); }
 .profile-goal {
@@ -161,7 +159,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
   width:100%; padding:19px;
   background:linear-gradient(135deg, var(--ac) 0%, #818cf8 100%);
   border:none; border-radius:16px;
-  font-family:'Barlow',sans-serif; font-size:17px; font-weight:800;
+  font-family:'Inter',sans-serif; font-size:17px; font-weight:800;
   color:#fff; cursor:pointer; letter-spacing:-.3px;
   box-shadow:0 8px 28px rgba(99,102,241,.38);
   transition:transform .15s, box-shadow .15s;
@@ -187,7 +185,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 }
 .back-btn {
   background:var(--s1); border:1px solid var(--b); color:var(--t1);
-  font-family:'Barlow',sans-serif; font-size:13px;
+  font-family:'Inter',sans-serif; font-size:13px;
   font-weight:700; cursor:pointer; padding:8px 14px;
   border-radius:10px; display:flex; align-items:center; gap:6px;
   transition:background .15s;
@@ -203,7 +201,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .week-seg-btn {
   flex:1; padding:7px 0; border-radius:8px; border:none;
   background:transparent; color:var(--t2);
-  font-family:'Barlow',sans-serif; font-size:12px; font-weight:700;
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:700;
   cursor:pointer; transition:all .2s; letter-spacing:.5px;
 }
 .week-seg-btn.active {
@@ -217,7 +215,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .day-chip {
   padding:7px 14px; border-radius:20px;
   border:1px solid var(--b); background:transparent;
-  color:var(--t2); font-family:'Barlow',sans-serif;
+  color:var(--t2); font-family:'Inter',sans-serif;
   font-size:12px; font-weight:600; cursor:pointer;
   transition:all .2s; white-space:nowrap;
 }
@@ -317,8 +315,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .ex-weight {
   font-size:26px; font-weight:900; color:var(--acl);
   letter-spacing:-.8px; line-height:1;
-  font-family:'Barlow Condensed',sans-serif;
-}
+  }
 .ex-weight.inc { color:var(--gr); }
 .ex-reps { font-size:12px; color:var(--t2); margin-top:4px; font-weight:500; }
 
@@ -337,7 +334,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
   flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
   background:var(--bg); border:1px solid var(--b);
   border-radius:9px; padding:9px 0;
-  font-family:'Barlow',sans-serif; font-size:12px; font-weight:600;
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:600;
   cursor:pointer; transition:background .15s, border-color .15s;
 }
 .ex-act-btn.tip-btn  { color:var(--acl); }
@@ -374,7 +371,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
   font-size:11px; color:var(--t2); margin-left:auto;
   cursor:pointer; padding:5px 10px; border-radius:8px;
   border:1px solid var(--b); background:var(--bg);
-  font-family:'Barlow',sans-serif; font-weight:600;
+  font-family:'Inter',sans-serif; font-weight:600;
   transition:background .15s, border-color .15s;
   -webkit-tap-highlight-color:transparent;
 }
@@ -428,8 +425,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .timer-num {
   font-size:60px; font-weight:900; color:var(--t1);
   letter-spacing:-3px; line-height:1;
-  font-family:'Barlow Condensed',sans-serif;
-  position:relative; z-index:1;
+    position:relative; z-index:1;
 }
 .timer-num.done { color:var(--gr); }
 
@@ -438,7 +434,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 }
 .timer-btn {
   padding:13px 28px; border-radius:12px; border:none;
-  font-family:'Barlow',sans-serif; font-size:14px; font-weight:700;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:700;
   cursor:pointer; transition:opacity .15s;
 }
 .timer-btn:active { opacity:.7; }
@@ -532,7 +528,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 }
 .chat-input {
   flex:1; background:var(--s2); border:1px solid var(--b); border-radius:12px;
-  padding:11px 14px; color:var(--t1); font-family:'Barlow',sans-serif;
+  padding:11px 14px; color:var(--t1); font-family:'Inter',sans-serif;
   font-size:16px; outline:none; resize:none; max-height:100px;
   -webkit-appearance:none;
 }
@@ -570,7 +566,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .meals-days-bar::-webkit-scrollbar { display:none; }
 .meal-day-chip {
   flex-shrink:0; padding:7px 16px; border-radius:20px; border:none;
-  background:var(--s2); color:var(--t2); font-family:'Barlow',sans-serif;
+  background:var(--s2); color:var(--t2); font-family:'Inter',sans-serif;
   font-size:12px; font-weight:600; cursor:pointer;
   transition:background .15s, color .15s;
 }
@@ -601,7 +597,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .meal-textarea {
   display:block; width:100%; background:transparent; border:none;
   border-top:1px solid var(--b); border-radius:0 0 16px 16px;
-  padding:10px 16px 12px; color:var(--t1); font-family:'Barlow',sans-serif;
+  padding:10px 16px 12px; color:var(--t1); font-family:'Inter',sans-serif;
   font-size:16px; outline:none; resize:none; min-height:48px;
   -webkit-appearance:none; line-height:1.6; box-sizing:border-box;
 }
@@ -614,7 +610,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .meal-photo-btn {
   display:flex; align-items:center; gap:6px;
   padding:8px 14px; border-radius:10px; border:1px dashed var(--b);
-  background:transparent; color:var(--t2); font-family:'Barlow',sans-serif;
+  background:transparent; color:var(--t2); font-family:'Inter',sans-serif;
   font-size:13px; font-weight:600; cursor:pointer; flex-shrink:0;
   transition:border-color .15s, color .15s;
 }
@@ -641,7 +637,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
   width:100%; padding:17px;
   background:linear-gradient(135deg, var(--cy) 0%, var(--ac) 100%);
   border:none; border-radius:16px;
-  font-family:'Barlow',sans-serif; font-size:16px; font-weight:800;
+  font-family:'Inter',sans-serif; font-size:16px; font-weight:800;
   color:#fff; cursor:pointer; letter-spacing:-.3px;
   box-shadow:0 4px 20px rgba(34,211,238,.25);
   transition:opacity .15s;
@@ -746,7 +742,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
   width:100%; padding:17px;
   background:linear-gradient(135deg, var(--gr) 0%, #059669 100%);
   border:none; border-radius:16px;
-  font-family:'Barlow',sans-serif; font-size:16px; font-weight:800;
+  font-family:'Inter',sans-serif; font-size:16px; font-weight:800;
   color:#fff; cursor:pointer; letter-spacing:-.3px;
   box-shadow:0 4px 20px rgba(52,211,153,.3);
   transition:opacity .15s;
@@ -780,7 +776,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 }
 .complete-notes {
   width:100%; background:var(--s2); border:1px solid var(--b); border-radius:12px;
-  padding:13px 14px; color:var(--t1); font-family:'Barlow',sans-serif;
+  padding:13px 14px; color:var(--t1); font-family:'Inter',sans-serif;
   font-size:16px; outline:none; resize:none; height:100px;
   -webkit-appearance:none; margin-bottom:16px;
 }
@@ -790,13 +786,13 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .complete-confirm {
   flex:1; padding:15px; border-radius:14px; border:none;
   background:linear-gradient(135deg, var(--gr), #059669);
-  font-family:'Barlow',sans-serif; font-size:15px; font-weight:800;
+  font-family:'Inter',sans-serif; font-size:15px; font-weight:800;
   color:#fff; cursor:pointer; transition:opacity .15s;
 }
 .complete-confirm:active { opacity:.8; }
 .complete-cancel {
   padding:15px 20px; border-radius:14px; border:1px solid var(--b);
-  background:var(--s2); font-family:'Barlow',sans-serif;
+  background:var(--s2); font-family:'Inter',sans-serif;
   font-size:15px; font-weight:600; color:var(--t2); cursor:pointer;
 }
 
@@ -874,14 +870,14 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 .tlogin-input {
   width:100%; background:var(--s1); border:1px solid var(--b);
   border-radius:14px; padding:15px 18px; color:var(--t1);
-  font-family:'Barlow',sans-serif; font-size:16px; outline:none;
+  font-family:'Inter',sans-serif; font-size:16px; outline:none;
   -webkit-appearance:none; margin-bottom:12px; text-align:center;
 }
 .tlogin-input:focus { border-color:var(--cy); }
 .tlogin-btn {
   width:100%; padding:16px;
   background:linear-gradient(135deg, var(--cy), var(--ac));
-  border:none; border-radius:14px; font-family:'Barlow',sans-serif;
+  border:none; border-radius:14px; font-family:'Inter',sans-serif;
   font-size:16px; font-weight:800; color:#fff; cursor:pointer;
   box-shadow:0 4px 16px rgba(34,211,238,.3);
 }
@@ -946,7 +942,7 @@ html, body { height:100%; overflow:hidden; font-family:'Barlow',sans-serif; back
 }
 .tclient-tab {
   flex:1; padding:12px; background:transparent; border:none;
-  font-family:'Barlow',sans-serif; font-size:14px; font-weight:700;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:700;
   color:var(--t2); cursor:pointer; border-bottom:2px solid transparent;
   transition:color .15s, border-color .15s;
 }
