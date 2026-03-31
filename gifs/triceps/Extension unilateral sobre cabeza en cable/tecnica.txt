@@ -1,0 +1,1 @@
+Trabaja un brazo a la vez manteniendo el codo estable cerca de la cabeza. Extiende completo y regresa controlado sin arquear el torso.
