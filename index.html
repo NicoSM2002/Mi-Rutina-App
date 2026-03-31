@@ -1979,6 +1979,7 @@ let trainerData = { completions:[], meals:[] };
 let activeTrainerTab = 'rutinas';
 let editorData = null;
 let editorDay = 'lunes';
+let editorWeek = 1;
 let editorPickerTarget = null;
 let _pickerCatalog = [];
 const TRAINER_TOKEN = 'ent2026';
@@ -2007,6 +2008,7 @@ async function openTrainerClient(clientId, clientName) {
   document.getElementById('tab-editar').classList.remove('active');
   editorData = JSON.parse(JSON.stringify(data));
   editorDay = 'lunes';
+  editorWeek = 1;
   show('trainer-client');
 
   try {
@@ -2561,69 +2563,81 @@ function renderRoutineEditor() {
   const el = document.getElementById('tclient-content');
   if (!editorData) editorData = JSON.parse(JSON.stringify(data));
   const day = editorData[editorDay];
+  const w = editorWeek;
   const days = ['lunes','martes','miercoles','jueves','viernes'];
   const dayLabels = { lunes:'Lun', martes:'Mar', miercoles:'Mié', jueves:'Jue', viernes:'Vie' };
-  let html = `<div class="re-day-bar">`;
+
+  // Week selector
+  let html = `<div class="week-seg" style="margin-bottom:14px">
+    <button class="week-seg-btn${w===1?' active':''}" onclick="setEditorWeek(1)">SEMANA 1</button>
+    <button class="week-seg-btn${w===2?' active':''}" onclick="setEditorWeek(2)">SEMANA 2</button>
+  </div>`;
+
+  // Day selector
+  html += `<div class="re-day-bar">`;
   days.forEach(d => {
     html += `<button class="day-chip${d===editorDay?' active':''}" onclick="setEditorDay('${d}')">${dayLabels[d]}</button>`;
   });
   html += `</div>`;
+
+  // Circuits
   day.circuits.forEach((circuit, ci) => {
     html += `<div class="re-circuit-card ${circuit.cls}"><div class="re-circuit-hdr">${circuit.label}</div>`;
     circuit.exercises.forEach((ex, ei) => {
       const st = ex.setType || 'normal';
-      const steps1 = ex.steps1 || [];
-      const steps2 = ex.steps2 || [];
-      const renderSteps = (steps, week) => {
+      const stepsKey = w === 1 ? 'steps1' : 'steps2';
+      const steps = ex[stepsKey] || [];
+      const exName  = w === 1 ? ex.name  : (ex.name2  || ex.name);
+      const exW     = w === 1 ? (ex.w1   || '') : (ex.w2   || '');
+      const exReps  = w === 1 ? (ex.reps || '') : (ex.reps2 || ex.reps || '');
+      const wField  = w === 1 ? 'w1' : 'w2';
+      const rField  = w === 1 ? 'reps' : 'reps2';
+
+      const renderSteps = () => {
         let s = `<div class="re-steps">`;
         steps.forEach((step, si) => {
           s += `<div class="re-step-row">
             <span class="re-step-num">${si+1}</span>
-            <div class="re-wr-col"><input class="re-input" value="${step.w||''}" oninput="updateStep('${editorDay}',${ci},${ei},${week},${si},'w',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
-            <div class="re-wr-col"><input class="re-input" value="${step.reps||''}" oninput="updateStep('${editorDay}',${ci},${ei},${week},${si},'reps',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
-            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},${week},${si})">×</button>
+            <div class="re-wr-col"><input class="re-input" value="${step.w||''}" oninput="updateStep('${editorDay}',${ci},${ei},${w},${si},'w',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
+            <div class="re-wr-col"><input class="re-input" value="${step.reps||''}" oninput="updateStep('${editorDay}',${ci},${ei},${w},${si},'reps',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
+            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},${w},${si})">×</button>
           </div>`;
         });
-        s += `</div>`;
-        s += `<button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},${week})">+ Agregar escalón</button>`;
+        s += `</div><button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},${w})">+ Agregar escalón</button>`;
         return s;
       };
+
       html += `<div class="re-exercise">
         <div class="re-set-type">
           <button class="re-set-type-btn${st==='normal'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'normal')">Normal</button>
           <button class="re-set-type-btn ds${st==='dropset'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'dropset')">Drop set</button>
           <button class="re-set-type-btn pir${st==='piramidal'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'piramidal')">Piramidal</button>
         </div>
-        <div class="re-ex-week">
-          <div class="re-week-label">Semana 1</div>
-          <div class="re-name-row">
-            <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},1)">${ex.name}</button>
-            <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},1)">Cambiar</button>
-          </div>
-          ${st === 'normal' ? `<div class="re-wr-row">
-            <div class="re-wr-col"><input class="re-input" value="${ex.w1||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'w1',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
-            <div class="re-wr-col"><input class="re-input" value="${ex.reps||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'reps',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
-          </div>` : renderSteps(steps1, 1)}
+        <div class="re-name-row">
+          <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},${w})">${exName}</button>
+          <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},${w})">Cambiar</button>
         </div>
-        <div class="re-ex-week">
-          <div class="re-week-label">Semana 2</div>
-          <div class="re-name-row">
-            <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},2)">${ex.name2||ex.name}</button>
-            <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},2)">Cambiar</button>
-          </div>
-          ${st === 'normal' ? `<div class="re-wr-row">
-            <div class="re-wr-col"><input class="re-input" value="${ex.w2||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'w2',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
-            <div class="re-wr-col"><input class="re-input" value="${ex.reps2||ex.reps||''}" oninput="updateEditorField('${editorDay}',${ci},${ei},'reps2',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
-          </div>` : renderSteps(steps2, 2)}
-        </div>
+        ${st === 'normal'
+          ? `<div class="re-wr-row">
+              <div class="re-wr-col"><input class="re-input" value="${exW}" oninput="updateEditorField('${editorDay}',${ci},${ei},'${wField}',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
+              <div class="re-wr-col"><input class="re-input" value="${exReps}" oninput="updateEditorField('${editorDay}',${ci},${ei},'${rField}',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
+            </div>`
+          : renderSteps()
+        }
       </div>`;
     });
     html += `</div>`;
   });
+
   html += `<div class="section-label" style="margin-top:16px;margin-bottom:6px">Nota del entrenador</div>
     <textarea class="re-nota" rows="3" oninput="updateEditorNota('${editorDay}',this.value)">${day.nota||''}</textarea>
     <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>`;
   el.innerHTML = html;
+}
+
+function setEditorWeek(w) {
+  editorWeek = w;
+  renderRoutineEditor();
 }
 
 function setEditorDay(day) {
