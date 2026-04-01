@@ -2886,27 +2886,33 @@ const ATHLETE_PROFILES = {
 function buildContext() {
   const profile = ATHLETE_PROFILES[currentAthlete] || ATHLETE_PROFILES.nicolas;
 
-  const day = data[currentDay];
-  if (!day) return profile;
+  if (!data || !Object.keys(data).length) return profile;
 
-  let routineText = `\nRUTINA ACTIVA — ${currentDay.toUpperCase()} (${day.title}) — SEMANA ${currentWeek}:\n`;
-  routineText += `Variante: ${day.sub}\n`;
+  let routineText = `\nRUTINA COMPLETA — SEMANA ACTIVA: ${currentWeek}\n`;
 
-  if (day.warmup) routineText += `Calentamiento: ${day.warmup.join(', ')}\n`;
-  if (day.cardio) routineText += `Cardio: ${day.cardio}\n`;
+  for (const [dayKey, day] of Object.entries(data)) {
+    if (!day || !day.title) continue;
+    const isActive = dayKey === currentDay;
+    routineText += `\n── ${dayKey.toUpperCase()}${isActive ? ' (DÍA ACTIVO)' : ''}: ${day.title} ──\n`;
+    if (day.sub) routineText += `Variante: ${day.sub}\n`;
 
-  (day.circuits || []).forEach(c => {
-    routineText += `\n${c.label} (descanso: ${c.rest}):\n`;
-    c.exercises.forEach(e => {
-      const s1 = `S1: ${e.name} — ${e.w1} × ${e.reps}`;
-      const s2 = `S2: ${e.name2} — ${e.w2} × ${e.reps2 || e.reps}`;
-      routineText += `  • ${s1} | ${s2}\n`;
-      if (e.tip)  routineText += `    Técnica S1: ${e.tip}\n`;
-      if (e.tip2) routineText += `    Técnica S2: ${e.tip2}\n`;
+    const wuAll = [...(day.warmupHombro||[]), ...(day.warmup||[])];
+    if (wuAll.length) routineText += `Calentamiento: ${wuAll.map(w => typeof w === 'string' ? w : w.text).join(', ')}\n`;
+    if (day.cardio) routineText += `Cardio: ${day.cardio}\n`;
+
+    (day.circuits || []).forEach(c => {
+      routineText += `${c.label} (descanso: ${c.rest}):\n`;
+      c.exercises.forEach(e => {
+        const s1 = `S1: ${e.name} — ${e.w1} × ${e.reps}`;
+        const s2 = `S2: ${e.name2} — ${e.w2} × ${e.reps2 || e.reps}`;
+        routineText += `  • ${s1} | ${s2}\n`;
+        if (e.tip)  routineText += `    Técnica S1: ${e.tip}\n`;
+        if (e.tip2) routineText += `    Técnica S2: ${e.tip2}\n`;
+      });
     });
-  });
 
-  if (day.nota) routineText += `\nNota del entrenador: ${day.nota}`;
+    if (day.nota) routineText += `Nota: ${day.nota}\n`;
+  }
 
   let mealsText = '';
   if (athleteMeals.length > 0) {
@@ -2970,7 +2976,7 @@ async function sendChat() {
       body: JSON.stringify({ messages: chatHistory, context: buildContext() })
     });
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'No pude obtener respuesta.';
+    const reply = data.content || 'No pude obtener respuesta.';
     typing.textContent = reply;
     typing.classList.remove('typing');
     chatHistory.push({ role:'assistant', content: reply });
