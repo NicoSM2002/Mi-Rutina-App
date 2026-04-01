@@ -575,20 +575,9 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   margin-bottom:14px;
 }
 .meals-title { font-size:17px; font-weight:800; color:var(--t1); }
-.meals-days-bar {
-  display:flex; gap:8px; overflow-x:auto; padding-bottom:14px;
-  -webkit-overflow-scrolling:touch; scrollbar-width:none;
-}
-.meals-days-bar::-webkit-scrollbar { display:none; }
-.meal-day-chip {
-  flex-shrink:0; padding:7px 16px; border-radius:20px; border:none;
-  background:var(--s2); color:var(--t2); font-family:'Inter',sans-serif;
-  font-size:12px; font-weight:600; cursor:pointer;
-  transition:background .15s, color .15s;
-}
-.meal-day-chip.active {
-  background:linear-gradient(135deg,#22d3ee22,#6366f122);
-  color:var(--cy); border:1px solid var(--cy);
+.meals-today-label {
+  font-size:13px; font-weight:600; color:var(--cy);
+  text-transform:capitalize; padding-bottom:10px; letter-spacing:.3px;
 }
 .meals-content {
   flex:1; overflow-y:auto; padding:16px;
@@ -1372,13 +1361,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
       <button class="back-btn" onclick="showProfile()">‹ Perfil</button>
       <div class="meals-title">🍽️ Mis Comidas</div>
     </div>
-    <div class="meals-days-bar">
-      <button class="meal-day-chip active" onclick="setMealDay('lunes')">Lunes</button>
-      <button class="meal-day-chip" onclick="setMealDay('martes')">Martes</button>
-      <button class="meal-day-chip" onclick="setMealDay('miercoles')">Miércoles</button>
-      <button class="meal-day-chip" onclick="setMealDay('jueves')">Jueves</button>
-      <button class="meal-day-chip" onclick="setMealDay('viernes')">Viernes</button>
-    </div>
+    <div class="meals-today-label" id="meals-today-label"></div>
   </div>
   <div class="meals-content" id="meals-content"></div>
   <div class="meals-send-wrap">
@@ -1503,7 +1486,6 @@ function renderRestDay(state) {
     </div>`;
 }
 function showProfile()  { show(ATHLETE_USERS[currentAthlete === 'nicolas' ? 'nsaravia' : 'msaravia'].screen); }
-function showMeals()    { show('meals'); renderMeals(); }
 window.addEventListener('load', () => { setTimeout(() => show('role-select'), 2600); });
 
 /* ── state ── */
@@ -2569,36 +2551,25 @@ const MEAL_SLOTS = [
   { key:'comida',      label:'Cena',          icon:'🌙', bg:'rgba(34,211,238,.15)',  sub:'Última comida del día' },
 ];
 
-const mealDays = ['lunes','martes','miercoles','jueves','viernes'];
-let currentMealDay = 'lunes';
 const mealsData = {};
 const photosData = {};
-mealDays.forEach(d => {
-  mealsData[d] = {};
-  photosData[d] = {};
-  MEAL_SLOTS.forEach(s => { mealsData[d][s.key] = ''; photosData[d][s.key] = ''; });
-});
+MEAL_SLOTS.forEach(s => { mealsData[s.key] = ''; photosData[s.key] = ''; });
 
-function showMeals() {
-  saveMealInputs();
-  show('meals');
-  renderMeals();
+function getTodayLabel() {
+  return new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })
+    .replace(/^\w/, c => c.toUpperCase());
 }
 
-function setMealDay(day) {
-  saveMealInputs();
-  currentMealDay = day;
-  document.querySelectorAll('.meal-day-chip').forEach((b,i) =>
-    b.classList.toggle('active', mealDays[i] === day));
+function showMeals() {
+  show('meals');
+  document.getElementById('meals-today-label').textContent = getTodayLabel();
   renderMeals();
 }
 
 function renderMeals() {
   const container = document.getElementById('meals-content');
-  const dayData = mealsData[currentMealDay];
-  const photoData = photosData[currentMealDay];
   container.innerHTML = MEAL_SLOTS.map(s => {
-    const hasPhoto = photoData[s.key];
+    const hasPhoto = photosData[s.key];
     return `
     <div class="meal-card">
       <div class="meal-card-header">
@@ -2610,7 +2581,7 @@ function renderMeals() {
       </div>
       <textarea class="meal-textarea" id="meal-${s.key}"
         placeholder="Ej: ${s.label === 'Desayuno' ? '2 huevos, arepa, café' : s.label === 'Almuerzo' ? 'Arroz, pollo, ensalada' : 'Describí lo que comiste...'}"
-        oninput="saveMealInputs()">${dayData[s.key]}</textarea>
+        oninput="saveMealInputs()">${mealsData[s.key]}</textarea>
       <div class="meal-photo-row">
         <input type="file" accept="image/*" id="file-${s.key}"
           style="display:none" onchange="handlePhotoSelected('${s.key}', this)">
@@ -2630,7 +2601,7 @@ function renderMeals() {
 function saveMealInputs() {
   MEAL_SLOTS.forEach(s => {
     const el = document.getElementById(`meal-${s.key}`);
-    if (el) mealsData[currentMealDay][s.key] = el.value;
+    if (el) mealsData[s.key] = el.value;
   });
 }
 
@@ -2647,13 +2618,11 @@ async function handlePhotoSelected(slot, input) {
   fd.append('photo', file);
   fd.append('client', currentAthlete);
   fd.append('slot', slot);
-  fd.append('day', currentMealDay);
-
   try {
     const res = await fetch(WORKER_URL + '/upload-photo', { method:'POST', body: fd });
     const data = await res.json();
     if (data.ok) {
-      photosData[currentMealDay][slot] = data.url;
+      photosData[slot] = data.url;
       previewEl.src = data.url;
       previewEl.classList.add('show');
       removeEl.classList.add('show');
@@ -2668,7 +2637,7 @@ async function handlePhotoSelected(slot, input) {
 }
 
 function removePhoto(slot) {
-  photosData[currentMealDay][slot] = '';
+  photosData[slot] = '';
   const previewEl = document.getElementById(`preview-${slot}`);
   const removeEl  = document.getElementById(`remove-${slot}`);
   if (previewEl) { previewEl.src = ''; previewEl.classList.remove('show'); }
@@ -2677,8 +2646,7 @@ function removePhoto(slot) {
 
 async function sendMeals() {
   saveMealInputs();
-  const dayData = mealsData[currentMealDay];
-  const hasAny = MEAL_SLOTS.some(s => dayData[s.key].trim() || photosData[currentMealDay][s.key]);
+  const hasAny = MEAL_SLOTS.some(s => mealsData[s.key].trim() || photosData[s.key]);
   if (!hasAny) {
     alert('Agregá al menos una comida o foto antes de enviar.');
     return;
@@ -2688,7 +2656,7 @@ async function sendMeals() {
   btn.disabled = true;
   btn.textContent = 'Enviando…';
 
-  const dayLabel = { lunes:'Lunes', martes:'Martes', miercoles:'Miércoles', jueves:'Jueves', viernes:'Viernes' }[currentMealDay];
+  const dayLabel = getTodayLabel();
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -2697,16 +2665,16 @@ async function sendMeals() {
       body: JSON.stringify({
         action: 'meals',
         client: currentAthlete,
-        day: currentMealDay,
+        day: new Date().toISOString().slice(0,10),
         dayLabel,
-        meals: dayData,
-        photos: photosData[currentMealDay]
+        meals: mealsData,
+        photos: photosData
       })
     });
     const data = await res.json();
     console.log('sendMeals worker response:', JSON.stringify(data));
     if (data.ok) {
-      const snapshotMeals = JSON.parse(JSON.stringify(mealsData[currentMealDay]));
+      const snapshotMeals = JSON.parse(JSON.stringify(mealsData));
       btn.textContent = '✅ ¡Enviado!';
       setTimeout(() => {
         btn.disabled = false;
