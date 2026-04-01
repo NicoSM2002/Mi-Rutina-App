@@ -1484,6 +1484,7 @@ function showRoutine() {
       <button class="day-chip" data-day="viernes" onclick="setDay('viernes')">Viernes · Brazos</button>`;
   }
   routineStep = 0;
+  document.querySelectorAll('.week-seg-btn').forEach((b,i) => b.classList.toggle('active', i+1===currentWeek));
   show('routine'); render();
 }
 function showProfile()  { show(ATHLETE_USERS[currentAthlete === 'nicolas' ? 'nsaravia' : 'msaravia'].screen); }
