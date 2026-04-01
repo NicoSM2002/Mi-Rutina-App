@@ -2765,6 +2765,9 @@ async function sendMeal(slot) {
           </div>
         </div>`;
       }
+      if (data.analysis) {
+        setTimeout(() => showNutritionSummary(dayLabel, { [slot]: data.analysis }, { [slot]: text }), 400);
+      }
     } else {
       btn.textContent = 'Error, intentá de nuevo';
       btn.disabled = false;
