@@ -1221,6 +1221,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
       </div>
       <div class="client-arrow">→</div>
     </div>
+    <div style="height:10px"></div>
     <div class="client-card" onclick="openTrainerClient('msaravia','María Saravia')">
       <div class="client-avatar" style="background:linear-gradient(135deg,var(--pu),var(--cy))">MS</div>
       <div>
@@ -1733,7 +1734,7 @@ const FALLBACK_DATA = {
       {text:'Press mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Press hombro mancuernas sentado/Press hombro mancuernas sentado.gif'},
     ],
     warmup:[
-      {text:'Rotación manguito mancuerna 5 lbs × 20 reps'},
+      {text:'Rotación manguito mancuerna 5 lbs × 20 reps',img:'./gifs/hombros/Elevacion lateral mancuernas/Elevacion lateral mancuernas.gif'},
       {text:'Elevación lateral ligera 10 lbs × 20 reps',img:'./gifs/hombros/Elevacion lateral mancuernas/Elevacion lateral mancuernas.gif'},
     ],
     circuits:[
@@ -2070,7 +2071,7 @@ const FALLBACK_DATA_MSARAVIA = {
     sub:'Press · Cierres · Core',
     warmup:[
       {text:'Push-ups acostandote completamente × 10 reps',img:'./gifs/pecho/Push-up con mancuernas/Push-up con mancuernas.gif'},
-      {text:'Crunch cortas × 30 reps'},
+      {text:'Crunch cortas × 30 reps',img:'./gifs/abdomen/Flexión de abdomen/Flexión de abdomen.gif'},
     ],
     cardio:'Caminadora 20 min',
     circuits:[
@@ -3011,6 +3012,19 @@ async function loadRoutine() {
       for (const day of Object.keys(fb)) {
         if (!data[day]) continue;
         const fbDay = fb[day];
+        // Restore warmup GIFs
+        ['warmup','warmupHombro'].forEach(key => {
+          if (!fbDay[key]) return;
+          fbDay[key].forEach((item, i) => {
+            if (!data[day][key]?.[i] || !item.img) return;
+            if (typeof data[day][key][i] === 'string') {
+              data[day][key][i] = { text: data[day][key][i], img: item.img };
+            } else {
+              data[day][key][i].img = item.img;
+            }
+          });
+        });
+        // Restore circuit exercise GIFs
         for (let ci = 0; ci < (data[day].circuits||[]).length; ci++) {
           const fbCircuit = fbDay.circuits?.[ci];
           if (!fbCircuit) continue;
