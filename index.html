@@ -1011,7 +1011,20 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   font-size:13px; color:var(--t2); line-height:1.6;
   border-left:2px solid var(--b); padding-left:10px; margin-top:8px;
 }
-.tmeal-slot { margin-bottom:12px; }
+.tmeal-day-card { background:var(--s2); border:1px solid var(--b); border-radius:14px; margin-bottom:10px; overflow:hidden; }
+.tmeal-day-header {
+  display:flex; align-items:center; gap:10px; padding:14px 16px;
+  cursor:pointer; user-select:none;
+}
+.tmeal-day-header-info { flex:1; }
+.tmeal-day-label { font-size:14px; font-weight:700; color:var(--t1); text-transform:capitalize; }
+.tmeal-day-date { font-size:11px; color:var(--t2); margin-top:2px; }
+.tmeal-day-count { font-size:11px; color:var(--cy); font-weight:600; background:rgba(34,211,238,.1); padding:3px 8px; border-radius:20px; }
+.tmeal-day-chevron { font-size:12px; color:var(--t2); transition:transform .2s; }
+.tmeal-day-card.open .tmeal-day-chevron { transform:rotate(180deg); }
+.tmeal-day-body { display:none; padding:0 16px 16px; border-top:1px solid var(--b); }
+.tmeal-day-card.open .tmeal-day-body { display:block; }
+.tmeal-slot { margin-top:12px; }
 .tmeal-slot-label {
   font-size:11px; font-weight:700; color:var(--t2);
   text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;
@@ -2540,29 +2553,47 @@ function renderTrainerTab() {
       el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">🍽️</div>Aún no hay reportes de comidas.</div>';
       return;
     }
-    const slots = [
-      { key:'desayuno', label:'☀️ Desayuno' },
+    const slotDefs = [
+      { key:'desayuno',     label:'☀️ Desayuno' },
       { key:'mediasNueves', label:'🍎 Medias nueves' },
-      { key:'almuerzo', label:'🍽️ Almuerzo' },
-      { key:'onces', label:'☕ Onces' },
-      { key:'comida', label:'🌙 Cena' },
+      { key:'almuerzo',     label:'🍽️ Almuerzo' },
+      { key:'onces',        label:'☕ Onces' },
+      { key:'comida',       label:'🌙 Cena' },
     ];
-    el.innerHTML = records.map(r => {
-      const slotsHtml = slots.filter(s => r.meals?.[s.key]?.trim() || r.photos?.[s.key] || r.analyses?.[s.key])
+    // Group records by day (ISO date key)
+    const grouped = {};
+    records.forEach(r => {
+      const k = r.day || r.dayLabel;
+      if (!grouped[k]) grouped[k] = { label: r.dayLabel || r.day, date: r.date || '', slots: {}, analyses: {} };
+      slotDefs.forEach(s => {
+        if (r.meals?.[s.key]?.trim() || r.photos?.[s.key]) {
+          grouped[k].slots[s.key] = { text: r.meals?.[s.key] || '', photo: r.photos?.[s.key] || '' };
+        }
+        if (r.analyses?.[s.key]) grouped[k].analyses[s.key] = r.analyses[s.key];
+      });
+    });
+    const days = Object.values(grouped);
+    el.innerHTML = days.map((day, i) => {
+      const count = Object.keys(day.slots).length;
+      const slotsHtml = slotDefs.filter(s => day.slots[s.key])
         .map(s => `
           <div class="tmeal-slot">
             <div class="tmeal-slot-label">${s.label}</div>
-            ${r.meals?.[s.key] ? `<div class="tmeal-slot-text">${r.meals[s.key]}</div>` : ''}
-            ${r.photos?.[s.key] ? `<img class="tmeal-slot-photo" src="${r.photos[s.key]}">` : ''}
-            ${r.analyses?.[s.key] ? `<button class="tmeal-analysis-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'▲ Ocultar análisis':'🤖 Análisis nutricional'">🤖 Análisis nutricional</button><div class="tmeal-analysis">${r.analyses[s.key]}</div>` : ''}
+            ${day.slots[s.key].text ? `<div class="tmeal-slot-text">${day.slots[s.key].text}</div>` : ''}
+            ${day.slots[s.key].photo ? `<img class="tmeal-slot-photo" src="${day.slots[s.key].photo}">` : ''}
+            ${day.analyses[s.key] ? `<button class="tmeal-analysis-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'▲ Ocultar':'🤖 Análisis nutricional'">🤖 Análisis nutricional</button><div class="tmeal-analysis">${day.analyses[s.key]}</div>` : ''}
           </div>`).join('');
       return `
-        <div class="trecord-card">
-          <div class="trecord-header">
-            <div class="trecord-day">${r.dayLabel || r.day}</div>
-            <div class="trecord-date">${r.date || ''}</div>
+        <div class="tmeal-day-card${i === 0 ? ' open' : ''}">
+          <div class="tmeal-day-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="tmeal-day-header-info">
+              <div class="tmeal-day-label">${day.label}</div>
+              <div class="tmeal-day-date">${day.date}</div>
+            </div>
+            <div class="tmeal-day-count">${count} comida${count !== 1 ? 's' : ''}</div>
+            <div class="tmeal-day-chevron">▼</div>
           </div>
-          ${slotsHtml}
+          <div class="tmeal-day-body">${slotsHtml}</div>
         </div>`;
     }).join('');
   }
@@ -2621,6 +2652,43 @@ function showMeals() {
   show('meals');
   document.getElementById('meals-today-label').textContent = getTodayLabel();
   renderMeals();
+  syncMealsSentFromServer();
+}
+
+async function syncMealsSentFromServer() {
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-data', client:currentAthlete })
+    });
+    const json = await res.json();
+    const today = getTodayKey();
+    const todayRecord = (json.meals || []).find(r => r.day === today);
+    if (!todayRecord) return;
+    const sentKey = `mealsSent_${currentAthlete}_${today}`;
+    const dKey = `mealsDay_${currentAthlete}_${today}`;
+    const sent = getSentSlots();
+    const saved = JSON.parse(localStorage.getItem(dKey) || '{}');
+    let updated = false;
+    MEAL_SLOTS.forEach(s => {
+      if ((todayRecord.meals?.[s.key]?.trim() || todayRecord.photos?.[s.key]) && !sent[s.key]) {
+        sent[s.key] = true;
+        mealsData[s.key] = todayRecord.meals?.[s.key] || '';
+        photosData[s.key] = todayRecord.photos?.[s.key] || '';
+        saved[s.key] = {
+          text: mealsData[s.key],
+          photo: photosData[s.key],
+          analysis: todayRecord.analyses?.[s.key] || null
+        };
+        updated = true;
+      }
+    });
+    if (updated) {
+      localStorage.setItem(sentKey, JSON.stringify(sent));
+      localStorage.setItem(dKey, JSON.stringify(saved));
+      renderMeals();
+    }
+  } catch(e) { /* silent */ }
 }
 
 function renderMeals() {
