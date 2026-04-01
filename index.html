@@ -634,6 +634,27 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
   font-size:12px; color:var(--t2); font-style:italic;
 }
 
+.meal-slot-send {
+  width:100%; margin-top:12px; padding:13px;
+  background:linear-gradient(135deg, var(--cy) 0%, var(--ac) 100%);
+  border:none; border-radius:12px;
+  color:#0f1117; font-weight:700; font-family:'Inter',sans-serif;
+  font-size:13px; cursor:pointer; transition:opacity .15s;
+}
+.meal-slot-send:active { opacity:.85; }
+.meal-slot-send:disabled { opacity:.5; cursor:default; }
+.meal-card.sent {
+  border:1px solid rgba(52,211,153,.4) !important;
+  background:rgba(52,211,153,.06) !important;
+}
+.meal-sent-badge {
+  width:26px; height:26px; border-radius:50%;
+  background:rgba(52,211,153,.2); color:#34d399;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0;
+}
+.meal-card.sent .meal-card-sub { color:#34d399; }
+.meal-card.sent .meal-textarea { opacity:.6; pointer-events:none; }
 .meals-send-wrap {
   padding:16px 16px calc(var(--sab) + 20px);
   flex-shrink:0;
@@ -1364,9 +1385,6 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
     <div class="meals-today-label" id="meals-today-label"></div>
   </div>
   <div class="meals-content" id="meals-content"></div>
-  <div class="meals-send-wrap">
-    <button class="meals-send-btn" id="meals-send-btn" onclick="sendMeals()">Enviar al entrenador</button>
-  </div>
 </div>
 
 <!-- ══ NUTRITION SUMMARY OVERLAY ══ -->
@@ -2560,7 +2578,33 @@ function getTodayLabel() {
     .replace(/^\w/, c => c.toUpperCase());
 }
 
+function getTodayKey() { return new Date().toISOString().slice(0,10); }
+function getSentSlots() {
+  return JSON.parse(localStorage.getItem(`mealsSent_${currentAthlete}_${getTodayKey()}`) || '{}');
+}
+function markSlotSent(slot) {
+  const key = `mealsSent_${currentAthlete}_${getTodayKey()}`;
+  const sent = getSentSlots();
+  sent[slot] = true;
+  localStorage.setItem(key, JSON.stringify(sent));
+  // Persist the data for this slot so it reappears on next visit
+  const dKey = `mealsDay_${currentAthlete}_${getTodayKey()}`;
+  const saved = JSON.parse(localStorage.getItem(dKey) || '{}');
+  saved[slot] = { text: mealsData[slot], photo: photosData[slot] };
+  localStorage.setItem(dKey, JSON.stringify(saved));
+}
+function loadTodayFromStorage() {
+  const dKey = `mealsDay_${currentAthlete}_${getTodayKey()}`;
+  const saved = JSON.parse(localStorage.getItem(dKey) || '{}');
+  MEAL_SLOTS.forEach(s => {
+    if (saved[s.key]) {
+      mealsData[s.key] = saved[s.key].text || '';
+      photosData[s.key] = saved[s.key].photo || '';
+    }
+  });
+}
 function showMeals() {
+  loadTodayFromStorage();
   show('meals');
   document.getElementById('meals-today-label').textContent = getTodayLabel();
   renderMeals();
@@ -2568,16 +2612,19 @@ function showMeals() {
 
 function renderMeals() {
   const container = document.getElementById('meals-content');
+  const sent = getSentSlots();
   container.innerHTML = MEAL_SLOTS.map(s => {
     const hasPhoto = photosData[s.key];
+    const isSent = !!sent[s.key];
     return `
-    <div class="meal-card">
+    <div class="meal-card${isSent ? ' sent' : ''}" id="card-${s.key}">
       <div class="meal-card-header">
         <div class="meal-icon" style="background:${s.bg}">${s.icon}</div>
-        <div>
+        <div style="flex:1">
           <div class="meal-card-title">${s.label}</div>
-          <div class="meal-card-sub">${s.sub}</div>
+          <div class="meal-card-sub">${isSent ? '✓ Enviado' : s.sub}</div>
         </div>
+        ${isSent ? '<div class="meal-sent-badge">✓</div>' : ''}
       </div>
       <textarea class="meal-textarea" id="meal-${s.key}"
         placeholder="Ej: ${s.label === 'Desayuno' ? '2 huevos, arepa, café' : s.label === 'Almuerzo' ? 'Arroz, pollo, ensalada' : 'Describí lo que comiste...'}"
@@ -2585,15 +2632,13 @@ function renderMeals() {
       <div class="meal-photo-row">
         <input type="file" accept="image/*" id="file-${s.key}"
           style="display:none" onchange="handlePhotoSelected('${s.key}', this)">
-        <button class="meal-photo-btn" onclick="document.getElementById('file-${s.key}').click()">
-          📷 Foto
-        </button>
+        ${!isSent ? `<button class="meal-photo-btn" onclick="document.getElementById('file-${s.key}').click()">📷 Foto</button>` : ''}
         <span class="meal-uploading" id="uploading-${s.key}" style="display:none">Subiendo…</span>
         <img class="meal-photo-preview ${hasPhoto ? 'show' : ''}" id="preview-${s.key}"
-          src="${hasPhoto || ''}" onclick="removePhoto('${s.key}')">
-        <button class="meal-photo-remove ${hasPhoto ? 'show' : ''}" id="remove-${s.key}"
-          onclick="removePhoto('${s.key}')">✕</button>
+          src="${hasPhoto || ''}" onclick="${isSent ? '' : `removePhoto('${s.key}')`}">
+        ${!isSent ? `<button class="meal-photo-remove ${hasPhoto ? 'show' : ''}" id="remove-${s.key}" onclick="removePhoto('${s.key}')">✕</button>` : ''}
       </div>
+      ${!isSent ? `<button class="meal-slot-send" id="slot-send-${s.key}" onclick="sendMeal('${s.key}')">Enviar ${s.label}</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -2644,15 +2689,16 @@ function removePhoto(slot) {
   if (removeEl)  { removeEl.classList.remove('show'); }
 }
 
-async function sendMeals() {
+async function sendMeal(slot) {
   saveMealInputs();
-  const hasAny = MEAL_SLOTS.some(s => mealsData[s.key].trim() || photosData[s.key]);
-  if (!hasAny) {
-    alert('Agregá al menos una comida o foto antes de enviar.');
+  const text = mealsData[slot] || '';
+  const photo = photosData[slot] || '';
+  if (!text.trim() && !photo) {
+    alert('Agregá texto o foto primero.');
     return;
   }
 
-  const btn = document.getElementById('meals-send-btn');
+  const btn = document.getElementById(`slot-send-${slot}`);
   btn.disabled = true;
   btn.textContent = 'Enviando…';
 
@@ -2665,22 +2711,33 @@ async function sendMeals() {
       body: JSON.stringify({
         action: 'meals',
         client: currentAthlete,
-        day: new Date().toISOString().slice(0,10),
+        day: getTodayKey(),
         dayLabel,
-        meals: mealsData,
-        photos: photosData
+        slot,
+        meals: { [slot]: text },
+        photos: { [slot]: photo }
       })
     });
     const data = await res.json();
-    console.log('sendMeals worker response:', JSON.stringify(data));
     if (data.ok) {
-      const snapshotMeals = JSON.parse(JSON.stringify(mealsData));
-      btn.textContent = '✅ ¡Enviado!';
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.textContent = 'Enviar al entrenador';
-        showNutritionSummary(dayLabel, data.analyses || {}, snapshotMeals);
-      }, 800);
+      markSlotSent(slot);
+      const card = document.getElementById(`card-${slot}`);
+      if (card) {
+        card.classList.add('sent');
+        card.querySelector('.meal-card-sub').textContent = '✓ Enviado';
+        if (!card.querySelector('.meal-sent-badge')) {
+          const badge = document.createElement('div');
+          badge.className = 'meal-sent-badge';
+          badge.textContent = '✓';
+          card.querySelector('.meal-card-header').appendChild(badge);
+        }
+        btn.remove();
+        card.querySelector('.meal-photo-btn')?.remove();
+        card.querySelector(`#remove-${slot}`)?.remove();
+      }
+      if (data.analysis) {
+        setTimeout(() => showNutritionSummary(dayLabel, { [slot]: data.analysis }, { [slot]: text }), 500);
+      }
     } else {
       btn.textContent = 'Error, intentá de nuevo';
       btn.disabled = false;
