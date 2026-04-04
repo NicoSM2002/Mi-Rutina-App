@@ -274,6 +274,23 @@ export default {
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
+    // ── GET PAYMENT ──
+    if (body.action === 'get-payment') {
+      const payment = await env.DB.get(`payment:${client}`, 'json');
+      return new Response(JSON.stringify({ ok: true, payment: payment || null }), { headers: cors });
+    }
+
+    // ── SAVE PAYMENT ──
+    if (body.action === 'save-payment') {
+      if (body.token !== 'ent2026' && !body.fields) {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      const existing = await env.DB.get(`payment:${client}`, 'json') || {};
+      const updated = { ...existing, ...body.fields };
+      await env.DB.put(`payment:${client}`, JSON.stringify(updated));
+      return new Response(JSON.stringify({ ok: true }), { headers: cors });
+    }
+
     // ── CHAT ──
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

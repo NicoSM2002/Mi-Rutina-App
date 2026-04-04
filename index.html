@@ -671,6 +671,55 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
 .meals-send-btn:active { opacity:.85; }
 .meals-send-btn:disabled { opacity:.5; cursor:default; }
 
+/* ── PAYMENT ── */
+.payment-card {
+  margin:0 16px 16px;
+  background:var(--s2); border:1px solid var(--b); border-radius:16px;
+  padding:16px;
+}
+.payment-card:empty { display:none; }
+.payment-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.payment-title { font-size:13px; font-weight:700; color:var(--t1); }
+.payment-badge {
+  font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px;
+}
+.payment-badge.paid { background:rgba(52,211,153,.15); color:#34d399; }
+.payment-badge.pending { background:rgba(251,191,36,.15); color:#fbbf24; }
+.payment-amount { font-size:26px; font-weight:800; color:var(--t1); margin-bottom:4px; }
+.payment-due { font-size:12px; color:var(--t2); margin-bottom:14px; }
+.payment-pay-btn {
+  width:100%; padding:14px; border:none; border-radius:12px;
+  background:linear-gradient(135deg,#34d399,#059669);
+  color:#fff; font-weight:700; font-size:14px; cursor:pointer;
+  font-family:'Inter',sans-serif;
+}
+.payment-paid-msg { text-align:center; color:#34d399; font-size:13px; font-weight:600; padding:6px 0; }
+
+/* trainer payment tab */
+.tpay-section { margin-bottom:20px; }
+.tpay-status-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.tpay-amount-big { font-size:32px; font-weight:800; color:var(--t1); }
+.tpay-toggle-btn {
+  width:100%; padding:15px; border:none; border-radius:14px;
+  font-weight:700; font-size:14px; cursor:pointer; font-family:'Inter',sans-serif;
+  margin-bottom:12px;
+}
+.tpay-toggle-btn.mark-paid { background:linear-gradient(135deg,#34d399,#059669); color:#fff; }
+.tpay-toggle-btn.mark-pending { background:var(--s2); color:var(--am); border:1px solid var(--am); }
+.tpay-field { margin-bottom:12px; }
+.tpay-label { font-size:11px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; }
+.tpay-input {
+  width:100%; background:var(--s2); border:1px solid var(--b); border-radius:10px;
+  padding:11px 14px; color:var(--t1); font-family:'Inter',sans-serif;
+  font-size:14px; box-sizing:border-box;
+}
+.tpay-save-btn {
+  width:100%; padding:15px; border:none; border-radius:14px;
+  background:linear-gradient(135deg,var(--cy),var(--ac));
+  color:#0f1117; font-weight:700; font-size:14px; cursor:pointer;
+  font-family:'Inter',sans-serif; margin-top:4px;
+}
+
 /* ── NUTRITION SUMMARY ── */
 .nutrition-overlay {
   position:fixed; inset:0; z-index:300;
@@ -1290,6 +1339,7 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
     <div class="tclient-tabs">
       <button class="tclient-tab active" id="tab-rutinas" onclick="setTrainerTab('rutinas')">💪 Rutinas</button>
       <button class="tclient-tab" id="tab-comidas" onclick="setTrainerTab('comidas')">🍽️ Comidas</button>
+      <button class="tclient-tab" id="tab-pagos" onclick="setTrainerTab('pagos')">💳 Pagos</button>
       <button class="tclient-tab" id="tab-editar" onclick="setTrainerTab('editar')">✏️ Editar</button>
     </div>
   </div>
@@ -1333,6 +1383,8 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
     </div>
   </div>
 
+  <div class="payment-card" id="payment-card-nicolas"></div>
+
   <div class="cta-wrap" style="display:flex;gap:10px;">
     <button class="cta-btn" onclick="showRoutine()" style="font-size:14px;padding:15px 10px;">💪 Rutina</button>
     <button class="cta-btn" onclick="showMeals()" style="font-size:14px;padding:15px 10px;background:linear-gradient(135deg,#22d3ee,#6366f1)">🍽️ Comidas</button>
@@ -1373,6 +1425,8 @@ html, body { height:100%; overflow:hidden; font-family:'Inter',sans-serif; backg
       </div>
     </div>
   </div>
+
+  <div class="payment-card" id="payment-card-msaravia"></div>
 
   <div class="cta-wrap" style="display:flex;gap:10px;">
     <button class="cta-btn" onclick="showRoutine()" style="font-size:14px;padding:15px 10px;">💪 Rutina</button>
@@ -2469,6 +2523,7 @@ function athleteLogin() {
   data = JSON.parse(JSON.stringify(fb));
   loadRoutine();
   show(config.screen);
+  loadAthletePayment(currentAthlete);
 }
 let trainerClientId = null;
 let trainerData = { completions:[], meals:[] };
@@ -2525,6 +2580,7 @@ function setTrainerTab(tab) {
   activeTrainerTab = tab;
   document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
   document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
+  document.getElementById('tab-pagos').classList.toggle('active', tab === 'pagos');
   document.getElementById('tab-editar').classList.toggle('active', tab === 'editar');
   renderTrainerTab();
 }
@@ -2532,6 +2588,7 @@ function setTrainerTab(tab) {
 function renderTrainerTab() {
   const el = document.getElementById('tclient-content');
   if (activeTrainerTab === 'editar') { renderRoutineEditor(); return; }
+  if (activeTrainerTab === 'pagos') { renderTrainerPayment(); return; }
   if (activeTrainerTab === 'rutinas') {
     const records = trainerData.completions || [];
     if (!records.length) {
@@ -3023,6 +3080,109 @@ async function confirmComplete() {
     btn.textContent = 'Error de conexión';
     btn.disabled = false;
   }
+}
+
+/* ── payment ── */
+let paymentData = {};
+
+async function loadAthletePayment(athlete) {
+  const cardId = `payment-card-${athlete === 'nicolas' ? 'nicolas' : 'msaravia'}`;
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-payment', client: athlete })
+    });
+    const data = await res.json();
+    if (data.ok && data.payment) renderAthletePayment(card, data.payment);
+  } catch(e) {}
+}
+
+function renderAthletePayment(card, p) {
+  if (!p || !p.amount) { card.innerHTML = ''; return; }
+  const isPaid = p.status === 'paid';
+  const fmt = n => new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 }).format(n);
+  card.innerHTML = `
+    <div class="payment-header">
+      <div class="payment-title">💳 Mi Plan Mensual</div>
+      <div class="payment-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? '✅ Al día' : '⚠️ Pendiente'}</div>
+    </div>
+    <div class="payment-amount">${fmt(p.amount)}</div>
+    <div class="payment-due">${isPaid ? `Pagado el ${p.paidDate || ''}` : `Fecha límite: ${p.dueDate || ''}`}</div>
+    ${!isPaid && p.payLink ? `<button class="payment-pay-btn" onclick="window.open('${p.payLink}','_blank')">💳 Pagar ahora</button>` : ''}
+    ${isPaid ? `<div class="payment-paid-msg">¡Gracias por tu pago! 🙌</div>` : ''}
+  `;
+}
+
+async function renderTrainerPayment() {
+  const el = document.getElementById('tclient-content');
+  el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando…</div>';
+  let p = {};
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-payment', client: trainerClientId })
+    });
+    const data = await res.json();
+    if (data.ok && data.payment) p = data.payment;
+  } catch(e) {}
+
+  const isPaid = p.status === 'paid';
+  const fmt = n => n ? new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 }).format(n) : '';
+  el.innerHTML = `
+    <div class="tpay-section">
+      <div class="tpay-status-row">
+        <div class="tpay-amount-big">${p.amount ? fmt(p.amount) : '—'}</div>
+        ${p.amount ? `<div class="payment-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? '✅ Al día' : '⚠️ Pendiente'}</div>` : ''}
+      </div>
+      ${p.amount ? `
+      <button class="tpay-toggle-btn ${isPaid ? 'mark-pending' : 'mark-paid'}"
+        onclick="togglePaymentStatus(${isPaid})">
+        ${isPaid ? '⚠️ Marcar como pendiente' : '✅ Marcar como pagado'}
+      </button>` : ''}
+    </div>
+    <div class="tpay-section">
+      <div class="trecord-notes" style="margin-bottom:14px">Configuración del plan</div>
+      <div class="tpay-field">
+        <div class="tpay-label">Monto mensual (COP)</div>
+        <input class="tpay-input" type="number" id="tpay-amount" placeholder="Ej: 150000" value="${p.amount || ''}">
+      </div>
+      <div class="tpay-field">
+        <div class="tpay-label">Fecha límite de pago</div>
+        <input class="tpay-input" type="date" id="tpay-due" value="${p.dueDate || ''}">
+      </div>
+      <div class="tpay-field">
+        <div class="tpay-label">Link de pago (Nequi, Bancolombia, etc.)</div>
+        <input class="tpay-input" type="url" id="tpay-link" placeholder="https://..." value="${p.payLink || ''}">
+      </div>
+      <button class="tpay-save-btn" onclick="savePaymentConfig()">Guardar configuración</button>
+    </div>
+  `;
+}
+
+async function togglePaymentStatus(currentlyPaid) {
+  const newStatus = currentlyPaid ? 'pending' : 'paid';
+  const paidDate = newStatus === 'paid' ? new Date().toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' }) : null;
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'save-payment', client: trainerClientId, fields: { status: newStatus, paidDate } })
+  });
+  renderTrainerPayment();
+}
+
+async function savePaymentConfig() {
+  const amount = parseInt(document.getElementById('tpay-amount').value) || 0;
+  const dueDate = document.getElementById('tpay-due').value;
+  const payLink = document.getElementById('tpay-link').value.trim();
+  const btn = document.querySelector('.tpay-save-btn');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'save-payment', client: trainerClientId, fields: { amount, dueDate, payLink } })
+  });
+  btn.textContent = '✅ Guardado';
+  setTimeout(() => renderTrainerPayment(), 800);
 }
 
 /* ── chat ── */
