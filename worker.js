@@ -291,6 +291,34 @@ export default {
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
+    // ── SUPPORT CHAT ──
+    if (body.action === 'get-support-chat') {
+      const msgs = await env.DB.get(`support-chat:${body.trainerId}`, 'json') || [];
+      return new Response(JSON.stringify({ ok: true, messages: msgs }), { headers: cors });
+    }
+
+    if (body.action === 'send-support-msg') {
+      const kvKey = `support-chat:${body.trainerId}`;
+      let msgs = await env.DB.get(kvKey, 'json') || [];
+      msgs.push({ role: body.role, text: body.text, ts: Date.now() });
+      if (msgs.length > 500) msgs = msgs.slice(-500);
+      await env.DB.put(kvKey, JSON.stringify(msgs));
+      return new Response(JSON.stringify({ ok: true }), { headers: cors });
+    }
+
+    if (body.action === 'list-support-chats') {
+      const list = await env.DB.list({ prefix: 'support-chat:' });
+      const chats = [];
+      for (const key of list.keys) {
+        const msgs = await env.DB.get(key.name, 'json') || [];
+        const last = msgs[msgs.length - 1];
+        const trainerId = key.name.replace('support-chat:', '');
+        chats.push({ trainerId, lastMsg: last?.text || '', lastTs: last?.ts || 0, role: last?.role || '', count: msgs.length });
+      }
+      chats.sort((a, b) => b.lastTs - a.lastTs);
+      return new Response(JSON.stringify({ ok: true, chats }), { headers: cors });
+    }
+
     // ── CHAT ──
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

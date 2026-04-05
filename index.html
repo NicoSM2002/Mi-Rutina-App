@@ -559,6 +559,65 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 }
 .chat-send:disabled { opacity:.4; cursor:default; }
 
+/* ── SUPPORT CHAT ── */
+.support-fab {
+  position:fixed; bottom:calc(20px + var(--sab)); right:20px; z-index:90;
+  width:48px; height:48px; border-radius:14px; border:none; cursor:pointer;
+  background:linear-gradient(135deg, #6366f1, #818cf8);
+  display:none; align-items:center; justify-content:center;
+  font-size:22px; box-shadow:0 4px 20px rgba(99,102,241,.4);
+  transition:transform .15s, box-shadow .15s;
+}
+.support-fab:active { transform:scale(.92); }
+
+.support-overlay {
+  position:fixed; inset:0; z-index:260;
+  background:rgba(10,11,20,.8);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none; transition:opacity .25s ease;
+}
+.support-overlay.show { opacity:1; pointer-events:all; }
+.support-sheet {
+  width:100%; height:82vh;
+  background:var(--s1); border:1px solid var(--b);
+  border-radius:28px 28px 0 0;
+  display:flex; flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.34,1.3,.64,1);
+  overflow:hidden;
+}
+.support-overlay.show .support-sheet { transform:translateY(0); }
+.support-msg { max-width:85%; padding:11px 14px; border-radius:16px; font-size:13px; line-height:1.6; }
+.support-msg.trainer { align-self:flex-end; background:#6366f1; color:#fff; border-bottom-right-radius:4px; }
+.support-msg.admin { align-self:flex-start; background:var(--s2); color:var(--t1); border:1px solid var(--b); border-bottom-left-radius:4px; }
+.support-msg-time { font-size:9px; opacity:.6; margin-top:4px; }
+
+/* ── ADMIN SUPPORT PANEL ── */
+#admin-support {
+  background:var(--bg); display:flex; flex-direction:column; overflow:hidden;
+}
+.admin-header {
+  background:var(--s1); border-bottom:1px solid rgba(255,255,255,.04);
+  padding:calc(var(--sat) + 16px) 20px 14px;
+  display:flex; align-items:center; gap:12px; flex-shrink:0;
+}
+.admin-header-title { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); }
+.admin-chat-list {
+  flex:1; overflow-y:auto; padding:16px;
+  -webkit-overflow-scrolling:touch;
+}
+.admin-chat-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:14px;
+  padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color .15s;
+}
+.admin-chat-card:active { border-color:var(--ac); }
+.admin-chat-name { font-family:var(--font-d); font-size:14px; font-weight:700; color:var(--t1); margin-bottom:4px; }
+.admin-chat-preview { font-size:12px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.admin-chat-time { font-size:10px; color:var(--t3); margin-top:4px; }
+.admin-chat-empty { text-align:center; color:var(--t2); font-size:14px; padding:60px 20px; }
+.admin-secret-btn { background:none; border:none; color:var(--t3); font-size:10px; cursor:pointer; padding:8px; opacity:.3; }
+
 /* ── MEALS SCREEN ── */
 #meals {
   background:var(--bg);
@@ -1347,6 +1406,13 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
     position: absolute;
     bottom: 0; left: 0; right: 0;
   }
+  #app-shell .support-fab {
+    position: absolute;
+  }
+  #app-shell .support-overlay,
+  #app-shell #admin-chat-overlay {
+    position: absolute;
+  }
 }
 </style>
 </head>
@@ -1402,6 +1468,18 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
       </div>
       <div class="role-card-arrow">→</div>
     </button>
+  </div>
+  <button class="admin-secret-btn" onclick="adminLogin()">Admin</button>
+</div>
+
+<!-- ══ ADMIN SUPPORT PANEL ══ -->
+<div class="screen" id="admin-support">
+  <div class="admin-header">
+    <button class="back-btn" onclick="show('role-select')">‹</button>
+    <div class="admin-header-title">🛠️ Panel de Soporte</div>
+  </div>
+  <div class="admin-chat-list" id="admin-chat-list">
+    <div class="admin-chat-empty">Cargando...</div>
   </div>
 </div>
 
@@ -3803,6 +3881,9 @@ show = function(id) {
   _origShow(id);
   const nav = document.getElementById('bottom-nav');
   const tnav = document.getElementById('trainer-bottom-nav');
+  const sfab = document.getElementById('support-fab');
+  const isTrainer = id === 'trainer-portal' || id === 'trainer-client';
+  sfab.style.display = isTrainer ? 'flex' : 'none';
   if (ATHLETE_SCREENS.includes(id)) {
     nav.style.display = 'flex';
     tnav.style.display = 'none';
@@ -3825,11 +3906,210 @@ showMeals = function() { _origShowMeals(); activateNav('meals'); };
 const _origShowProfile = showProfile;
 showProfile = function() { _origShowProfile(); activateNav('profile'); };
 
+/* ── support chat ── */
+const TRAINER_NAMES = { nicolas:'Nicolás Saravia', msaravia:'María Saravia' };
+let supportPollId = null;
+let adminPollId = null;
+let adminChatTrainerId = null;
+let currentTrainerId = 'trainer1'; // default trainer ID for support
+
+function adminLogin() {
+  const pw = prompt('Contraseña admin:');
+  if (pw === 'admin2026') {
+    show('admin-support');
+    loadAdminChats();
+  }
+}
+
+function openSupportChat() {
+  document.getElementById('support-overlay').classList.add('show');
+  loadSupportMessages();
+  supportPollId = setInterval(loadSupportMessages, 8000);
+}
+
+function closeSupportChat() {
+  document.getElementById('support-overlay').classList.remove('show');
+  if (supportPollId) { clearInterval(supportPollId); supportPollId = null; }
+}
+
+async function loadSupportMessages() {
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-support-chat', trainerId: currentTrainerId })
+    });
+    const data = await res.json();
+    renderSupportMessages(data.messages || []);
+  } catch(e) {}
+}
+
+function renderSupportMessages(msgs) {
+  const el = document.getElementById('support-messages');
+  if (!msgs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--t2)"><div style="font-size:36px;margin-bottom:12px">💬</div><div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px">Chat de Soporte</div><div style="font-size:12px">Escribe un mensaje para iniciar la conversación.</div></div>';
+    return;
+  }
+  el.innerHTML = msgs.map(m => {
+    const time = new Date(m.ts).toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+    return `<div class="support-msg ${m.role}"><div>${m.text}</div><div class="support-msg-time">${time}</div></div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendSupportMsg() {
+  const input = document.getElementById('support-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  // Append locally
+  const el = document.getElementById('support-messages');
+  const time = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+  el.innerHTML += `<div class="support-msg trainer"><div>${text}</div><div class="support-msg-time">${time}</div></div>`;
+  el.scrollTop = el.scrollHeight;
+  try {
+    await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'send-support-msg', trainerId: currentTrainerId, role:'trainer', text })
+    });
+  } catch(e) {}
+}
+
+// ── Admin support ──
+async function loadAdminChats() {
+  const el = document.getElementById('admin-chat-list');
+  el.innerHTML = '<div class="admin-chat-empty"><div style="font-size:36px;margin-bottom:12px">⏳</div>Cargando conversaciones...</div>';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'list-support-chats' })
+    });
+    const data = await res.json();
+    const chats = data.chats || [];
+    if (!chats.length) {
+      el.innerHTML = '<div class="admin-chat-empty"><div style="font-size:36px;margin-bottom:12px">💬</div>No hay conversaciones de soporte.</div>';
+      return;
+    }
+    el.innerHTML = chats.map(c => {
+      const name = TRAINER_NAMES[c.trainerId] || c.trainerId;
+      const time = c.lastTs ? new Date(c.lastTs).toLocaleDateString('es-CO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+      const who = c.role === 'admin' ? 'Tú: ' : '';
+      return `<div class="admin-chat-card" onclick="openAdminChat('${c.trainerId}')">
+        <div class="admin-chat-name">${name}</div>
+        <div class="admin-chat-preview">${who}${c.lastMsg}</div>
+        <div class="admin-chat-time">${time} · ${c.count} mensajes</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="admin-chat-empty">Error al cargar.</div>';
+  }
+}
+
+function openAdminChat(trainerId) {
+  adminChatTrainerId = trainerId;
+  document.getElementById('admin-chat-title').textContent = TRAINER_NAMES[trainerId] || trainerId;
+  document.getElementById('admin-chat-overlay').classList.add('show');
+  loadAdminChatMessages();
+  adminPollId = setInterval(loadAdminChatMessages, 8000);
+}
+
+function closeAdminChat() {
+  document.getElementById('admin-chat-overlay').classList.remove('show');
+  if (adminPollId) { clearInterval(adminPollId); adminPollId = null; }
+  loadAdminChats(); // refresh list
+}
+
+async function loadAdminChatMessages() {
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-support-chat', trainerId: adminChatTrainerId })
+    });
+    const data = await res.json();
+    renderAdminChatMessages(data.messages || []);
+  } catch(e) {}
+}
+
+function renderAdminChatMessages(msgs) {
+  const el = document.getElementById('admin-chat-messages');
+  if (!msgs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--t2)">Sin mensajes aún.</div>';
+    return;
+  }
+  el.innerHTML = msgs.map(m => {
+    const time = new Date(m.ts).toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+    const cls = m.role === 'admin' ? 'trainer' : 'admin'; // flip: admin msgs on right in admin view
+    return `<div class="support-msg ${cls}"><div>${m.text}</div><div class="support-msg-time">${time}</div></div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendAdminMsg() {
+  const input = document.getElementById('admin-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const el = document.getElementById('admin-chat-messages');
+  const time = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+  el.innerHTML += `<div class="support-msg trainer"><div>${text}</div><div class="support-msg-time">${time}</div></div>`;
+  el.scrollTop = el.scrollHeight;
+  try {
+    await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'send-support-msg', trainerId: adminChatTrainerId, role:'admin', text })
+    });
+  } catch(e) {}
+}
+
 /* ── service worker ── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
 </script>
+<!-- ══ SUPPORT FAB ══ -->
+<button class="support-fab" id="support-fab" onclick="openSupportChat()">💬</button>
+
+<!-- ══ SUPPORT CHAT OVERLAY ══ -->
+<div class="support-overlay" id="support-overlay">
+  <div class="support-sheet">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar" style="background:linear-gradient(135deg,#6366f1,#818cf8)">💬</div>
+        <div>
+          <div class="chat-title">Soporte</div>
+          <div class="chat-sub">Mi Rutina</div>
+        </div>
+      </div>
+      <button class="chat-close" onclick="closeSupportChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="support-messages"></div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="support-input" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+      <button class="chat-send" id="support-send" onclick="sendSupportMsg()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN CHAT OVERLAY ══ -->
+<div class="support-overlay" id="admin-chat-overlay">
+  <div class="support-sheet">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar" style="background:linear-gradient(135deg,#6366f1,#818cf8)">🛠️</div>
+        <div>
+          <div class="chat-title" id="admin-chat-title">Chat</div>
+          <div class="chat-sub">Soporte Admin</div>
+        </div>
+      </div>
+      <button class="chat-close" onclick="closeAdminChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="admin-chat-messages"></div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="admin-chat-input" rows="1" placeholder="Responder..."></textarea>
+      <button class="chat-send" onclick="sendAdminMsg()">➤</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ BOTTOM NAV ══ -->
 <div class="bottom-nav" id="bottom-nav">
   <button class="bnav-item" id="bnav-profile" onclick="showProfile();activateNav('profile')">
