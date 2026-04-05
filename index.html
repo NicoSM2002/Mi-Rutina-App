@@ -1010,27 +1010,21 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
   display:flex; flex-direction:column; overflow:hidden;
 }
 .tclient-header {
-  background:var(--s1); border-bottom:1px solid var(--b);
-  padding:calc(var(--sat) + 16px) 16px 0;
+  background:var(--s1); border-bottom:1px solid rgba(255,255,255,.04);
+  padding:calc(var(--sat) + 16px) 16px 14px;
   flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
 }
 .tclient-header-top {
   display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:14px;
+  width:100%;
 }
 .tclient-name { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
-.tclient-tabs {
-  display:flex; gap:0; border-bottom:none;
-}
-.tclient-tab {
-  flex:1; padding:12px; background:transparent; border:none;
-  font-family:var(--font-d); font-size:12px; font-weight:600;
-  color:var(--t3); cursor:pointer; border-bottom:2px solid transparent;
-  transition:color .15s, border-color .15s;
-}
-.tclient-tab.active { color:var(--acl); border-bottom-color:var(--ac); }
+.tclient-tabs { display:none; }
+.tclient-tab { display:none; }
 .tclient-content {
   flex:1; overflow-y:auto; padding:16px;
+  padding-bottom:calc(80px + var(--sab));
   -webkit-overflow-scrolling:touch;
 }
 .tclient-content::-webkit-scrollbar { display:none; }
@@ -1147,16 +1141,16 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 .ex-step-pill .sp-r { font-size:11px; color:var(--t2); margin-top:1px; }
 
 /* ── EXERCISE PICKER ── */
-.expicker-overlay { position:fixed; inset:0; z-index:350; background:rgba(10,11,20,.95); display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .2s; }
+.expicker-overlay { position:fixed; inset:0; z-index:350; background:var(--bg); display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .2s; }
 .expicker-overlay.show { opacity:1; pointer-events:all; }
-.expicker-header { padding:calc(var(--sat)+16px) 16px 12px; border-bottom:1px solid var(--b); flex-shrink:0; }
+.expicker-header { padding:calc(var(--sat)+16px) 16px 12px; border-bottom:1px solid var(--b); flex-shrink:0; margin:0; }
 .expicker-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
 .expicker-title { font-family:var(--font-d); font-size:16px; font-weight:700; color:var(--t1); }
 .expicker-close { width:32px; height:32px; border-radius:8px; border:none; background:var(--b); color:var(--t2); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-.expicker-search { width:100%; background:var(--s1); border:1px solid var(--b); border-radius:12px; padding:12px 14px; color:var(--t1); font-family:'Inter',sans-serif; font-size:16px; outline:none; -webkit-appearance:none; }
+.expicker-search { width:100%; background:var(--s1); border:1px solid var(--b); border-radius:12px; padding:12px 14px; color:var(--t1); font-family:var(--font-b),sans-serif; font-size:16px; outline:none; -webkit-appearance:none; }
 .expicker-search::placeholder { color:var(--t2); }
 .expicker-list { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch; }
-.expicker-item { background:var(--s1); border:1px solid var(--b); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color .15s; }
+.expicker-item { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color .15s; }
 .expicker-item:active { border-color:var(--ac); background:var(--s2); }
 .expicker-gif { width:52px; height:52px; border-radius:8px; object-fit:cover; background:var(--bg); flex-shrink:0; }
 .expicker-name { font-family:var(--font-d); font-size:13px; font-weight:700; color:var(--t1); }
@@ -1243,6 +1237,63 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
   background:var(--ac);
 }
 
+/* ── Trainer bottom nav ── */
+.trainer-bottom-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  z-index:100;
+  background:rgba(8,8,10,.92);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.04);
+  padding:6px 4px calc(var(--sab) + 6px);
+  justify-content:space-around;
+  align-items:center;
+}
+.tbnav-item {
+  flex:1;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  background:none; border:none; cursor:pointer;
+  color:var(--t3); font-size:9px; font-weight:600;
+  font-family:var(--font-d);
+  padding:6px 2px;
+  transition:color .2s;
+  position:relative;
+}
+.tbnav-item .tbnav-icon { font-size:18px; line-height:1; }
+.tbnav-item.active { color:var(--acl); }
+.tbnav-item.active::after {
+  content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+  width:18px; height:3px; border-radius:2px;
+  background:var(--ac);
+}
+
+/* ── Platform payment card ── */
+.platform-pay-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.04);
+  border-radius:16px; padding:20px; margin-top:20px;
+}
+.platform-pay-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.platform-pay-title {
+  font-family:var(--font-d); font-size:14px; font-weight:700; color:var(--t1);
+}
+.platform-pay-amount {
+  font-family:var(--font-d); font-size:28px; font-weight:800; color:var(--t1);
+  margin-bottom:4px;
+}
+.platform-pay-due {
+  font-size:12px; color:var(--t2); margin-bottom:16px;
+}
+.platform-pay-btn {
+  width:100%; padding:14px; border:none; border-radius:12px;
+  background:linear-gradient(135deg, #FF6B2C, #FF8F5E);
+  color:#fff; font-family:var(--font-d); font-weight:700; font-size:14px;
+  cursor:pointer; transition:opacity .15s;
+}
+.platform-pay-btn:active { opacity:.85; }
+
 /* ── Payments screen (athlete) ── */
 #payments {
   background:var(--bg);
@@ -1291,7 +1342,8 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
     overflow-y: auto;
     overflow-x: hidden;
   }
-  #app-shell .bottom-nav {
+  #app-shell .bottom-nav,
+  #app-shell .trainer-bottom-nav {
     position: absolute;
     bottom: 0; left: 0; right: 0;
   }
@@ -1417,7 +1469,6 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 <div class="screen" id="trainer-client">
   <div class="tclient-header">
     <div class="tclient-header-top">
-      <button class="back-btn" onclick="show('trainer-portal')">‹ Clientes</button>
       <div class="tclient-name" id="tclient-name">Nicolás Saravia</div>
     </div>
     <div class="tclient-tabs">
@@ -2637,6 +2688,7 @@ async function openTrainerClient(clientId, clientName) {
   document.getElementById('tab-rutinas').classList.add('active');
   document.getElementById('tab-comidas').classList.remove('active');
   document.getElementById('tab-editar').classList.remove('active');
+  activateTrainerNav('rutinas');
   const edFb = clientId === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
   editorData = JSON.parse(JSON.stringify(edFb));
   editorDay = 'sesion1';
@@ -2662,7 +2714,14 @@ function setTrainerTab(tab) {
   document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
   document.getElementById('tab-pagos').classList.toggle('active', tab === 'pagos');
   document.getElementById('tab-editar').classList.toggle('active', tab === 'editar');
+  activateTrainerNav(tab);
   renderTrainerTab();
+}
+
+function activateTrainerNav(tab) {
+  document.querySelectorAll('.tbnav-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('tbnav-' + tab);
+  if (el) el.classList.add('active');
 }
 
 function renderTrainerTab() {
@@ -3238,6 +3297,15 @@ async function renderTrainerPayment() {
       </div>
       <button class="tpay-save-btn" onclick="savePaymentConfig()">Guardar configuración</button>
     </div>
+
+    <div class="platform-pay-card">
+      <div class="platform-pay-header">
+        <div class="platform-pay-title">🏢 Pago de Plataforma</div>
+      </div>
+      <div class="platform-pay-amount">$49.900</div>
+      <div class="platform-pay-due">Fecha límite: 15 de cada mes</div>
+      <button class="platform-pay-btn" onclick="platformPayAction()">Realizar Pago</button>
+    </div>
   `;
 }
 
@@ -3263,6 +3331,10 @@ async function savePaymentConfig() {
   });
   btn.textContent = '✅ Guardado';
   setTimeout(() => renderTrainerPayment(), 800);
+}
+
+function platformPayAction() {
+  alert('Enlace de pago próximamente. Contacta al soporte para más información.');
 }
 
 /* ── chat ── */
@@ -3730,11 +3802,18 @@ const _origShow = show;
 show = function(id) {
   _origShow(id);
   const nav = document.getElementById('bottom-nav');
+  const tnav = document.getElementById('trainer-bottom-nav');
   if (ATHLETE_SCREENS.includes(id)) {
     nav.style.display = 'flex';
+    tnav.style.display = 'none';
     if (NAV_MAP[id]) activateNav(NAV_MAP[id]);
+  } else if (id === 'trainer-client') {
+    nav.style.display = 'none';
+    tnav.style.display = 'flex';
+    activateTrainerNav(activeTrainerTab || 'rutinas');
   } else {
     nav.style.display = 'none';
+    tnav.style.display = 'none';
   }
 };
 
@@ -3764,6 +3843,25 @@ if ('serviceWorker' in navigator) {
   </button>
   <button class="bnav-item" id="bnav-payments" onclick="showPayments();activateNav('payments')">
     <span class="bnav-icon">💳</span>Pagos
+  </button>
+</div>
+
+<!-- ══ TRAINER BOTTOM NAV ══ -->
+<div class="trainer-bottom-nav" id="trainer-bottom-nav">
+  <button class="tbnav-item" id="tbnav-back" onclick="show('trainer-portal')">
+    <span class="tbnav-icon">‹</span>Clientes
+  </button>
+  <button class="tbnav-item" id="tbnav-rutinas" onclick="setTrainerTab('rutinas')">
+    <span class="tbnav-icon">💪</span>Rutinas
+  </button>
+  <button class="tbnav-item" id="tbnav-comidas" onclick="setTrainerTab('comidas')">
+    <span class="tbnav-icon">🍽️</span>Comidas
+  </button>
+  <button class="tbnav-item" id="tbnav-pagos" onclick="setTrainerTab('pagos')">
+    <span class="tbnav-icon">💳</span>Pagos
+  </button>
+  <button class="tbnav-item" id="tbnav-editar" onclick="setTrainerTab('editar')">
+    <span class="tbnav-icon">✏️</span>Editar
   </button>
 </div>
 
