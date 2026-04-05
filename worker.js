@@ -303,6 +303,38 @@ export default {
       msgs.push({ role: body.role, text: body.text, ts: Date.now() });
       if (msgs.length > 500) msgs = msgs.slice(-500);
       await env.DB.put(kvKey, JSON.stringify(msgs));
+
+      // Email notification when trainer sends a message
+      if (body.role === 'trainer') {
+        const trainerName = ATHLETES[body.trainerId]?.name || body.trainerId;
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Mi Rutina <onboarding@resend.dev>',
+            to: TRAINER_EMAIL,
+            subject: `💬 Nuevo mensaje de soporte — ${trainerName}`,
+            html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0" bgcolor="#0f1117">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
+  <tr><td align="center" style="padding:24px 16px">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
+      <tr><td style="background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:16px;padding:24px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.7);text-transform:uppercase;margin-bottom:6px">Mensaje de soporte</div>
+        <div style="font-size:22px;font-weight:800;color:#fff">💬 ${trainerName}</div>
+      </td></tr>
+      <tr><td height="16"></td></tr>
+      <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
+        <div style="font-size:14px;color:#e2e8f0;line-height:1.6">${body.text}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:12px">${new Date().toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' })}</div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>`
+          })
+        }).catch(() => {});
+      }
+
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
