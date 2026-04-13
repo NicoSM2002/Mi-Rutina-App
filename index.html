@@ -1837,16 +1837,46 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-function showRoutine() {
+async function showRoutine() {
+  show('routine');
+
+  // Get today's date in Colombia timezone
+  const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const todayISO = `${nowCO.getFullYear()}-${String(nowCO.getMonth()+1).padStart(2,'0')}-${String(nowCO.getDate()).padStart(2,'0')}`;
+
+  // Check server for today's completions
+  let completedToday = false;
+  let serverCompletions = [];
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get-data', client: currentAthlete })
+    });
+    const data = await res.json();
+    serverCompletions = data.completions || [];
+    completedToday = serverCompletions.some(c => c.day === todayISO);
+
+    // Sync localStorage sessionIdx with server completion count
+    const fb = currentAthlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
+    const total = Object.keys(fb).length;
+    const serverIdx = serverCompletions.length;
+    localStorage.setItem('sessionIdx_' + currentAthlete, serverIdx);
+    if (completedToday) {
+      localStorage.setItem('lastCompleted_' + currentAthlete, new Date().toDateString());
+    }
+  } catch(e) {
+    // Offline fallback: use localStorage
+    const lastCompleted = localStorage.getItem('lastCompleted_' + currentAthlete);
+    completedToday = (lastCompleted === new Date().toDateString());
+  }
+
   const state = getSessionState(currentAthlete);
-  const lastCompleted = localStorage.getItem('lastCompleted_' + currentAthlete);
-  const today = new Date().toDateString();
 
   document.getElementById('routine-days-bar').innerHTML =
     `<div class="session-badge">Sesión ${state.sessionNum} <span class="session-of-total">de ${state.total}</span></div>`;
 
-  if (lastCompleted === today) {
-    show('routine');
+  if (completedToday) {
     renderRestDay(state);
     return;
   }
@@ -1854,7 +1884,7 @@ function showRoutine() {
   currentWeek = state.week;
   currentDay  = state.sessionKey;
   routineStep = 0;
-  show('routine'); render();
+  render();
 }
 
 function renderRestDay(state) {
