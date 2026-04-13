@@ -1690,7 +1690,7 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 <div class="complete-overlay" id="complete-overlay">
   <div class="complete-sheet">
     <div class="complete-sheet-title">¡Rutina completada! 💪</div>
-    <div class="complete-sheet-sub" id="complete-sub">Lunes — Semana 1</div>
+    <div class="complete-sheet-sub" id="complete-sub">Lunes</div>
     <textarea class="complete-notes" id="complete-notes" placeholder="Notas opcionales: ¿Cómo te sentiste? ¿Subiste algún peso? ¿Algo que destacar?"></textarea>
     <div class="complete-sheet-btns">
       <button class="complete-cancel" onclick="closeComplete()">Cancelar</button>
@@ -1788,9 +1788,8 @@ function getSessionState(athlete) {
   const fb = athlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
   const total = Object.keys(fb).length;
   const idx   = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
-  const week  = (Math.floor(idx / total) % 2) + 1;
   const num   = (idx % total) + 1;
-  return { idx, total, week, sessionNum: num, sessionKey: 'sesion' + num };
+  return { idx, total, week: 1, sessionNum: num, sessionKey: 'sesion' + num };
 }
 function advanceSession(athlete) {
   const idx = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
@@ -1807,7 +1806,7 @@ const MUSC = {
 const FALLBACK_DATA = {
   sesion1: {
     title:'Pecho & Bíceps',
-    sub:'S1: Smith + poleas · S2: Mancuernas libres + variación de curl',
+    sub:'Smith + poleas',
     warmupHombro:[
       {text:'Vuelos frontales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion frontal alternas/Elevacion frontal alternas.gif'},
       {text:'Vuelos laterales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion lateral mancuernas/Elevacion lateral mancuernas.gif'},
@@ -1879,11 +1878,11 @@ const FALLBACK_DATA = {
           img2:'./gifs/biceps/Curl biceps barra/Curl biceps barra.gif'},
       ]},
     ],
-    nota:'S1: el Smith inclinado al inicio cuando estás fresco es clave — pecho alto. S2: press barra plano con carga máxima en C2. Los fondos de pecho en C3 semana 2 son duros — controla el descenso.'
+    nota:'El Smith inclinado al inicio cuando estás fresco es clave — pecho alto. Retrae escápulas y controla el descenso.'
   },
   sesion2: {
     title:'Espalda & Tríceps',
-    sub:'S1: jalón ancho + remo cable · S2: agarre neutro + remo T-bar',
+    sub:'Jalón ancho + remo cable',
     warmupHombro:[
       {text:'Vuelos frontales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion frontal alternas/Elevacion frontal alternas.gif'},
       {text:'Vuelos laterales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion lateral mancuernas/Elevacion lateral mancuernas.gif'},
@@ -1959,7 +1958,7 @@ const FALLBACK_DATA = {
   },
   sesion3: {
     title:'Pierna',
-    sub:'S1: barra + prensa · S2: goblet + búlgara + curl sentado (posición elongada)',
+    sub:'Barra + prensa',
     warmup:[
       {text:'Extensión pierna 60 lbs × 20 reps',img:'./gifs/cuadriceps/Extension de pierna/Extension de pierna.gif'},
       {text:'Caminata inclinada en cinta 10 min'},
@@ -2030,7 +2029,7 @@ const FALLBACK_DATA = {
   },
   sesion4: {
     title:'Hombros',
-    sub:'S1: mancuernas + face pull · S2: barra + cables con tensión constante',
+    sub:'Mancuernas + face pull',
     warmupHombro:[
       {text:'Vuelos frontales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion frontal alternas/Elevacion frontal alternas.gif'},
       {text:'Vuelos laterales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion lateral mancuernas/Elevacion lateral mancuernas.gif'},
@@ -2106,7 +2105,7 @@ const FALLBACK_DATA = {
   },
   sesion5: {
     title:'Brazo Completo',
-    sub:'S1: barra + cerrado · S2: EZ + variaciones cabeza larga / posición elongada',
+    sub:'Barra + cerrado',
     warmupHombro:[
       {text:'Vuelos frontales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion frontal alternas/Elevacion frontal alternas.gif'},
       {text:'Vuelos laterales mancuernas 5 lbs × 15 reps',img:'./gifs/hombros/Elevacion lateral mancuernas/Elevacion lateral mancuernas.gif'},
@@ -2471,13 +2470,11 @@ function renderWuItem(item, uid) {
 
 /* ── exercise card html (shared helper) ── */
 function renderExCard(ex, ci, ei, w) {
-  const nameChanged = w === 2 && ex.name2 && ex.name2 !== ex.name;
-  const currentName = nameChanged ? ex.name2 : ex.name;
-  const currentTip  = (w === 2 && ex.tip2)  ? ex.tip2  : ex.tip;
-  const currentReps = (w === 2 && ex.reps2) ? ex.reps2 : ex.reps;
-  const currentImg  = (w === 2 && ex.img2)  ? ex.img2  : ex.img;
-  const wv = w === 1 ? ex.w1 : ex.w2;
-  const up = w === 2 && !nameChanged && ex.w1 !== ex.w2;
+  const currentName = ex.name;
+  const currentTip  = ex.tip;
+  const currentReps = ex.reps;
+  const currentImg  = ex.img;
+  const wv = ex.w1;
   const tid = `tip_${ci}_${ei}`;
   const pid = `photo_${ci}_${ei}`;
   const mCls = ex.muscle ? (MUSC[ex.muscle] || '') : '';
@@ -2489,7 +2486,7 @@ function renderExCard(ex, ci, ei, w) {
     .replace('triceps','Tríceps').replace('biceps','Bíceps')
     .replace('abdomen','Abdomen') : '';
   const st = ex.setType || 'normal';
-  const currentSteps = w === 1 ? (ex.steps1||[]) : (ex.steps2||[]);
+  const currentSteps = ex.steps1 || [];
   const isSpecial = st !== 'normal' && currentSteps.length > 0;
   const badgeHtml = st === 'dropset'
     ? `<span class="ex-set-badge ds">DROP SET</span>`
@@ -2499,11 +2496,11 @@ function renderExCard(ex, ci, ei, w) {
   return `<div class="ex-card">
     <div class="ex-top">
       <div class="ex-left">
-        <div class="ex-name">${currentName}${nameChanged?'<span class="new-chip">NUEVO</span>':''}${badgeHtml}</div>
+        <div class="ex-name">${currentName}${badgeHtml}</div>
         ${ex.muscle?`<span class="muscle-badge ${mCls}">${muscleName}</span>`:''}
       </div>
       ${!isSpecial?`<div class="ex-right">
-        <div class="ex-weight${up?' inc':''}">${wv}${up?'<span class="inc-chip">↑</span>':''}</div>
+        <div class="ex-weight">${wv}</div>
         <div class="ex-reps">${currentReps}</div>
       </div>`:''}
     </div>
@@ -2727,7 +2724,6 @@ let trainerData = { completions:[], meals:[] };
 let activeTrainerTab = 'rutinas';
 let editorData = null;
 let editorDay = 'sesion1';
-let editorWeek = 1;
 let editorPickerTarget = null;
 let _pickerCatalog = [];
 const TRAINER_TOKEN = 'ent2026';
@@ -2758,7 +2754,6 @@ async function openTrainerClient(clientId, clientName) {
   const edFb = clientId === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
   editorData = JSON.parse(JSON.stringify(edFb));
   editorDay = 'sesion1';
-  editorWeek = 1;
   show('trainer-client');
 
   try {
@@ -2806,7 +2801,7 @@ function renderTrainerTab() {
           <div class="trecord-day">${r.dayLabel || r.day}</div>
           <div class="trecord-date">${r.date || ''}</div>
         </div>
-        <div class="trecord-week">Semana ${r.week}</div>
+        <div class="trecord-week">Sesión completada</div>
         ${r.notes ? `<div class="trecord-notes">${r.notes}</div>` : ''}
       </div>`).join('');
   } else {
@@ -3222,7 +3217,7 @@ const DAY_NAMES = {
 };
 
 function openComplete() {
-  document.getElementById('complete-sub').textContent = `${DAY_NAMES[currentDay] || currentDay} · Semana ${currentWeek}`;
+  document.getElementById('complete-sub').textContent = `${DAY_NAMES[currentDay] || currentDay}`;
   document.getElementById('complete-notes').value = '';
   document.getElementById('complete-overlay').classList.add('show');
 }
@@ -3263,7 +3258,8 @@ async function confirmComplete() {
         action: 'complete',
         client: currentAthlete,
         day: currentDay,
-        week: currentWeek,
+        dayLabel: DAY_NAMES[currentDay] || currentDay,
+        week: 1,
         context: buildContext(),
         notes: notes
       })
@@ -3434,7 +3430,7 @@ function buildContext() {
 
   if (!data || !Object.keys(data).length) return instructions + profile;
 
-  let routineText = `\nSESIÓN ACTIVA HOY: Sesión ${state.sessionNum} de ${state.total} — Semana ${currentWeek}\n`;
+  let routineText = `\nSESIÓN ACTIVA HOY: Sesión ${state.sessionNum} de ${state.total}\n`;
 
   for (const [dayKey, day] of Object.entries(data)) {
     if (!day || !day.title) continue;
@@ -3609,7 +3605,7 @@ function renderRoutineEditor() {
   const el = document.getElementById('tclient-content');
   if (!editorData) editorData = JSON.parse(JSON.stringify(data));
   const day = editorData[editorDay];
-  const w = editorWeek;
+  const w = 1;
   const days = trainerClientId === 'msaravia'
     ? ['sesion1','sesion2','sesion3','sesion4']
     : ['sesion1','sesion2','sesion3','sesion4','sesion5'];
@@ -3617,11 +3613,7 @@ function renderRoutineEditor() {
     ? { sesion1:'S1', sesion2:'S2', sesion3:'S3', sesion4:'S4' }
     : { sesion1:'S1', sesion2:'S2', sesion3:'S3', sesion4:'S4', sesion5:'S5' };
 
-  // Week selector
-  let html = `<div class="week-seg" style="margin-bottom:14px">
-    <button class="week-seg-btn${w===1?' active':''}" onclick="setEditorWeek(1)">SEMANA 1</button>
-    <button class="week-seg-btn${w===2?' active':''}" onclick="setEditorWeek(2)">SEMANA 2</button>
-  </div>`;
+  let html = '';
 
   // Day selector
   html += `<div class="re-day-bar">`;
@@ -3636,25 +3628,24 @@ function renderRoutineEditor() {
     html += `<div class="re-circuit-card ${circuit.cls}"><div class="re-circuit-hdr">${circuit.label}</div>`;
     circuit.exercises.forEach((ex, ei) => {
       const st = ex.setType || 'normal';
-      const stepsKey = w === 1 ? 'steps1' : 'steps2';
-      const steps = ex[stepsKey] || [];
-      const exName  = w === 1 ? ex.name  : (ex.name2  || ex.name);
-      const exW     = w === 1 ? (ex.w1   || '') : (ex.w2   || '');
-      const exReps  = w === 1 ? (ex.reps || '') : (ex.reps2 || ex.reps || '');
-      const wField  = w === 1 ? 'w1' : 'w2';
-      const rField  = w === 1 ? 'reps' : 'reps2';
+      const steps = ex.steps1 || [];
+      const exName  = ex.name;
+      const exW     = ex.w1 || '';
+      const exReps  = ex.reps || '';
+      const wField  = 'w1';
+      const rField  = 'reps';
 
       const renderSteps = () => {
         let s = `<div class="re-steps">`;
         steps.forEach((step, si) => {
           s += `<div class="re-step-row">
             <span class="re-step-num">${si+1}</span>
-            <div class="re-wr-col"><input class="re-input" value="${step.w||''}" oninput="updateStep('${editorDay}',${ci},${ei},${w},${si},'w',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
-            <div class="re-wr-col"><input class="re-input" value="${step.reps||''}" oninput="updateStep('${editorDay}',${ci},${ei},${w},${si},'reps',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
-            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},${w},${si})">×</button>
+            <div class="re-wr-col"><input class="re-input" value="${step.w||''}" oninput="updateStep('${editorDay}',${ci},${ei},1,${si},'w',this.value)" placeholder="Peso"><div class="re-input-label">Peso</div></div>
+            <div class="re-wr-col"><input class="re-input" value="${step.reps||''}" oninput="updateStep('${editorDay}',${ci},${ei},1,${si},'reps',this.value)" placeholder="Reps"><div class="re-input-label">Reps</div></div>
+            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},1,${si})">×</button>
           </div>`;
         });
-        s += `</div><button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},${w})">+ Agregar escalón</button>`;
+        s += `</div><button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},1)">+ Agregar escalón</button>`;
         return s;
       };
 
@@ -3665,8 +3656,8 @@ function renderRoutineEditor() {
           <button class="re-set-type-btn pir${st==='piramidal'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'piramidal')">Piramidal</button>
         </div>
         <div class="re-name-row">
-          <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},${w})">${exName}</button>
-          <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},${w})">Cambiar</button>
+          <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},1)">${exName}</button>
+          <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},1)">Cambiar</button>
         </div>
         ${st === 'normal'
           ? `<div class="re-wr-row">
@@ -3685,11 +3676,6 @@ function renderRoutineEditor() {
     <textarea class="re-nota" rows="3" oninput="updateEditorNota('${editorDay}',this.value)">${day.nota||''}</textarea>
     <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>`;
   el.innerHTML = html;
-}
-
-function setEditorWeek(w) {
-  editorWeek = w;
-  renderRoutineEditor();
 }
 
 function setEditorDay(day) {
@@ -3779,17 +3765,11 @@ function renderPickerList(query) {
 
 function selectExerciseByIdx(idx) {
   const ex = _pickerCatalog[idx];
-  const { day, ci, ei, week } = editorPickerTarget;
-  if (week === 1) {
-    editorData[day].circuits[ci].exercises[ei].name = ex.name;
-    editorData[day].circuits[ci].exercises[ei].img = ex.img;
-    editorData[day].circuits[ci].exercises[ei].tip = ex.tip;
-    editorData[day].circuits[ci].exercises[ei].muscle = ex.muscle;
-  } else {
-    editorData[day].circuits[ci].exercises[ei].name2 = ex.name;
-    editorData[day].circuits[ci].exercises[ei].img2 = ex.img;
-    editorData[day].circuits[ci].exercises[ei].tip2 = ex.tip;
-  }
+  const { day, ci, ei } = editorPickerTarget;
+  editorData[day].circuits[ci].exercises[ei].name = ex.name;
+  editorData[day].circuits[ci].exercises[ei].img = ex.img;
+  editorData[day].circuits[ci].exercises[ei].tip = ex.tip;
+  editorData[day].circuits[ci].exercises[ei].muscle = ex.muscle;
   closeExercisePicker();
   renderRoutineEditor();
 }

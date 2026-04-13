@@ -88,14 +88,9 @@ export default {
       <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td width="48%" bgcolor="#0f1117" style="background:#0f1117;border-radius:10px;padding:16px;text-align:center">
+            <td bgcolor="#0f1117" style="background:#0f1117;border-radius:10px;padding:16px;text-align:center">
               <div style="font-size:22px;font-weight:800;color:#34d399">${body.dayLabel || body.day}</div>
-              <div style="font-size:11px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.8px">Día</div>
-            </td>
-            <td width="4%"></td>
-            <td width="48%" bgcolor="#0f1117" style="background:#0f1117;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:22px;font-weight:800;color:#34d399">S${body.week}</div>
-              <div style="font-size:11px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.8px">Semana</div>
+              <div style="font-size:11px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.8px">Sesión completada</div>
             </td>
           </tr>
           ${body.notes ? `
@@ -121,7 +116,7 @@ export default {
         body: JSON.stringify({
           from: 'Mi Rutina <onboarding@resend.dev>',
           to: TRAINER_EMAIL,
-          subject: `✅ ${athleteName} completó: ${body.dayLabel || body.day} — Semana ${body.week}`,
+          subject: `✅ ${athleteName} completó: ${body.dayLabel || body.day}`,
           html: emailHtml
         })
       });
