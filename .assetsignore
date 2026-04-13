@@ -1,0 +1,9 @@
+.git
+.wrangler
+fundacional
+worker.js
+wrangler.toml
+node_modules
+package.json
+package-lock.json
+*.toml
