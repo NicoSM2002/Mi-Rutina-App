@@ -114,9 +114,12 @@ export default {
 
     // ── COMPLETE ROUTINE ──
     if (body.action === 'complete') {
+      const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+      const isoDate = `${nowCO.getFullYear()}-${String(nowCO.getMonth()+1).padStart(2,'0')}-${String(nowCO.getDate()).padStart(2,'0')}`;
       const entry = {
-        day: body.day,
+        day: isoDate,
         dayLabel: body.dayLabel,
+        sessionKey: body.day,
         week: body.week,
         notes: body.notes,
         date: new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }),
