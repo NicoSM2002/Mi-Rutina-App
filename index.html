@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+html { scroll-padding-block: 30vh; }
 :root {
   --sat: env(safe-area-inset-top);
   --sab: env(safe-area-inset-bottom);
@@ -3692,6 +3693,15 @@ async function savePaymentConfig() {
 function platformPayAction() {
   alert('Enlace de pago próximamente. Contacta al soporte para más información.');
 }
+
+/* ── keep focused input visible above soft keyboard ── */
+document.addEventListener('focusin', (e) => {
+  const el = e.target;
+  if (!el || !el.matches('input, textarea, [contenteditable="true"]')) return;
+  setTimeout(() => {
+    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+  }, 300);
+});
 
 /* ── chat ── */
 const WORKER_URL = 'https://mirutina.nicolas-f07.workers.dev';

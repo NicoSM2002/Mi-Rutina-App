@@ -60,7 +60,7 @@ function parseMacros(analysisText) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     // Serve static assets for non-POST requests
     if (request.method !== 'POST' && request.method !== 'OPTIONS') {
       return env.ASSETS.fetch(request);
@@ -82,8 +82,8 @@ export default {
     };
 
     const ATHLETES = {
-      nicolas:  { name: 'Nicolás Saravia' },
-      msaravia: { name: 'María Saravia'   },
+      nicolas:  { name: 'Nicolás Saravia', email: 'nicolas@drakeconstruction.com' },
+      msaravia: { name: 'María Saravia',   email: 'nicolas@drakeconstruction.com' },
     };
     const TRAINER_EMAIL = 'nicolas@drakeconstruction.com';
 
@@ -342,6 +342,41 @@ export default {
         return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
       }
       await env.DB.put(`routine:${client}`, JSON.stringify(body.routine));
+
+      const athleteEmail = ATHLETES[client]?.email;
+      if (athleteEmail) {
+        const updatedAt = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' });
+        const routineHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0" bgcolor="#0f1117">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
+  <tr><td align="center" style="padding:24px 16px">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
+      <tr><td style="background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:16px;padding:24px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-bottom:6px">Rutina actualizada</div>
+        <div style="font-size:28px;font-weight:800;color:#fff">🔄 ${athleteName}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px">${updatedAt}</div>
+      </td></tr>
+      <tr><td height="16"></td></tr>
+      <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
+        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Tu entrenador actualizó tu rutina. Abre la app para revisar los cambios y arrancar tu próxima sesión.</p>
+        <a href="https://mirutina.nicolas-f07.workers.dev/?client=${client}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>`;
+
+        ctx.waitUntil(fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Mi Rutina <onboarding@resend.dev>',
+            to: athleteEmail,
+            subject: `🔄 Rutina actualizada — ${athleteName}`,
+            html: routineHtml
+          })
+        }).catch(() => {}));
+      }
+
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
@@ -454,6 +489,8 @@ export default {
   async scheduled(event, env, ctx) {
     if (event.cron === '0 15 * * 6') {
       await sendWeeklyReport(env);
+    } else if (event.cron === '0 18 * * *') {
+      await sendWorkoutReminder(env);
     } else {
       await sendDailyMealReport(env);
     }
@@ -533,6 +570,57 @@ async function sendDailyMealReport(env) {
         html: emailHtml
       })
     });
+  }
+}
+
+// ── Workout reminder (1 PM Colombia, only if no session completed today) ──
+async function sendWorkoutReminder(env) {
+  const ATHLETES = {
+    nicolas:  { name: 'Nicolás Saravia', email: 'nicolas@drakeconstruction.com' },
+    msaravia: { name: 'María Saravia',   email: 'nicolas@drakeconstruction.com' },
+  };
+
+  const coDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const todayKey = `${coDate.getFullYear()}-${String(coDate.getMonth()+1).padStart(2,'0')}-${String(coDate.getDate()).padStart(2,'0')}`;
+  const dayLabel = coDate.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+  if (coDate.getDay() === 0) return; // domingo libre
+
+  for (const [clientId, athlete] of Object.entries(ATHLETES)) {
+    const routine = await env.DB.get(`routine:${clientId}`, 'json');
+    if (!routine) continue;
+
+    const completions = await env.DB.get(`completions:${clientId}`, 'json') || [];
+    if (completions.some(c => c.day === todayKey)) continue;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0" bgcolor="#0f1117">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
+  <tr><td align="center" style="padding:24px 16px">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
+      <tr><td style="background:linear-gradient(135deg,#059669,#34d399);border-radius:16px;padding:24px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-bottom:6px">Recordatorio de entrenamiento</div>
+        <div style="font-size:28px;font-weight:800;color:#fff">💪 ${athlete.name}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px;text-transform:capitalize">${dayLabel}</div>
+      </td></tr>
+      <tr><td height="16"></td></tr>
+      <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
+        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">¡Buenos días! Hoy toca entrenar. Abre la app, revisa tu sesión y dale con todo.</p>
+        <a href="https://mirutina.nicolas-f07.workers.dev/?client=${clientId}" style="display:inline-block;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Ir a mi rutina</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>`;
+
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Mi Rutina <onboarding@resend.dev>',
+        to: athlete.email,
+        subject: `💪 Recordatorio de entrenamiento — ${athlete.name}`,
+        html
+      })
+    }).catch(() => {});
   }
 }
 

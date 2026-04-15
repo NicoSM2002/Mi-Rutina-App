@@ -15,6 +15,9 @@ id = "405c9c9064344dcd91cb82aac6d38994"
 binding = "PHOTOS"
 bucket_name = "mi-rutina-fotos"
 
-# Daily meal report at 10 PM Colombia (03:00 UTC)
+# Crons:
+#  - 03:00 UTC daily  → 22:00 Colombia, reporte diario de comidas
+#  - 15:00 UTC sábado → 10:00 Colombia, reporte semanal
+#  - 18:00 UTC daily  → 13:00 Colombia, recordatorio si no se ha entrenado
 [triggers]
-crons = ["0 3 * * *", "0 15 * * 6"]
+crons = ["0 3 * * *", "0 15 * * 6", "0 18 * * *"]
