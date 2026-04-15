@@ -1,5 +1,5 @@
 // ── Shared constants ──
-const TRAINER_EMAIL = 'nicolas@drakeconstruction.com';
+const TRAINER_EMAIL = 'juansaravia2002@gmail.com';
 
 // ── Athletes: dynamic KV-backed store ──
 // Schema:
