@@ -1,0 +1,10 @@
+.wrangler
+.git
+worker.js
+wrangler.toml
+.assetsignore
+fundacional
+index.html.bak
+old_index.html
+preview.html
+node_modules
