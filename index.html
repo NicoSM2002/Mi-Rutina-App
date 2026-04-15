@@ -1048,6 +1048,49 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 }
 .tportal-title { font-family:var(--font-d); font-size:18px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
 .tportal-body { padding:20px 16px; }
+.new-athlete-btn {
+  width:36px; height:36px; border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg, #FF6B2C, #FFB547);
+  color:#fff; font-size:22px; font-weight:700; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 14px rgba(255,107,44,.3);
+}
+.new-athlete-btn:active { opacity:.85; }
+
+/* New athlete form */
+.na-field { margin-bottom:14px; }
+.na-label { display:block; font-size:12px; color:var(--t3); margin-bottom:6px; letter-spacing:.3px; }
+.na-req { color:#FF6B2C; margin-left:2px; }
+.na-hint { font-size:11px; color:var(--t3); margin-top:4px; }
+.na-input {
+  width:100%; background:var(--s1); border:1px solid rgba(255,255,255,.06);
+  border-radius:12px; padding:13px 14px; color:var(--t1);
+  font-family:var(--font-b); font-size:15px; outline:none;
+  -webkit-appearance:none; box-sizing:border-box;
+}
+.na-input:focus { border-color:var(--ac); }
+.na-row { display:flex; gap:10px; }
+.na-col { flex:1; }
+.na-pills { display:flex; gap:8px; }
+.na-pill {
+  flex:1; background:var(--s1); border:1px solid rgba(255,255,255,.06);
+  border-radius:12px; padding:11px 0; color:var(--t1); font-family:var(--font-d);
+  font-size:15px; font-weight:700; cursor:pointer;
+}
+.na-pill-active { background:linear-gradient(135deg, #FF6B2C, #FF8F5E); border-color:transparent; color:#fff; }
+.na-details {
+  background:var(--s1); border:1px solid rgba(255,255,255,.04);
+  border-radius:12px; padding:12px 14px; margin-bottom:12px;
+}
+.na-summary {
+  cursor:pointer; font-family:var(--font-d); font-weight:600; font-size:14px;
+  color:var(--t2); padding:4px 0; list-style:none;
+}
+.na-summary::-webkit-details-marker { display:none; }
+.na-summary::before { content:'▸ '; color:var(--ac); }
+.na-details[open] .na-summary::before { content:'▾ '; }
+.na-details[open] { padding-bottom:10px; }
+.na-details[open] .na-summary { margin-bottom:10px; }
 .client-card {
   background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px;
   padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer;
@@ -1606,6 +1649,7 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
   <div class="tportal-header">
     <button class="back-btn" onclick="show('role-select')">‹ Salir</button>
     <div class="tportal-title">Portal Entrenador</div>
+    <button class="new-athlete-btn" onclick="openNewAthleteForm()" title="Nuevo atleta">+</button>
   </div>
   <div class="tportal-body">
     <div class="section-label" style="margin-bottom:12px">Mis clientes</div>
@@ -1625,6 +1669,129 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
         <div class="client-meta">Plan: Pérdida de grasa y tonificación</div>
       </div>
       <div class="client-arrow">→</div>
+    </div>
+    <div id="trainer-extra-clients"></div>
+  </div>
+</div>
+
+<!-- ══ NEW ATHLETE FORM ══ -->
+<div class="screen" id="trainer-new-athlete">
+  <div class="tportal-header">
+    <button class="back-btn" onclick="show('trainer-portal')">‹ Volver</button>
+    <div class="tportal-title">Nuevo atleta</div>
+  </div>
+  <div class="tportal-body" style="padding-bottom:40px">
+    <form id="new-athlete-form" onsubmit="event.preventDefault(); submitNewAthlete();" autocomplete="off">
+
+      <div class="section-label" style="margin-bottom:10px">Identidad</div>
+      <div class="na-field">
+        <label class="na-label">Nombre completo <span class="na-req">*</span></label>
+        <input class="na-input" id="na-name" type="text" oninput="suggestUsername()" required>
+      </div>
+      <div class="na-field">
+        <label class="na-label">Username (para login) <span class="na-req">*</span></label>
+        <input class="na-input" id="na-username" type="text" pattern="[a-z0-9]+" required>
+        <div class="na-hint">Solo minúsculas y números. Se usa para iniciar sesión.</div>
+      </div>
+      <div class="na-field">
+        <label class="na-label">Email</label>
+        <input class="na-input" id="na-email" type="email" placeholder="para recibir notificaciones">
+      </div>
+      <div class="na-row">
+        <div class="na-field na-col">
+          <label class="na-label">Teléfono</label>
+          <input class="na-input" id="na-phone" type="tel">
+        </div>
+        <div class="na-field na-col">
+          <label class="na-label">Fecha de nacimiento</label>
+          <input class="na-input" id="na-birthdate" type="date">
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:20px;margin-bottom:10px">Entrenamiento</div>
+      <div class="na-field">
+        <label class="na-label">Sesiones por semana <span class="na-req">*</span></label>
+        <div class="na-pills" id="na-sessions">
+          <button type="button" class="na-pill" data-val="3" onclick="setSessionsPill(3)">3</button>
+          <button type="button" class="na-pill" data-val="4" onclick="setSessionsPill(4)">4</button>
+          <button type="button" class="na-pill na-pill-active" data-val="5" onclick="setSessionsPill(5)">5</button>
+          <button type="button" class="na-pill" data-val="6" onclick="setSessionsPill(6)">6</button>
+        </div>
+      </div>
+      <div class="na-field">
+        <label class="na-label">Objetivo</label>
+        <select class="na-input" id="na-goal">
+          <option value="">Seleccionar…</option>
+          <option value="hipertrofia">Hipertrofia</option>
+          <option value="perdida-grasa">Pérdida de grasa</option>
+          <option value="fuerza">Fuerza</option>
+          <option value="recomposicion">Recomposición</option>
+          <option value="rendimiento">Rendimiento</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="na-field">
+        <label class="na-label">Nivel</label>
+        <select class="na-input" id="na-level">
+          <option value="">Seleccionar…</option>
+          <option value="principiante">Principiante</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+        </select>
+      </div>
+
+      <details class="na-details">
+        <summary class="na-summary">Antropometría (opcional)</summary>
+        <div class="na-row">
+          <div class="na-field na-col"><label class="na-label">Peso (kg)</label><input class="na-input" id="na-weight" type="number" step="0.1" inputmode="decimal"></div>
+          <div class="na-field na-col"><label class="na-label">Altura (cm)</label><input class="na-input" id="na-height" type="number" step="0.1" inputmode="decimal"></div>
+        </div>
+        <div class="na-row">
+          <div class="na-field na-col"><label class="na-label">% Grasa</label><input class="na-input" id="na-bodyfat" type="number" step="0.1" inputmode="decimal"></div>
+          <div class="na-field na-col"><label class="na-label">Músculo (kg)</label><input class="na-input" id="na-muscle" type="number" step="0.1" inputmode="decimal"></div>
+        </div>
+      </details>
+
+      <details class="na-details">
+        <summary class="na-summary">Notas y lesiones (opcional)</summary>
+        <div class="na-field">
+          <label class="na-label">Lesiones / restricciones</label>
+          <textarea class="na-input" id="na-injuries" rows="2"></textarea>
+        </div>
+        <div class="na-field">
+          <label class="na-label">Notas del entrenador</label>
+          <textarea class="na-input" id="na-notes" rows="3"></textarea>
+        </div>
+      </details>
+
+      <div id="na-error" class="tlogin-error"></div>
+      <button type="submit" class="tlogin-btn" id="na-submit" style="margin-top:18px">Crear atleta</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══ PROFILE GENERIC (atletas creados dinámicamente) ══ -->
+<div class="screen" id="profile-generic">
+  <div class="profile-hero">
+    <div class="profile-name" id="pg-name">—</div>
+    <div class="profile-goal" id="pg-goal">Plan de Entrenamiento</div>
+  </div>
+  <div class="profile-body">
+    <div>
+      <div class="section-label">Métricas actuales</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="sv" id="pg-weight">—</div><div class="sl">Peso kg</div></div>
+        <div class="stat-card"><div class="sv" id="pg-bf">—</div><div class="sl">Grasa</div></div>
+        <div class="stat-card"><div class="sv" id="pg-muscle">—</div><div class="sl">Músculo kg</div></div>
+      </div>
+      <div class="stats-grid two" style="margin-top:8px">
+        <div class="stat-card"><div class="sv" id="pg-bmi">—</div><div class="sl">IMC</div></div>
+        <div class="stat-card"><div class="sv" id="pg-bmr">—</div><div class="sl">BMR kcal</div></div>
+      </div>
+    </div>
+    <div id="pg-notes-wrap" style="display:none">
+      <div class="section-label">Notas del entrenador</div>
+      <div class="progress-card"><div id="pg-notes"></div></div>
     </div>
   </div>
 </div>
@@ -1854,6 +2021,8 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  if (id === 'athlete-login' && typeof fetchDynamicAthletes === 'function' && !dynamicAthletesCache) fetchDynamicAthletes();
+  if (id === 'trainer-portal' && typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
 }
 async function showRoutine() {
   show('routine');
@@ -2847,19 +3016,65 @@ const ATHLETE_USERS  = { nsaravia: { screen:'profile',          client:'nicolas'
 const TRAINER_USERS = { entrenador: true };
 let currentAthlete = 'nicolas';
 
-function athleteLogin() {
+/* Dynamic athletes fetched from the worker, merged into ATHLETE_USERS on demand */
+let dynamicAthletesCache = null;
+async function fetchDynamicAthletes() {
+  try {
+    const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'list-athletes' }) });
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.athletes)) {
+      dynamicAthletesCache = data.athletes;
+      return data.athletes;
+    }
+  } catch (_) {}
+  return [];
+}
+
+async function athleteLogin() {
   const user   = document.getElementById('athlete-username').value.trim().toLowerCase();
   const errEl  = document.getElementById('athlete-error');
-  const config = ATHLETE_USERS[user];
-  if (!config) { errEl.textContent = 'Usuario no encontrado.'; return; }
   errEl.textContent = '';
+
+  // 1) Legacy hardcoded users (Nicolás/María)
+  const config = ATHLETE_USERS[user];
+  if (config) {
+    document.getElementById('athlete-username').value = '';
+    currentAthlete = config.client;
+    const fb = currentAthlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
+    data = JSON.parse(JSON.stringify(fb));
+    loadRoutine();
+    show(config.screen);
+    loadAthletePayment(currentAthlete);
+    return;
+  }
+
+  // 2) Dynamic athletes (created from the trainer portal)
+  const list = dynamicAthletesCache || await fetchDynamicAthletes();
+  const dyn  = list.find(a => (a.username || a.clientId) === user);
+  if (!dyn) { errEl.textContent = 'Usuario no encontrado.'; return; }
   document.getElementById('athlete-username').value = '';
-  currentAthlete = config.client;
-  const fb = currentAthlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
-  data = JSON.parse(JSON.stringify(fb));
+  currentAthlete = dyn.clientId;
+  data = JSON.parse(JSON.stringify(FALLBACK_DATA));  // template shape, overridden by loadRoutine()
   loadRoutine();
-  show(config.screen);
+  showGenericProfile(dyn);
   loadAthletePayment(currentAthlete);
+}
+
+function showGenericProfile(athlete) {
+  const p = athlete.profile || {};
+  document.getElementById('pg-name').textContent = athlete.name || athlete.username || '—';
+  document.getElementById('pg-goal').textContent = 'Plan · Objetivo: ' + (p.goal || athlete.goal || '—');
+  const fmt = (v, suf='') => (v === null || v === undefined || v === '') ? '—' : (v + suf);
+  document.getElementById('pg-weight').textContent = fmt(p.weight);
+  document.getElementById('pg-bf').textContent     = fmt(p.bodyFat, '%');
+  document.getElementById('pg-muscle').textContent = fmt(p.muscleMass);
+  document.getElementById('pg-bmi').textContent    = fmt(p.bmi);
+  document.getElementById('pg-bmr').textContent    = fmt(p.bmr);
+  const notes = p.notes || '';
+  const wrap  = document.getElementById('pg-notes-wrap');
+  if (notes) { wrap.style.display = ''; document.getElementById('pg-notes').textContent = notes; }
+  else { wrap.style.display = 'none'; }
+  show('profile-generic');
 }
 let trainerClientId = null;
 let trainerData = { completions:[], meals:[] };
@@ -2881,6 +3096,106 @@ function trainerLogin() {
   errEl.textContent = '';
   document.getElementById('trainer-username').value = '';
   show('trainer-portal');
+  loadTrainerExtraClients();
+}
+
+/* Render dynamically-created athletes as additional client cards */
+async function loadTrainerExtraClients() {
+  const container = document.getElementById('trainer-extra-clients');
+  if (!container) return;
+  const list = await fetchDynamicAthletes();
+  const extras = list.filter(a => a.clientId !== 'nicolas' && a.clientId !== 'msaravia');
+  if (!extras.length) { container.innerHTML = ''; return; }
+  container.innerHTML = extras.map(a => {
+    const initials = (a.name || a.username || '?').split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
+    const plan = a.profile?.goal ? ('Plan: ' + a.profile.goal) : ('Sesiones: ' + (a.sessionsPerWeek || '—') + '/semana');
+    return `<div style="height:10px"></div>
+      <div class="client-card" onclick="openTrainerClient('${a.clientId}', ${JSON.stringify(a.name || a.username)})">
+        <div class="client-avatar" style="background:linear-gradient(135deg,#34d399,#06b6d4)">${initials}</div>
+        <div>
+          <div class="client-name">${a.name || a.username}</div>
+          <div class="client-meta">${plan}</div>
+        </div>
+        <div class="client-arrow">→</div>
+      </div>`;
+  }).join('');
+}
+
+/* New athlete form handlers */
+function openNewAthleteForm() {
+  document.getElementById('new-athlete-form').reset();
+  setSessionsPill(5);
+  document.getElementById('na-error').textContent = '';
+  show('trainer-new-athlete');
+}
+
+function suggestUsername() {
+  const name = document.getElementById('na-name').value || '';
+  const field = document.getElementById('na-username');
+  if (field.dataset.edited === '1') return;
+  field.value = name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 20);
+}
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'na-username') e.target.dataset.edited = '1';
+}, true);
+
+function setSessionsPill(n) {
+  document.querySelectorAll('#na-sessions .na-pill').forEach(btn => {
+    btn.classList.toggle('na-pill-active', Number(btn.dataset.val) === Number(n));
+  });
+}
+function getSelectedSessions() {
+  const active = document.querySelector('#na-sessions .na-pill-active');
+  return active ? Number(active.dataset.val) : 0;
+}
+
+async function submitNewAthlete() {
+  const errEl = document.getElementById('na-error');
+  const submitBtn = document.getElementById('na-submit');
+  errEl.textContent = '';
+
+  const athlete = {
+    name:          document.getElementById('na-name').value.trim(),
+    username:      document.getElementById('na-username').value.trim().toLowerCase(),
+    email:         document.getElementById('na-email').value.trim(),
+    phone:         document.getElementById('na-phone').value.trim(),
+    birthdate:     document.getElementById('na-birthdate').value || null,
+    sessionsPerWeek: getSelectedSessions(),
+    goal:          document.getElementById('na-goal').value,
+    level:         document.getElementById('na-level').value,
+    weight:        parseFloat(document.getElementById('na-weight').value) || null,
+    height:        parseFloat(document.getElementById('na-height').value) || null,
+    bodyFat:       parseFloat(document.getElementById('na-bodyfat').value) || null,
+    muscleMass:    parseFloat(document.getElementById('na-muscle').value) || null,
+    injuries:      document.getElementById('na-injuries').value.trim(),
+    notes:         document.getElementById('na-notes').value.trim(),
+  };
+
+  if (!athlete.name) { errEl.textContent = 'Falta el nombre.'; return; }
+  if (!athlete.username) { errEl.textContent = 'Falta el username.'; return; }
+  if (!/^[a-z0-9]+$/.test(athlete.username)) { errEl.textContent = 'El username solo puede tener letras minúsculas y números.'; return; }
+  if (!athlete.sessionsPerWeek) { errEl.textContent = 'Selecciona las sesiones por semana.'; return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creando…';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'create-athlete', token: TRAINER_TOKEN, athlete })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Error al crear');
+    dynamicAthletesCache = null;  // invalidate cache
+    show('trainer-portal');
+    loadTrainerExtraClients();
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Crear atleta';
+  }
 }
 
 async function openTrainerClient(clientId, clientName) {
