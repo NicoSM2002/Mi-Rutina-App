@@ -1,10 +1,99 @@
-// ── Shared constants (single source of truth) ──
-// Para cambiar los correos de los atletas, editá solo aquí.
-const ATHLETES = {
-  nicolas:  { name: 'Nicolás Saravia', email: 'nicolas@drakeconstruction.com' },
-  msaravia: { name: 'María Saravia',   email: 'nicolas@drakeconstruction.com' },
-};
+// ── Shared constants ──
 const TRAINER_EMAIL = 'nicolas@drakeconstruction.com';
+
+// ── Athletes: dynamic KV-backed store ──
+// Schema:
+//   KV `athlete-index`   → string[] of clientIds in display order
+//   KV `athlete:${id}`   → { clientId, username, name, email, sessionsPerWeek,
+//                            profile:{...}, preferredDays:[], photoUrl, pdfUrl,
+//                            createdAt, archived }
+// First call to listAthletes / getAthlete seeds Nicolás y María if the index
+// doesn't exist yet — routines already in `routine:nicolas` / `routine:msaravia`
+// are NOT touched.
+
+const SEED_ATHLETES = [
+  {
+    clientId: 'nicolas',
+    username: 'nsaravia',
+    name: 'Nicolás Saravia',
+    email: 'nicolas@drakeconstruction.com',
+    sessionsPerWeek: 5,
+    preferredDays: ['lun','mar','mie','jue','vie'],
+    profile: {
+      weight: 67.9, bodyFat: 11.3, muscleMass: 57.1, bmi: 21, bmr: 1723,
+      goal: 'hipertrofia', level: 'intermedio', notes: '', injuries: ''
+    }
+  },
+  {
+    clientId: 'msaravia',
+    username: 'msaravia',
+    name: 'María Saravia',
+    email: 'nicolas@drakeconstruction.com',
+    sessionsPerWeek: 4,
+    preferredDays: ['lun','mar','jue','vie'],
+    profile: {
+      weight: null, bodyFat: null, muscleMass: null, bmi: null, bmr: null,
+      goal: 'hipertrofia', level: 'intermedio', notes: '', injuries: ''
+    }
+  },
+];
+
+async function bootstrapAthletesIfNeeded(env) {
+  const existing = await env.DB.get('athlete-index', 'json');
+  if (existing && Array.isArray(existing) && existing.length > 0) return existing;
+  const ids = [];
+  for (const a of SEED_ATHLETES) {
+    await env.DB.put(`athlete:${a.clientId}`, JSON.stringify({ ...a, createdAt: Date.now(), archived: false }));
+    ids.push(a.clientId);
+  }
+  await env.DB.put('athlete-index', JSON.stringify(ids));
+  return ids;
+}
+
+async function listAthletes(env, { includeArchived = false } = {}) {
+  const ids = await bootstrapAthletesIfNeeded(env);
+  const records = [];
+  for (const id of ids) {
+    const a = await env.DB.get(`athlete:${id}`, 'json');
+    if (!a) continue;
+    if (!includeArchived && a.archived) continue;
+    records.push(a);
+  }
+  return records;
+}
+
+async function getAthlete(env, clientId) {
+  if (!clientId) return null;
+  await bootstrapAthletesIfNeeded(env);
+  return await env.DB.get(`athlete:${clientId}`, 'json');
+}
+
+function slugifyUsername(name) {
+  return (name || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 20) || `user${Date.now().toString(36).slice(-5)}`;
+}
+
+function emptyRoutineTemplate(sessionsPerWeek) {
+  const n = Math.max(1, Math.min(7, Number(sessionsPerWeek) || 4));
+  const out = {};
+  for (let i = 1; i <= n; i++) {
+    out[`sesion${i}`] = {
+      title: `Sesión ${i}`,
+      sub: '',
+      warmup: [],
+      warmupHombro: [],
+      cardio: '',
+      circuits: [
+        { label: 'Circuito 1', cls: 'c1', rest: '60s descanso', exercises: [] }
+      ],
+      nota: ''
+    };
+  }
+  return out;
+}
 
 // ── Helper: week range (Mon–Sat) in Colombia timezone ──
 function getWeekRange(dateStr) {
@@ -112,7 +201,8 @@ export default {
 
     const body = await request.json();
     const client = body.client || 'nicolas';
-    const athleteName = ATHLETES[client]?.name || client;
+    const athleteRecord = await getAthlete(env, client);
+    const athleteName = athleteRecord?.name || client;
 
     // ── COMPLETE ROUTINE ──
     if (body.action === 'complete') {
@@ -345,7 +435,7 @@ export default {
       }
       await env.DB.put(`routine:${client}`, JSON.stringify(body.routine));
 
-      const athleteEmail = ATHLETES[client]?.email;
+      const athleteEmail = athleteRecord?.email;
       if (athleteEmail) {
         const updatedAt = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' });
         const routineHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
@@ -382,6 +472,109 @@ export default {
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
+    // ── LIST ATHLETES (public read) ──
+    if (body.action === 'list-athletes') {
+      const athletes = await listAthletes(env, { includeArchived: !!body.includeArchived });
+      return new Response(JSON.stringify({ ok: true, athletes }), { headers: cors });
+    }
+
+    // ── GET ATHLETE (public read) ──
+    if (body.action === 'get-athlete') {
+      const athlete = await getAthlete(env, body.clientId || client);
+      return new Response(JSON.stringify({ ok: true, athlete: athlete || null }), { headers: cors });
+    }
+
+    // ── CREATE ATHLETE (trainer only) ──
+    if (body.action === 'create-athlete') {
+      if (body.token !== 'ent2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      const input = body.athlete || {};
+      const name = (input.name || '').trim();
+      const username = slugifyUsername(input.username || input.name);
+      const sessionsPerWeek = Math.max(1, Math.min(7, Number(input.sessionsPerWeek) || 0));
+      if (!name || !username || !sessionsPerWeek) {
+        return new Response(JSON.stringify({ ok: false, error: 'Nombre, username y sesiones son obligatorios' }), { headers: cors });
+      }
+      // Ensure the index exists and username is unique (also used as clientId)
+      const existingIds = await bootstrapAthletesIfNeeded(env);
+      if (existingIds.includes(username)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Username ya existe' }), { headers: cors });
+      }
+      const record = {
+        clientId: username,
+        username,
+        name,
+        email:           (input.email || '').trim() || null,
+        phone:           (input.phone || '').trim() || null,
+        birthdate:       input.birthdate || null,
+        sessionsPerWeek,
+        preferredDays:   Array.isArray(input.preferredDays) ? input.preferredDays : [],
+        profile: {
+          weight:      input.weight      ?? null,
+          height:      input.height      ?? null,
+          bodyFat:     input.bodyFat     ?? null,
+          muscleMass:  input.muscleMass  ?? null,
+          bmi:         input.bmi         ?? null,
+          bmr:         input.bmr         ?? null,
+          goal:        input.goal        || '',
+          level:       input.level       || '',
+          experience:  input.experience  || '',
+          injuries:    input.injuries    || '',
+          notes:       input.notes       || ''
+        },
+        photoUrl:        input.photoUrl || null,
+        pdfUrl:          input.pdfUrl   || null,
+        createdAt:       Date.now(),
+        archived:        false
+      };
+      await env.DB.put(`athlete:${username}`, JSON.stringify(record));
+      const newIndex = [...existingIds, username];
+      await env.DB.put('athlete-index', JSON.stringify(newIndex));
+      // Initialize an empty routine so the athlete can log in immediately.
+      const routine = emptyRoutineTemplate(sessionsPerWeek);
+      await env.DB.put(`routine:${username}`, JSON.stringify(routine));
+      return new Response(JSON.stringify({ ok: true, athlete: record }), { headers: cors });
+    }
+
+    // ── UPDATE ATHLETE (trainer only) ──
+    if (body.action === 'update-athlete') {
+      if (body.token !== 'ent2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      const id = body.clientId;
+      const existing = await getAthlete(env, id);
+      if (!existing) {
+        return new Response(JSON.stringify({ ok: false, error: 'Atleta no encontrado' }), { headers: cors });
+      }
+      const patch = body.fields || {};
+      const updated = {
+        ...existing,
+        ...patch,
+        clientId: existing.clientId,        // immutable
+        username: existing.username,        // immutable
+        profile: { ...(existing.profile || {}), ...(patch.profile || {}) }
+      };
+      await env.DB.put(`athlete:${id}`, JSON.stringify(updated));
+      return new Response(JSON.stringify({ ok: true, athlete: updated }), { headers: cors });
+    }
+
+    // ── DELETE ATHLETE (trainer only, soft delete) ──
+    if (body.action === 'delete-athlete') {
+      if (body.token !== 'ent2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      const id = body.clientId;
+      const existing = await getAthlete(env, id);
+      if (!existing) {
+        return new Response(JSON.stringify({ ok: false, error: 'Atleta no encontrado' }), { headers: cors });
+      }
+      await env.DB.put(`athlete:${id}`, JSON.stringify({ ...existing, archived: true }));
+      const ids = (await env.DB.get('athlete-index', 'json')) || [];
+      await env.DB.put('athlete-index', JSON.stringify(ids.filter(x => x !== id)));
+      return new Response(JSON.stringify({ ok: true }), { headers: cors });
+    }
+
     // ── GET PAYMENT ──
     if (body.action === 'get-payment') {
       const payment = await env.DB.get(`payment:${client}`, 'json');
@@ -414,7 +607,8 @@ export default {
 
       // Email notification when trainer sends a message
       if (body.role === 'trainer') {
-        const trainerName = ATHLETES[body.trainerId]?.name || body.trainerId;
+        const trainerRec = await getAthlete(env, body.trainerId);
+        const trainerName = trainerRec?.name || body.trainerId;
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -514,7 +708,8 @@ async function sendDailyMealReport(env) {
   const todayKey = `${coDate.getFullYear()}-${String(coDate.getMonth()+1).padStart(2,'0')}-${String(coDate.getDate()).padStart(2,'0')}`;
   const dayLabel = coDate.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  for (const [clientId, athlete] of Object.entries(ATHLETES)) {
+  for (const athlete of await listAthletes(env)) {
+    const clientId = athlete.clientId;
     const records = await env.DB.get(`meals:${clientId}`, 'json') || [];
     const todayRecord = records.find(r => r.day === todayKey);
     if (!todayRecord) continue;
@@ -580,7 +775,9 @@ async function sendWorkoutReminder(env) {
   const dayLabel = coDate.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
   if (coDate.getDay() === 0) return; // domingo libre
 
-  for (const [clientId, athlete] of Object.entries(ATHLETES)) {
+  for (const athlete of await listAthletes(env)) {
+    const clientId = athlete.clientId;
+    if (!athlete.email) continue;
     const routine = await env.DB.get(`routine:${clientId}`, 'json');
     if (!routine) continue;
 
@@ -647,7 +844,8 @@ async function sendWeeklyReport(env) {
   const week = getWeekRange(null);
   const dateSet = new Set(week.dates);
 
-  for (const [clientId, athlete] of Object.entries(ATHLETES)) {
+  for (const athlete of await listAthletes(env)) {
+    const clientId = athlete.clientId;
     const [completions, meals] = await Promise.all([
       env.DB.get(`completions:${clientId}`, 'json'),
       env.DB.get(`meals:${clientId}`, 'json')
