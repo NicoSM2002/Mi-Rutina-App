@@ -1256,6 +1256,23 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 .re-step-del:active { color:#f87171; }
 .re-add-step { width:100%; padding:8px; background:none; border:1px dashed var(--b); border-radius:9px; color:var(--t2); font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer; margin-top:4px; }
 .re-add-step:active { border-color:var(--ac); color:var(--acl); }
+.re-circuit-hdr-row { display:flex; align-items:center; gap:8px; padding:10px 12px; }
+.re-circuit-title { flex:1; font-family:var(--font-d); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; }
+.c1 .re-circuit-title { color:var(--acl); }
+.c2 .re-circuit-title { color:var(--gr); }
+.c3 .re-circuit-title { color:var(--am); }
+.re-rest-select { background:var(--s0); border:1px solid rgba(255,255,255,.08); border-radius:8px; color:var(--t1); font-family:'Inter',sans-serif; font-size:11px; font-weight:600; padding:5px 6px; -webkit-appearance:none; appearance:none; }
+.re-del-btn { background:none; border:none; color:var(--t3); font-size:20px; line-height:1; cursor:pointer; padding:2px 8px; }
+.re-del-btn:active { color:#f87171; }
+.re-add-btn { width:calc(100% - 24px); padding:10px; background:none; border:1px dashed var(--b); border-radius:10px; color:var(--t2); font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer; margin:8px 12px 12px; display:block; }
+.re-add-btn:active { border-color:var(--ac); color:var(--acl); }
+.re-warmup-card { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px; padding:14px; margin-bottom:12px; }
+.re-wu-title { font-family:var(--font-d); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--acl); margin-bottom:10px; }
+.re-wu-row { display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+.re-wu-row input { flex:1; background:var(--s0); border:1px solid rgba(255,255,255,.06); border-radius:8px; color:var(--t1); font-family:'Inter',sans-serif; font-size:13px; padding:9px 10px; outline:none; }
+.re-wu-row input:focus { border-color:var(--ac); }
+.re-add-btn.re-wu-add { margin:4px 0 0; width:100%; padding:8px; font-size:12px; }
+.re-ex-top { display:flex; justify-content:flex-end; padding:6px 10px 0; }
 .ex-set-badge { display:inline-block; font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle; letter-spacing:.4px; }
 .ex-set-badge.ds { background:rgba(251,191,36,.15); color:var(--am); }
 .ex-set-badge.pir { background:rgba(192,132,252,.15); color:var(--pu); }
@@ -2893,11 +2910,11 @@ function render() {
     /* circuit */
     const ci = routineStep - 1;
     const c = day.circuits[ci];
-    html += `<div class="circuit-section ${c.cls}">
+    html += `<div class="circuit-section ${c.cls || ('c'+(((ci)%3)+1))}">
       <div class="circuit-hdr">
-        <span class="circuit-num">${c.label}</span>
+        <span class="circuit-num">Circuito ${ci+1}</span>
         <span class="circuit-badge">4 SERIES</span>
-        <button class="circuit-rest" onclick="startTimer(${parseInt(c.rest)})">⏱ ${c.rest}</button>
+        <button class="circuit-rest" onclick="startTimer(${parseInt(c.rest)||60})">⏱ ${parseInt(c.rest)||60}s descanso</button>
       </div>
       <div class="ex-cards">`;
     c.exercises.forEach((ex, ei) => { html += renderExCard(ex, ci, ei, w); });
@@ -3305,23 +3322,49 @@ async function openTrainerClient(clientId, clientName) {
   document.getElementById('tab-resumen').classList.remove('active');
   document.getElementById('tab-editar').classList.remove('active');
   activateTrainerNav('rutinas');
-  const edFb = clientId === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
-  editorData = JSON.parse(JSON.stringify(edFb));
+  editorData = null;
   editorDay = 'sesion1';
   show('trainer-client');
 
   try {
-    const res = await fetch(WORKER_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-data', client: clientId })
-    });
-    trainerData = await res.json();
+    const [dataRes, routineRes] = await Promise.all([
+      fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'get-data', client: clientId }) }),
+      fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'get-routine', client: clientId }) })
+    ]);
+    trainerData = await dataRes.json();
+    const routineJson = await routineRes.json();
+    if (routineJson && routineJson.routine && Object.keys(routineJson.routine).length) {
+      editorData = routineJson.routine;
+    } else {
+      const fb = clientId === 'msaravia' ? FALLBACK_DATA_MSARAVIA
+              : (clientId === 'nicolas' ? FALLBACK_DATA : emptyRoutineTemplateJS(4));
+      editorData = JSON.parse(JSON.stringify(fb));
+    }
   } catch {
     trainerData = { completions:[], meals:[] };
+    const fb = clientId === 'msaravia' ? FALLBACK_DATA_MSARAVIA
+            : (clientId === 'nicolas' ? FALLBACK_DATA : emptyRoutineTemplateJS(4));
+    editorData = JSON.parse(JSON.stringify(fb));
   }
   renderTrainerTab();
 }
+
+function emptyRoutineTemplateJS(n) {
+  const out = {};
+  const N = Math.max(1, Math.min(7, Number(n) || 4));
+  for (let i = 1; i <= N; i++) {
+    out[`sesion${i}`] = {
+      title: `Sesión ${i}`, sub: '', warmup: [], warmupHombro: [], cardio: '',
+      circuits: [{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises: [] }],
+      nota: ''
+    };
+  }
+  return out;
+}
+
+function reEscAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function setTrainerTab(tab) {
   activeTrainerTab = tab;
@@ -4351,29 +4394,76 @@ async function loadRoutine() {
 /* ── ROUTINE EDITOR ── */
 function renderRoutineEditor() {
   const el = document.getElementById('tclient-content');
-  if (!editorData) editorData = JSON.parse(JSON.stringify(data));
+  if (!editorData) { el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando rutina…</div>'; return; }
+  const days = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k))
+    .sort((a,b) => parseInt(a.slice(6)) - parseInt(b.slice(6)));
+  if (!days.length) {
+    editorData.sesion1 = emptyRoutineTemplateJS(1).sesion1;
+    return renderRoutineEditor();
+  }
+  if (!days.includes(editorDay)) editorDay = days[0];
   const day = editorData[editorDay];
   const w = 1;
-  const days = trainerClientId === 'msaravia'
-    ? ['sesion1','sesion2','sesion3','sesion4']
-    : ['sesion1','sesion2','sesion3','sesion4','sesion5'];
-  const dayLabels = trainerClientId === 'msaravia'
-    ? { sesion1:'S1', sesion2:'S2', sesion3:'S3', sesion4:'S4' }
-    : { sesion1:'S1', sesion2:'S2', sesion3:'S3', sesion4:'S4', sesion5:'S5' };
 
   let html = '';
 
   // Day selector
   html += `<div class="re-day-bar">`;
   days.forEach(d => {
-    html += `<button class="day-chip${d===editorDay?' active':''}" onclick="setEditorDay('${d}')">${dayLabels[d]}</button>`;
+    const num = d.slice(6);
+    html += `<button class="day-chip${d===editorDay?' active':''}" onclick="setEditorDay('${d}')">S${num}</button>`;
   });
+  html += `<button class="day-chip" style="color:var(--acl);font-weight:800" onclick="addSession()" title="Agregar sesión">＋</button>`;
+  if (days.length > 1) {
+    html += `<button class="day-chip" style="color:#f87171" onclick="removeSession('${editorDay}')" title="Quitar sesión actual">×</button>`;
+  }
+  html += `</div>`;
+
+  // Warmup editor
+  const hasHombro = Array.isArray(day.warmupHombro) && day.warmupHombro.length > 0;
+  html += `<div class="re-warmup-card">`;
+  if (hasHombro) {
+    html += `<div class="re-wu-title">🔥 Calentamiento hombro</div>`;
+    day.warmupHombro.forEach((it, wi) => {
+      const text = typeof it === 'string' ? it : (it && it.text) || '';
+      html += `<div class="re-wu-row">
+        <input type="text" value="${reEscAttr(text)}" oninput="updateWarmupText('${editorDay}','warmupHombro',${wi},this.value)" placeholder="Ejercicio de calentamiento">
+        <button class="re-del-btn" onclick="removeWarmupItem('${editorDay}','warmupHombro',${wi})" title="Quitar">×</button>
+      </div>`;
+    });
+    html += `<button class="re-add-btn re-wu-add" onclick="addWarmupItem('${editorDay}','warmupHombro')">+ Agregar ejercicio de hombro</button>`;
+    html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,.05);margin:14px 0">`;
+  }
+  html += `<div class="re-wu-title">🔥 Calentamiento del día</div>`;
+  (day.warmup || []).forEach((it, wi) => {
+    const text = typeof it === 'string' ? it : (it && it.text) || '';
+    html += `<div class="re-wu-row">
+      <input type="text" value="${reEscAttr(text)}" oninput="updateWarmupText('${editorDay}','warmup',${wi},this.value)" placeholder="Ejercicio de calentamiento">
+      <button class="re-del-btn" onclick="removeWarmupItem('${editorDay}','warmup',${wi})" title="Quitar">×</button>
+    </div>`;
+  });
+  html += `<button class="re-add-btn re-wu-add" onclick="addWarmupItem('${editorDay}','warmup')">+ Agregar calentamiento</button>`;
+  if (!hasHombro) {
+    html += `<button class="re-add-btn re-wu-add" onclick="addWarmupItem('${editorDay}','warmupHombro')" style="margin-top:6px">+ Agregar calentamiento de hombro</button>`;
+  }
   html += `</div>`;
 
   // Circuits
   html += `<div class="re-circuits-grid">`;
   day.circuits.forEach((circuit, ci) => {
-    html += `<div class="re-circuit-card ${circuit.cls}"><div class="re-circuit-hdr">${circuit.label}</div>`;
+    const cls = circuit.cls || ('c' + (((ci) % 3) + 1));
+    const restSec = parseInt(circuit.rest) || 60;
+    const restVal = [60,90,120].includes(restSec) ? restSec : 60;
+    html += `<div class="re-circuit-card ${cls}">
+      <div class="re-circuit-hdr-row">
+        <span class="re-circuit-title">Circuito ${ci+1}</span>
+        <select class="re-rest-select" onchange="setCircuitRest('${editorDay}',${ci},this.value)">
+          <option value="60"${restVal===60?' selected':''}>60s</option>
+          <option value="90"${restVal===90?' selected':''}>90s</option>
+          <option value="120"${restVal===120?' selected':''}>120s</option>
+        </select>
+        <button class="re-del-btn" onclick="removeCircuit('${editorDay}',${ci})" title="Quitar circuito">×</button>
+      </div>`;
     circuit.exercises.forEach((ex, ei) => {
       const st = ex.setType || 'normal';
       const steps = ex.steps1 || [];
@@ -4418,6 +4508,9 @@ function renderRoutineEditor() {
       };
 
       html += `<div class="re-exercise">
+        <div class="re-ex-top">
+          <button class="re-del-btn" onclick="removeExercise('${editorDay}',${ci},${ei})" title="Quitar ejercicio">×</button>
+        </div>
         <div class="re-set-type">
           <button class="re-set-type-btn${st==='normal'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'normal')">Normal</button>
           <button class="re-set-type-btn ds${st==='dropset'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'dropset')">Drop set</button>
@@ -4458,8 +4551,10 @@ function renderRoutineEditor() {
         }
       </div>`;
     });
+    html += `<button class="re-add-btn" onclick="addExercise('${editorDay}',${ci})">+ Agregar ejercicio</button>`;
     html += `</div>`;
   });
+  html += `<button class="re-add-btn" style="border-style:solid;border-color:var(--acl);color:var(--acl)" onclick="addCircuit('${editorDay}')">+ Agregar circuito</button>`;
   html += `</div>`; // re-circuits-grid
 
   html += `<div class="section-label" style="margin-top:16px;margin-bottom:6px">Nota del entrenador</div>
@@ -4579,6 +4674,75 @@ function addStep(day, ci, ei, week) {
   const key = week === 1 ? 'steps1' : 'steps2';
   editorData[day].circuits[ci].exercises[ei][key].push({w:'',reps:''});
   renderRoutineEditor();
+}
+
+function addSession() {
+  const keys = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k));
+  const nextN = keys.length ? Math.max(...keys.map(k => parseInt(k.slice(6)))) + 1 : 1;
+  const key = 'sesion' + nextN;
+  editorData[key] = { title:`Sesión ${nextN}`, sub:'', warmup:[], warmupHombro:[], cardio:'',
+    circuits:[{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises:[] }], nota:'' };
+  editorDay = key;
+  renderRoutineEditor();
+}
+
+function removeSession(day) {
+  if (!confirm('¿Quitar esta sesión? Se perderá su contenido.')) return;
+  delete editorData[day];
+  const rest = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k))
+    .sort((a,b) => parseInt(a.slice(6)) - parseInt(b.slice(6)));
+  editorDay = rest[0] || 'sesion1';
+  if (!rest.length) editorData.sesion1 = emptyRoutineTemplateJS(1).sesion1;
+  renderRoutineEditor();
+}
+
+function addCircuit(day) {
+  const circuits = editorData[day].circuits || (editorData[day].circuits = []);
+  const n = circuits.length + 1;
+  circuits.push({ label:`Circuito ${n}`, cls:'c'+(((n-1)%3)+1), rest:'60s descanso', exercises:[] });
+  renderRoutineEditor();
+}
+
+function removeCircuit(day, ci) {
+  if (!confirm('¿Quitar este circuito?')) return;
+  editorData[day].circuits.splice(ci, 1);
+  renderRoutineEditor();
+}
+
+function addExercise(day, ci) {
+  editorData[day].circuits[ci].exercises.push({
+    name:'Nuevo ejercicio', muscle:'', img:'', tip:'',
+    w1:'', reps:'', setType:'normal'
+  });
+  renderRoutineEditor();
+}
+
+function removeExercise(day, ci, ei) {
+  if (!confirm('¿Quitar este ejercicio?')) return;
+  editorData[day].circuits[ci].exercises.splice(ei, 1);
+  renderRoutineEditor();
+}
+
+function addWarmupItem(day, key) {
+  if (!Array.isArray(editorData[day][key])) editorData[day][key] = [];
+  editorData[day][key].push({ text:'' });
+  renderRoutineEditor();
+}
+
+function removeWarmupItem(day, key, wi) {
+  editorData[day][key].splice(wi, 1);
+  renderRoutineEditor();
+}
+
+function updateWarmupText(day, key, wi, value) {
+  const arr = editorData[day][key];
+  const it = arr[wi];
+  if (typeof it === 'string') arr[wi] = { text: value };
+  else it.text = value;
+}
+
+function setCircuitRest(day, ci, value) {
+  editorData[day].circuits[ci].rest = `${value}s descanso`;
 }
 
 function removeStep(day, ci, ei, week, si) {
