@@ -4587,7 +4587,15 @@ function renderRoutineEditor() {
   html += `<button class="re-add-btn" style="border-style:solid;border-color:var(--acl);color:var(--acl)" onclick="addCircuit('${editorDay}')">+ Agregar circuito</button>`;
   html += `</div>`; // re-circuits-grid
 
-  html += `<div class="section-label" style="margin-top:16px;margin-bottom:6px">Nota del entrenador</div>
+  html += `<div class="section-label" style="margin-top:16px;margin-bottom:6px">🏃 Cardio final</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t2);cursor:pointer">
+        <input type="checkbox" ${day.cardio?'checked':''} onchange="toggleCardio('${editorDay}',this.checked)" style="width:18px;height:18px;accent-color:var(--ac)">
+        ¿Incluye cardio?
+      </label>
+    </div>
+    ${day.cardio !== '' && day.cardio != null ? `<input type="text" class="re-nota" style="padding:12px;font-size:14px" placeholder="Ej: Caminadora 20 min nivel 6" value="${reEscAttr(day.cardio)}" oninput="updateEditorCardio('${editorDay}',this.value)">` : ''}
+    <div class="section-label" style="margin-top:16px;margin-bottom:6px">Nota del entrenador</div>
     <textarea class="re-nota" rows="3" oninput="updateEditorNota('${editorDay}',this.value)">${day.nota||''}</textarea>
     <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>`;
   el.innerHTML = html;
@@ -4604,6 +4612,15 @@ function updateEditorField(day, ci, ei, field, value) {
 
 function updateEditorNota(day, value) {
   editorData[day].nota = value;
+}
+
+function updateEditorCardio(day, value) {
+  editorData[day].cardio = value;
+}
+
+function toggleCardio(day, enabled) {
+  editorData[day].cardio = enabled ? (editorData[day].cardio || ' ') : '';
+  renderRoutineEditor();
 }
 
 function setSetType(day, ci, ei, type) {
