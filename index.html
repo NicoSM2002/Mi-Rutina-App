@@ -20,6 +20,11 @@ body.kbd-open #trainer-login .tlogin-body {
   justify-content: flex-start;
   padding-top: calc(var(--sat) + 72px);
 }
+/* Give scrollable screens extra room at the bottom so focused inputs can scroll above the keyboard */
+body.kbd-open #trainer-portal,
+body.kbd-open #app-shell {
+  padding-bottom: var(--kbd-height, 0px);
+}
 :root {
   --sat: env(safe-area-inset-top);
   --sab: env(safe-area-inset-bottom);
