@@ -2811,11 +2811,15 @@ function nextStep() {
 }
 
 function renderWuItem(item, uid) {
-  const text = typeof item === 'string' ? item : item.text;
+  const text = typeof item === 'string' ? item : (item.text || item.name || '');
   const img  = typeof item === 'object' && item.img ? item.img : null;
-  if (!img) return `<div class="warmup-item"><span class="wu-text">${text}</span></div>`;
+  const wv   = typeof item === 'object' ? (item.w || '') : '';
+  const rv   = typeof item === 'object' ? (item.reps || '') : '';
+  const meta = [wv, rv].filter(Boolean).join(' · ');
+  const metaHtml = meta ? `<span class="wu-meta" style="color:var(--t3);font-size:12px;margin-left:8px">${meta}</span>` : '';
+  if (!img) return `<div class="warmup-item"><span class="wu-text">${text}${metaHtml}</span></div>`;
   return `<div class="warmup-item">
-    <span class="wu-text">${text}</span>
+    <span class="wu-text">${text}${metaHtml}</span>
     <button class="ex-act-btn gif-btn" onclick="togglePhoto('${uid}','${img}')">🎬 Ver GIF</button>
   </div><div class="ex-photo wu-photo" id="${uid}"></div>`;
 }
@@ -4428,10 +4432,37 @@ function renderRoutineEditor() {
   html += `<div class="re-warmup-card">`;
   html += `<div class="re-wu-title">🔥 Calentamiento del día</div>`;
   (day.warmup || []).forEach((it, wi) => {
-    const name = typeof it === 'string' ? it : (it && (it.text || it.name)) || '';
-    html += `<div class="re-wu-row">
-      <button class="re-name-btn" style="flex:1;text-align:left" onclick="openWarmupPicker(${wi})">${reEscAttr(name) || 'Elegir ejercicio…'}</button>
-      <button class="re-del-btn" onclick="removeWarmupItem('${editorDay}','warmup',${wi})" title="Quitar">×</button>
+    const obj = (typeof it === 'object' && it) ? it : { text: String(it||'') };
+    const name = obj.text || obj.name || '';
+    const pw = parseWeight(obj.w || '');
+    const pr = parseReps(obj.reps || '');
+    html += `<div class="re-wu-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start;background:var(--s0);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:10px;margin-bottom:10px">
+      <div style="display:flex;gap:6px;width:100%;align-items:center">
+        <button class="re-name-btn" style="flex:1;text-align:left" onclick="openWarmupPicker(${wi})">${reEscAttr(name) || 'Elegir ejercicio…'}</button>
+        <button class="re-del-btn" onclick="removeWarmupItem('${editorDay}','warmup',${wi})" title="Quitar">×</button>
+      </div>
+      <div class="re-wr-row" style="width:100%">
+        <div class="re-wr-col">
+          <div class="re-combo">
+            <input type="number" inputmode="decimal" value="${pw.num}" placeholder="0" oninput="updateWarmupWeightNum(${wi},this.value)">
+            <select class="re-unit-select" onchange="updateWarmupWeightUnit(${wi},this.value)">
+              <option value="lbs"${pw.unit==='lbs'?' selected':''}>lbs</option>
+              <option value="kg"${pw.unit==='kg'?' selected':''}>kg</option>
+            </select>
+          </div>
+          <div class="re-input-label">Peso</div>
+        </div>
+        <div class="re-wr-col">
+          <div class="re-combo">
+            <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateWarmupRepsNum(${wi},this.value)">
+            <select class="re-unit-select" onchange="updateWarmupRepsType(${wi},this.value)">
+              <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
+              <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
+            </select>
+          </div>
+          <div class="re-input-label">Reps</div>
+        </div>
+      </div>
     </div>`;
   });
   html += `<button class="re-add-btn re-wu-add" onclick="addWarmupPicker()">+ Agregar calentamiento</button>`;
@@ -4723,6 +4754,31 @@ function removeWarmupItem(day, key, wi) {
   renderRoutineEditor();
 }
 
+function _wuItem(wi) {
+  const arr = editorData[editorDay].warmup || (editorData[editorDay].warmup = []);
+  if (typeof arr[wi] !== 'object' || arr[wi] === null) arr[wi] = { text: String(arr[wi]||'') };
+  return arr[wi];
+}
+function updateWarmupWeightNum(wi, num) {
+  const it = _wuItem(wi);
+  const { unit } = parseWeight(it.w || '');
+  it.w = formatWeight(num, unit);
+}
+function updateWarmupWeightUnit(wi, unit) {
+  const it = _wuItem(wi);
+  const { num } = parseWeight(it.w || '');
+  it.w = formatWeight(num, unit);
+}
+function updateWarmupRepsNum(wi, num) {
+  const it = _wuItem(wi);
+  const { type } = parseReps(it.reps || '');
+  it.reps = formatReps(num, type);
+}
+function updateWarmupRepsType(wi, type) {
+  const it = _wuItem(wi);
+  const { num } = parseReps(it.reps || '');
+  it.reps = formatReps(num, type);
+}
 function updateWarmupText(day, key, wi, value) {
   const arr = editorData[day][key];
   const it = arr[wi];
