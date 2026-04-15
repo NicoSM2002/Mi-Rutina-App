@@ -2127,7 +2127,17 @@ function renderRestDay(state) {
       <div class="rest-hint">Tu próxima sesión estará lista mañana.</div>
     </div>`;
 }
-function showProfile()  { show(ATHLETE_USERS[currentAthlete === 'nicolas' ? 'nsaravia' : 'msaravia'].screen); }
+function showProfile() {
+  if (currentAthlete === 'nicolas') { show('profile'); return; }
+  if (currentAthlete === 'msaravia') { show('profile-msaravia'); return; }
+  const dyn = (dynamicAthletesCache || []).find(a => a.clientId === currentAthlete);
+  if (dyn) { showGenericProfile(dyn); return; }
+  fetchDynamicAthletes().then(list => {
+    const d = (list || []).find(a => a.clientId === currentAthlete);
+    if (d) showGenericProfile(d);
+    else show('profile-generic');
+  });
+}
 window.addEventListener('load', () => { setTimeout(() => show('role-select'), 2600); });
 
 /* ── state ── */
