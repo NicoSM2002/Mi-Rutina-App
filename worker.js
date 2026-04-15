@@ -283,7 +283,7 @@ export default {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: 'Mi Rutina <onboarding@resend.dev>',
+          from: 'Mi Rutina <noreply@mirutinapp.com>',
           to: TRAINER_EMAIL,
           subject: `✅ ${athleteName} completó: ${body.dayLabel || body.day}`,
           html: emailHtml
@@ -499,7 +499,8 @@ Devolvé SOLO un JSON así, sin texto extra:
       await env.DB.put(`routine:${client}`, JSON.stringify(routine));
 
       const athleteEmail = athleteRecord?.email;
-      if (athleteEmail) {
+      let _emailDebug = { hasRecord: !!athleteRecord, hasEmail: !!athleteEmail, email: athleteEmail || null, hasKey: !!env.RESEND_API_KEY };
+      if (athleteEmail && env.RESEND_API_KEY) {
         const updatedAt = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' });
         const routineHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0" bgcolor="#0f1117">
@@ -520,19 +521,26 @@ Devolvé SOLO un JSON así, sin texto extra:
   </td></tr>
 </table></body></html>`;
 
-        ctx.waitUntil(fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'Mi Rutina <onboarding@resend.dev>',
-            to: athleteEmail,
-            subject: `🔄 Rutina actualizada — ${athleteName}`,
-            html: routineHtml
-          })
-        }).catch(() => {}));
+        try {
+          const rr = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'Mi Rutina <noreply@mirutinapp.com>',
+              to: athleteEmail,
+              subject: `🔄 Rutina actualizada — ${athleteName}`,
+              html: routineHtml
+            })
+          });
+          const rj = await rr.json().catch(() => ({}));
+          _emailDebug.resendStatus = rr.status;
+          _emailDebug.resendBody = rj;
+        } catch (e) {
+          _emailDebug.resendError = e.message;
+        }
       }
 
-      return new Response(JSON.stringify({ ok: true, routine }), { headers: cors });
+      return new Response(JSON.stringify({ ok: true, routine, emailDebug: _emailDebug }), { headers: cors });
     }
 
     // ── LIST ATHLETES (public read) ──
@@ -626,7 +634,7 @@ Devolvé SOLO un JSON así, sin texto extra:
           method: 'POST',
           headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: 'Mi Rutina <onboarding@resend.dev>',
+            from: 'Mi Rutina <noreply@mirutinapp.com>',
             to: record.email,
             subject: `👋 Bienvenido a Mi Rutina, ${name}`,
             html: welcomeHtml
@@ -788,7 +796,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
           method: 'POST',
           headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: 'Mi Rutina <onboarding@resend.dev>',
+            from: 'Mi Rutina <noreply@mirutinapp.com>',
             to: TRAINER_EMAIL,
             subject: `💬 Nuevo mensaje de soporte — ${trainerName}`,
             html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
@@ -934,7 +942,7 @@ async function sendDailyMealReport(env) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Mi Rutina <onboarding@resend.dev>',
+        from: 'Mi Rutina <noreply@mirutinapp.com>',
         to: TRAINER_EMAIL,
         subject: `🍽️ Reporte diario — ${athlete.name} (${filledSlots.length}/${MEAL_SLOTS.length} comidas)`,
         html: emailHtml
@@ -982,7 +990,7 @@ async function sendWorkoutReminder(env) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Mi Rutina <onboarding@resend.dev>',
+        from: 'Mi Rutina <noreply@mirutinapp.com>',
         to: athlete.email,
         subject: `💪 Recordatorio de entrenamiento — ${athlete.name}`,
         html
@@ -1108,7 +1116,7 @@ async function sendWeeklyReport(env) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Mi Rutina <onboarding@resend.dev>',
+        from: 'Mi Rutina <noreply@mirutinapp.com>',
         to: TRAINER_EMAIL,
         subject: `📊 Resumen semanal — ${athlete.name} (${week.label})`,
         html: emailHtml
