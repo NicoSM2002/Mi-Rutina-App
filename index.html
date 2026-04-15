@@ -3877,15 +3877,19 @@ async function loadRoutine() {
             }
           });
         });
-        // Restore circuit exercise GIFs
+        // Restore circuit exercise GIFs — only if the exercise name still matches
+        // the original fallback at that position (means trainer didn't change it,
+        // just need to refresh img path in case GIFs got reorganized on disk).
+        // If name changed, keep the saved img (trainer picked a new exercise).
         for (let ci = 0; ci < (data[day].circuits||[]).length; ci++) {
           const fbCircuit = fbDay.circuits?.[ci];
           if (!fbCircuit) continue;
           for (let ei = 0; ei < (data[day].circuits[ci].exercises||[]).length; ei++) {
             const fbEx = fbCircuit.exercises?.[ei];
-            if (fbEx) {
-              data[day].circuits[ci].exercises[ei].img  = fbEx.img;
-              data[day].circuits[ci].exercises[ei].img2 = fbEx.img2;
+            const savedEx = data[day].circuits[ci].exercises[ei];
+            if (fbEx && savedEx && savedEx.name === fbEx.name) {
+              savedEx.img  = fbEx.img;
+              savedEx.img2 = fbEx.img2;
             }
           }
         }
@@ -3950,8 +3954,8 @@ function renderRoutineEditor() {
               <div class="re-combo">
                 <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateStepRepsNum('${editorDay}',${ci},${ei},1,${si},this.value)">
                 <select class="re-unit-select" onchange="updateStepRepsType('${editorDay}',${ci},${ei},1,${si},this.value)">
-                  <option value="reps"${pr.type==='reps'?' selected':''}>reps</option>
-                  <option value="reps alternas"${pr.type==='reps alternas'?' selected':''}>alt.</option>
+                  <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
+                  <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
                 </select>
               </div>
               <div class="re-input-label">Reps</div>
@@ -3992,8 +3996,8 @@ function renderRoutineEditor() {
                   <div class="re-combo">
                     <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateEditorRepsNum('${editorDay}',${ci},${ei},'${rField}',this.value)">
                     <select class="re-unit-select" onchange="updateEditorRepsType('${editorDay}',${ci},${ei},'${rField}',this.value)">
-                      <option value="reps"${pr.type==='reps'?' selected':''}>reps</option>
-                      <option value="reps alternas"${pr.type==='reps alternas'?' selected':''}>alt.</option>
+                      <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
+                      <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
                     </select>
                   </div>
                   <div class="re-input-label">Reps</div>
@@ -4051,11 +4055,11 @@ function parseWeight(s) {
 }
 
 function parseReps(s) {
-  if (!s) return { num: '', type: 'reps' };
+  if (!s) return { num: '', type: 'rep' };
   const str = String(s);
   const m = str.match(/(\d+)/);
   const num = m ? m[1] : '';
-  const type = /alterna/i.test(str) ? 'reps alternas' : 'reps';
+  const type = /alterna/i.test(str) ? 'alt' : 'rep';
   return { num, type };
 }
 
@@ -4064,7 +4068,9 @@ function formatWeight(num, unit) {
 }
 
 function formatReps(num, type) {
-  return num ? `${num} ${type || 'reps'}` : '';
+  if (!num) return '';
+  const suffix = type === 'alt' ? 'reps alternas' : 'reps';
+  return `${num} ${suffix}`;
 }
 
 function updateEditorWeightNum(day, ci, ei, field, num) {
