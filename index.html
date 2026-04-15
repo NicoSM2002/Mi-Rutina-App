@@ -4847,8 +4847,8 @@ document.addEventListener('gestureend', e => e.preventDefault());
 document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
 /* ── bottom nav ── */
-const ATHLETE_SCREENS = ['profile','profile-msaravia','routine','meals','resumen','payments'];
-const NAV_MAP = { profile:'profile', 'profile-msaravia':'profile', routine:'routine', meals:'meals', resumen:'resumen', payments:'payments' };
+const ATHLETE_SCREENS = ['profile','profile-msaravia','profile-generic','routine','meals','resumen','payments'];
+const NAV_MAP = { profile:'profile', 'profile-msaravia':'profile', 'profile-generic':'profile', routine:'routine', meals:'meals', resumen:'resumen', payments:'payments' };
 
 function activateNav(tab) {
   document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
