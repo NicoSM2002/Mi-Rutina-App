@@ -1091,6 +1091,19 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 .na-details[open] .na-summary::before { content:'▾ '; }
 .na-details[open] { padding-bottom:10px; }
 .na-details[open] .na-summary { margin-bottom:10px; }
+.na-pdf-box { margin-bottom:18px; }
+.na-pdf-btn {
+  width:100%; display:flex; align-items:center; gap:14px;
+  background:linear-gradient(135deg, rgba(6,182,212,.12), rgba(99,102,241,.12));
+  border:1.5px dashed rgba(99,102,241,.45); border-radius:14px;
+  padding:16px; color:var(--t1); cursor:pointer; text-align:left;
+}
+.na-pdf-btn:active { opacity:.85; }
+.na-pdf-btn[disabled] { opacity:.6; cursor:default; }
+.na-pdf-icon { font-size:28px; }
+.na-pdf-text { display:flex; flex-direction:column; gap:2px; flex:1; }
+.na-pdf-title { font-family:var(--font-d); font-weight:700; font-size:15px; color:var(--t1); }
+.na-pdf-sub { font-size:12px; color:var(--t3); }
 .client-card {
   background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px;
   padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer;
@@ -1682,6 +1695,17 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
   </div>
   <div class="tportal-body" style="padding-bottom:40px">
     <form id="new-athlete-form" onsubmit="event.preventDefault(); submitNewAthlete();" autocomplete="off">
+
+      <div class="na-pdf-box">
+        <input id="na-pdf-input" type="file" accept="application/pdf" hidden onchange="handlePdfSelected(event)">
+        <button type="button" class="na-pdf-btn" onclick="document.getElementById('na-pdf-input').click()" id="na-pdf-btn">
+          <span class="na-pdf-icon">📄</span>
+          <span class="na-pdf-text">
+            <span class="na-pdf-title">Analizar PDF</span>
+            <span class="na-pdf-sub" id="na-pdf-sub">Subí un documento de onboarding y la IA llena los campos</span>
+          </span>
+        </button>
+      </div>
 
       <div class="section-label" style="margin-bottom:10px">Identidad</div>
       <div class="na-field">
@@ -3124,8 +3148,12 @@ async function loadTrainerExtraClients() {
 /* New athlete form handlers */
 function openNewAthleteForm() {
   document.getElementById('new-athlete-form').reset();
+  document.getElementById('na-username').dataset.edited = '';
   setSessionsPill(5);
   document.getElementById('na-error').textContent = '';
+  uploadedPdfUrl = null;
+  const sub = document.getElementById('na-pdf-sub');
+  if (sub) sub.textContent = 'Subí un documento de onboarding y la IA llena los campos';
   show('trainer-new-athlete');
 }
 
@@ -3151,6 +3179,71 @@ function getSelectedSessions() {
   return active ? Number(active.dataset.val) : 0;
 }
 
+let uploadedPdfUrl = null;
+
+async function handlePdfSelected(ev) {
+  const file = ev.target.files?.[0];
+  if (!file) return;
+  const btn = document.getElementById('na-pdf-btn');
+  const sub = document.getElementById('na-pdf-sub');
+  btn.setAttribute('disabled', 'true');
+  try {
+    sub.textContent = 'Subiendo PDF…';
+    const fd = new FormData();
+    fd.append('pdf', file);
+    const upRes = await fetch(WORKER_URL + '/upload-pdf', { method:'POST', body: fd });
+    const upData = await upRes.json();
+    if (!upData.ok) throw new Error(upData.error || 'No se pudo subir el PDF');
+    uploadedPdfUrl = upData.url;
+
+    sub.textContent = 'La IA está leyendo el documento…';
+    const exRes = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'extract-profile-from-pdf', token: TRAINER_TOKEN, pdfUrl: upData.url })
+    });
+    const exData = await exRes.json();
+    if (!exData.ok) throw new Error(exData.error || 'La IA no pudo leer el PDF');
+    fillFormFromExtraction(exData.fields || {});
+    sub.textContent = '✓ Campos rellenados desde el PDF. Revisá antes de crear.';
+  } catch (e) {
+    sub.textContent = '⚠ ' + e.message;
+  } finally {
+    btn.removeAttribute('disabled');
+    ev.target.value = '';
+  }
+}
+
+function fillFormFromExtraction(f) {
+  const set = (id, val) => {
+    if (val === null || val === undefined || val === '') return;
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = val;
+  };
+  set('na-name', f.name);
+  if (f.name) suggestUsername();
+  set('na-email', f.email);
+  set('na-phone', f.phone);
+  set('na-birthdate', f.birthdate);
+  set('na-goal', f.goal);
+  set('na-level', f.level);
+  set('na-weight', f.weight);
+  set('na-height', f.height);
+  set('na-bodyfat', f.bodyFat);
+  set('na-muscle', f.muscleMass);
+  set('na-injuries', f.injuries);
+  set('na-notes', f.notes);
+  if (f.sessionsPerWeek && [3,4,5,6].includes(Number(f.sessionsPerWeek))) {
+    setSessionsPill(Number(f.sessionsPerWeek));
+  }
+  // Open the collapsed sections if anthro or notes got values
+  if (f.weight || f.height || f.bodyFat || f.muscleMass) {
+    document.querySelectorAll('#trainer-new-athlete .na-details')[0]?.setAttribute('open', '');
+  }
+  if (f.injuries || f.notes) {
+    document.querySelectorAll('#trainer-new-athlete .na-details')[1]?.setAttribute('open', '');
+  }
+}
+
 async function submitNewAthlete() {
   const errEl = document.getElementById('na-error');
   const submitBtn = document.getElementById('na-submit');
@@ -3171,6 +3264,7 @@ async function submitNewAthlete() {
     muscleMass:    parseFloat(document.getElementById('na-muscle').value) || null,
     injuries:      document.getElementById('na-injuries').value.trim(),
     notes:         document.getElementById('na-notes').value.trim(),
+    pdfUrl:        uploadedPdfUrl,
   };
 
   if (!athlete.name) { errEl.textContent = 'Falta el nombre.'; return; }

@@ -199,6 +199,19 @@ export default {
       return new Response(JSON.stringify({ ok: true, url: publicUrl }), { headers: cors });
     }
 
+    // ── UPLOAD PDF (onboarding docs for new athletes) ──
+    if (url.pathname === '/upload-pdf') {
+      const formData = await request.formData();
+      const file = formData.get('pdf');
+      if (!file) return new Response(JSON.stringify({ ok:false, error:'missing file' }), { headers: cors });
+      const key = `onboarding/${Date.now()}-${Math.random().toString(36).slice(2)}.pdf`;
+      await env.PHOTOS.put(key, file.stream(), {
+        httpMetadata: { contentType: file.type || 'application/pdf' }
+      });
+      const publicUrl = `https://pub-b674ba0042be4917ad022c23faf247d9.r2.dev/${key}`;
+      return new Response(JSON.stringify({ ok: true, url: publicUrl }), { headers: cors });
+    }
+
     const body = await request.json();
     const client = body.client || 'nicolas';
     const athleteRecord = await getAthlete(env, client);
@@ -557,6 +570,81 @@ export default {
       };
       await env.DB.put(`athlete:${id}`, JSON.stringify(updated));
       return new Response(JSON.stringify({ ok: true, athlete: updated }), { headers: cors });
+    }
+
+    // ── EXTRACT PROFILE FROM PDF (trainer only) ──
+    if (body.action === 'extract-profile-from-pdf') {
+      if (body.token !== 'ent2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      if (!body.pdfUrl) {
+        return new Response(JSON.stringify({ ok: false, error: 'Falta pdfUrl' }), { headers: cors });
+      }
+      try {
+        const pdfRes = await fetch(body.pdfUrl);
+        if (!pdfRes.ok) throw new Error('No se pudo descargar el PDF');
+        const bytes = new Uint8Array(await pdfRes.arrayBuffer());
+        // Chunked base64 to avoid call-stack issues on large PDFs.
+        let binary = '';
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        const b64 = btoa(binary);
+
+        const schemaPrompt = `Sos un asistente que extrae datos de un documento de onboarding de un atleta en español.
+Devolvé UNICAMENTE un JSON válido (sin texto alrededor, sin backticks) con esta forma exacta:
+{
+  "name": string|null,
+  "email": string|null,
+  "phone": string|null,
+  "birthdate": "YYYY-MM-DD"|null,
+  "weight": number|null,
+  "height": number|null,
+  "bodyFat": number|null,
+  "muscleMass": number|null,
+  "goal": "hipertrofia"|"perdida-grasa"|"fuerza"|"recomposicion"|"rendimiento"|"otro"|null,
+  "level": "principiante"|"intermedio"|"avanzado"|null,
+  "experience": string|null,
+  "injuries": string|null,
+  "notes": string|null,
+  "sessionsPerWeek": number|null
+}
+Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
+
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 800,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
+                { type: 'text', text: schemaPrompt }
+              ]
+            }]
+          })
+        });
+        const claudeData = await claudeRes.json();
+        const raw = claudeData.content?.[0]?.text || '';
+        let parsed = null;
+        try {
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        } catch (_) {}
+        if (!parsed) {
+          return new Response(JSON.stringify({ ok: false, error: 'La IA no devolvió JSON válido', raw }), { headers: cors });
+        }
+        return new Response(JSON.stringify({ ok: true, fields: parsed }), { headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ ok: false, error: e.message }), { headers: cors });
+      }
     }
 
     // ── DELETE ATHLETE (trainer only, soft delete) ──
