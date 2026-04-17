@@ -866,7 +866,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
   // ── CRON HANDLERS ──
   async scheduled(event, env, ctx) {
-    if (event.cron === '0 15 * * 6') {
+    if (event.cron === '0 1 * * 7') {
       await sendWeeklyReport(env);
     } else if (event.cron === '0 18 * * *') {
       await sendWorkoutReminder(env);
@@ -1014,7 +1014,7 @@ function buildMacrosTotalHtml(totals, title) {
     </td></tr>`;
 }
 
-// ── Weekly report (Saturday 10 AM Colombia) ──
+// ── Weekly report (Saturday 8 PM Colombia = Sunday 01:00 UTC) ──
 async function sendWeeklyReport(env) {
   const MEAL_SLOTS = [
     { key: 'desayuno', label: 'Desayuno', icon: '☀️' },
