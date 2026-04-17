@@ -2203,8 +2203,6 @@ function renderRestDay(state) {
     </div>`;
 }
 function showProfile() {
-  if (currentAthlete === 'nicolas') { show('profile'); return; }
-  if (currentAthlete === 'msaravia') { show('profile-msaravia'); return; }
   const dyn = (dynamicAthletesCache || []).find(a => a.clientId === currentAthlete);
   if (dyn) { showGenericProfile(dyn); return; }
   fetchDynamicAthletes().then(list => {
@@ -3165,26 +3163,13 @@ async function athleteLogin() {
   const errEl  = document.getElementById('athlete-error');
   errEl.textContent = '';
 
-  // 1) Legacy hardcoded users (Nicolás/María)
-  const config = ATHLETE_USERS[user];
-  if (config) {
-    document.getElementById('athlete-username').value = '';
-    currentAthlete = config.client;
-    const fb = currentAthlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
-    data = JSON.parse(JSON.stringify(fb));
-    loadRoutine();
-    show(config.screen);
-    loadAthletePayment(currentAthlete);
-    return;
-  }
-
-  // 2) Dynamic athletes (created from the trainer portal)
-  const list = dynamicAthletesCache || await fetchDynamicAthletes();
+  // Always fetch fresh list — don't trust cache (athlete may have been deleted)
+  const list = await fetchDynamicAthletes();
   const dyn  = list.find(a => (a.username || a.clientId) === user);
   if (!dyn) { errEl.textContent = 'Usuario no encontrado.'; return; }
   document.getElementById('athlete-username').value = '';
   currentAthlete = dyn.clientId;
-  data = JSON.parse(JSON.stringify(FALLBACK_DATA));  // template shape, overridden by loadRoutine()
+  data = {};
   loadRoutine();
   showGenericProfile(dyn);
   loadAthletePayment(currentAthlete);
