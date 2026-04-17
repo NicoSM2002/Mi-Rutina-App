@@ -545,7 +545,7 @@ Devolvé SOLO un JSON así, sin texto extra:
       <tr><td height="16"></td></tr>
       <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
         <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Tu entrenador actualizó tu rutina. Abre la app para revisar los cambios y arrancar tu próxima sesión.</p>
-        <a href="https://mirutina.nicolas-f07.workers.dev/?client=${client}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
+        <a href="https://mirutinapp.com/?client=${client}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
       </td></tr>
     </table>
   </td></tr>
@@ -639,7 +639,7 @@ Devolvé SOLO un JSON así, sin texto extra:
 
       // Welcome email with login link + username
       if (record.email && env.RESEND_API_KEY) {
-        const appUrl = `https://mirutina.nicolas-f07.workers.dev/?client=${username}`;
+        const appUrl = `https://mirutinapp.com/?client=${username}`;
         const welcomeHtml = `<!DOCTYPE html><html><body style="margin:0;padding:0" bgcolor="#0f1117">
 <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
   <tr><td align="center" style="padding:24px 16px">
@@ -882,7 +882,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
       // Welcome email with login info
       if (record.email && env.RESEND_API_KEY) {
-        const appUrl = `https://mirutina.nicolas-f07.workers.dev/`;
+        const appUrl = `https://mirutinapp.com/`;
         const html = `<!DOCTYPE html><html><body style="margin:0;padding:0" bgcolor="#0f1117">
 <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
   <tr><td align="center" style="padding:24px 16px">
@@ -1148,7 +1148,7 @@ async function sendWorkoutReminder(env) {
       <tr><td height="16"></td></tr>
       <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
         <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">¡Buenos días! Hoy toca entrenar. Abre la app, revisa tu sesión y dale con todo.</p>
-        <a href="https://mirutina.nicolas-f07.workers.dev/?client=${clientId}" style="display:inline-block;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Ir a mi rutina</a>
+        <a href="https://mirutinapp.com/?client=${clientId}" style="display:inline-block;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Ir a mi rutina</a>
       </td></tr>
     </table>
   </td></tr>
