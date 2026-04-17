@@ -88,7 +88,7 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 /* ══════════════════════════════
    PROFILE
 ══════════════════════════════ */
-#profile {
+#profile, #profile-generic, #profile-msaravia {
   background:var(--bg);
   display:flex; flex-direction:column;
   overflow-y:auto;
@@ -2003,11 +2003,7 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
         <div class="stat-card"><div class="sv" id="pg-bmr">—</div><div class="sl">BMR kcal</div></div>
       </div>
     </div>
-    <div id="pg-notes-wrap" style="display:none">
-      <div class="section-label">Notas del entrenador</div>
-      <div class="progress-card"><div id="pg-notes"></div></div>
-    </div>
-    <div id="pg-trainer-wrap" style="display:none;margin-top:18px">
+    <div id="pg-trainer-wrap" style="display:none">
       <div class="section-label">👨‍🏫 Tu entrenador</div>
       <div class="progress-card" style="display:flex;gap:14px;align-items:flex-start">
         <div id="pg-trainer-avatar" style="width:70px;height:70px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-d);font-weight:800;font-size:22px;overflow:hidden"></div>
@@ -2022,6 +2018,10 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
           </div>
         </div>
       </div>
+    </div>
+    <div id="pg-notes-wrap" style="display:none">
+      <div class="section-label">Notas del entrenador</div>
+      <div class="progress-card"><div id="pg-notes"></div></div>
     </div>
   </div>
 </div>
