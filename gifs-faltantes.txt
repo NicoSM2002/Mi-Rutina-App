@@ -1,0 +1,85 @@
+# GIFs faltantes — ejercicios sin GIF propio
+# Estos ejercicios hoy usan el GIF de otro ejercicio parecido. Hay que buscarles su GIF.
+# Cuando tengas un GIF, creá la carpeta: gifs/<grupo>/<nombre exacto>/<nombre exacto>.gif
+# Ejemplo: gifs/biceps/Curl barra EZ/Curl barra EZ.gif
+
+# ═══════════════════════════════════════════════════
+#  BÍCEPS (9)
+# ═══════════════════════════════════════════════════
+- Curl Scott mancuerna
+- Curl araña en banco inclinado
+- Curl barra EZ
+- Curl en soga (drop set)
+- Curl en soga polea baja
+- Curl inclinado mancuernas
+- Curl mancuernas
+- Curl predicador barra EZ
+
+# ═══════════════════════════════════════════════════
+#  CUÁDRICEPS (9)
+# ═══════════════════════════════════════════════════
+- Elevación de pierna en cajón
+- Prensa pierna pie alto
+- Sentadilla mancuerna al frente cerradas
+- Sentadilla sin peso
+- Tijeras alternas con mancuernas
+- Tijeras con step al frente
+- Tijeras en movimiento
+- Zancadas alternas con mancuernas
+- Zancadas en movimiento
+
+# ═══════════════════════════════════════════════════
+#  HOMBROS (13)
+# ═══════════════════════════════════════════════════
+- Elevación frontal con disco
+- Elevación lateral mancuernas
+- Elevación lateral polea baja
+- Press landmine
+- Press militar abiertas y cerradas
+- Press militar sentada barra
+- Pájaro en cables (pec deck inversa)
+- Pájaro inclinado mancuernas
+- Remo al mentón cable
+- Vuelo posterior máquina
+- Vuelos frontales de pie con disco
+- Vuelos laterales de pie
+- Vuelos laterales sentada
+
+# ═══════════════════════════════════════════════════
+#  PECHO (6)
+# ═══════════════════════════════════════════════════
+- Aperturas mancuernas sentada
+- Cable cruce alto (pectoral inferior)
+- Cruce cable inclinado
+- Cruce de cables bajo a alto
+- Press inclinado mancuernas
+- Push-ups con rodillas en el piso
+
+# ═══════════════════════════════════════════════════
+#  ESPALDA (5)
+# ═══════════════════════════════════════════════════
+- Jalón agarre neutro estrecho
+- Pull over en cable
+- Remo T-bar
+- Remo cable unilateral
+- Vuelo inverso en cables cruzados
+
+# ═══════════════════════════════════════════════════
+#  TRÍCEPS (6)
+# ═══════════════════════════════════════════════════
+- Extensión tríceps sobre cabeza cable
+- Extensión tríceps sobre cabeza soga
+- Extensión tríceps soga polea alta
+- Fondos estrecho en paralelas
+- Press agarre cerrado polea alta
+- Press cerrado en banco cable
+
+# ═══════════════════════════════════════════════════
+#  PANTORRILLA (2)
+# ═══════════════════════════════════════════════════
+- Elevación talones sentado (sóleo)
+- Elevación talones una pierna de pie
+
+# ═══════════════════════════════════════════════════
+# TOTAL: 50 GIFs faltantes
+# ═══════════════════════════════════════════════════
