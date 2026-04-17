@@ -806,6 +806,13 @@ html, body {
   padding:11px 14px; color:var(--t1); font-family:var(--font-b),sans-serif;
   font-size:14px; box-sizing:border-box; -webkit-appearance:none; appearance:none;
 }
+.tpay-money-wrap { position:relative; }
+.tpay-money-prefix {
+  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  color:var(--t2); font-family:var(--font-b),sans-serif; font-size:14px; font-weight:700;
+  pointer-events:none; user-select:none;
+}
+.tpay-money-wrap .tpay-input { padding-left:26px; }
 .tpay-save-btn {
   width:100%; padding:15px; border:none; border-radius:14px;
   background:linear-gradient(135deg,var(--cy),var(--ac));
@@ -4590,7 +4597,10 @@ async function renderTrainerPayment() {
       <div class="trecord-notes" style="margin-bottom:14px">Configuración del plan</div>
       <div class="tpay-field">
         <div class="tpay-label">Monto mensual (COP)</div>
-        <input class="tpay-input" type="number" id="tpay-amount" placeholder="Ej: 150000" value="${p.amount || ''}">
+        <div class="tpay-money-wrap">
+          <span class="tpay-money-prefix">$</span>
+          <input class="tpay-input" type="text" inputmode="numeric" pattern="[0-9.]*" id="tpay-amount" placeholder="150.000" value="${p.amount ? Number(p.amount).toLocaleString('es-CO') : ''}" oninput="formatMoneyInput(this)">
+        </div>
       </div>
       <div class="tpay-field">
         <div class="tpay-label">Fecha límite de pago</div>
@@ -4624,8 +4634,14 @@ async function togglePaymentStatus(currentlyPaid) {
   renderTrainerPayment();
 }
 
+function formatMoneyInput(el) {
+  const raw = el.value.replace(/\D/g, '');
+  el.value = raw ? Number(raw).toLocaleString('es-CO') : '';
+}
+
 async function savePaymentConfig() {
-  const amount = parseInt(document.getElementById('tpay-amount').value) || 0;
+  const rawAmount = document.getElementById('tpay-amount').value.replace(/\D/g, '');
+  const amount = parseInt(rawAmount) || 0;
   const dueDate = document.getElementById('tpay-due').value;
   const payLink = document.getElementById('tpay-link').value.trim();
   const btn = document.querySelector('.tpay-save-btn');
