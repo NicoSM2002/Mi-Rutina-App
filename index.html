@@ -5573,8 +5573,43 @@ function addWarmupPicker() {
   openWarmupPicker(-1);
 }
 
+function validateRoutineBeforeSave(routine) {
+  // Garantía: cada ejercicio con nombre debe tener GIF, y el GIF debe existir
+  // en el catálogo canónico (derivado de la estructura de carpetas en gifs/).
+  const validImgs = new Set(EXERCISE_CATALOG.map(e => e.img));
+  const problems = [];
+  for (const [dayKey, day] of Object.entries(routine)) {
+    if (!day || !/^sesion\d+$/.test(dayKey)) continue;
+    const checkItem = (item, where) => {
+      const name = typeof item === 'string' ? item : (item && (item.text || item.name));
+      const img  = typeof item === 'object' && item.img ? item.img : null;
+      if (name && !img) problems.push(`${where}: "${name}" sin GIF (elegilo del catálogo)`);
+      else if (img && !validImgs.has(img)) problems.push(`${where}: "${name}" apunta a un GIF inválido`);
+    };
+    (day.warmup || []).forEach((it, i) => checkItem(it, `${dayKey} / calentamiento #${i+1}`));
+    (day.warmupHombro || []).forEach((it, i) => checkItem(it, `${dayKey} / hombro #${i+1}`));
+    (day.circuits || []).forEach((c, ci) => {
+      (c.exercises || []).forEach((ex, ei) => {
+        if (!ex) return;
+        if (ex.name === 'Nuevo ejercicio' || !ex.name) {
+          problems.push(`${dayKey} / circuito ${ci+1} / ejercicio #${ei+1}: sin elegir`);
+          return;
+        }
+        if (!ex.img) problems.push(`${dayKey} / circuito ${ci+1}: "${ex.name}" sin GIF`);
+        else if (!validImgs.has(ex.img)) problems.push(`${dayKey} / circuito ${ci+1}: "${ex.name}" con GIF inválido`);
+      });
+    });
+  }
+  return problems;
+}
+
 async function saveRoutineFromEditor() {
   const btn = document.getElementById('re-save-btn');
+  const problems = validateRoutineBeforeSave(editorData);
+  if (problems.length) {
+    alert('⚠️ No se puede guardar hasta resolver:\n\n' + problems.slice(0, 6).join('\n') + (problems.length > 6 ? `\n... y ${problems.length-6} más` : ''));
+    return;
+  }
   btn.disabled = true; btn.textContent = 'Guardando…';
   try {
     const res = await fetch(WORKER_URL, {
