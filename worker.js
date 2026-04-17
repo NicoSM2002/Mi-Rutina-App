@@ -838,6 +838,43 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       };
       await env.DB.put(`trainer:${username}`, JSON.stringify(record));
       await env.DB.put('trainer-index', JSON.stringify([...ids, username]));
+
+      // Welcome email with login info
+      if (record.email && env.RESEND_API_KEY) {
+        const appUrl = `https://mirutina.nicolas-f07.workers.dev/`;
+        const html = `<!DOCTYPE html><html><body style="margin:0;padding:0" bgcolor="#0f1117">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
+  <tr><td align="center" style="padding:24px 16px">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
+      <tr><td style="background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:16px;padding:24px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.9);text-transform:uppercase;margin-bottom:6px">Bienvenido a Mi Rutina</div>
+        <div style="font-size:28px;font-weight:800;color:#fff">🏋️ ${name}</div>
+      </td></tr>
+      <tr><td height="16"></td></tr>
+      <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
+        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Se creó tu perfil de entrenador en Mi Rutina. Ya podés entrar al portal con tu usuario.</p>
+        <div style="margin:14px 0;padding:14px;background:#0f1117;border:1px solid #2d3148;border-radius:10px">
+          <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Tu usuario</div>
+          <div style="font-size:20px;font-weight:800;color:#818cf8;font-family:ui-monospace,Menlo,monospace">${username}</div>
+        </div>
+        <p style="margin:0 0 14px;font-size:13px;color:#94a3b8;line-height:1.5">Desde el portal podés crear atletas, armar sus rutinas, ver comidas, pagos y resúmenes semanales.</p>
+        <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>`;
+        ctx.waitUntil(fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Mi Rutina <noreply@mirutinapp.com>',
+            to: record.email,
+            subject: `🏋️ Bienvenido a Mi Rutina, ${name}`,
+            html
+          })
+        }).catch(() => {}));
+      }
+
       return new Response(JSON.stringify({ ok: true, trainer: record }), { headers: cors });
     }
 

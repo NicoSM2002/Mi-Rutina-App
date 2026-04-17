@@ -1666,7 +1666,7 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
   <div class="admin-chat-list" id="admin-chat-list" style="display:block">
     <div class="admin-chat-empty">Cargando...</div>
   </div>
-  <div class="admin-trainers-list" id="admin-trainers-list" style="display:none;flex:1;overflow-y:auto;padding:16px">
+  <div class="admin-trainers-list" id="admin-trainers-list" style="display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column">
     <div class="admin-chat-empty">Cargando...</div>
   </div>
   <button class="new-athlete-btn" id="admin-fab-add-trainer" onclick="openCreateTrainerForm()" title="Nuevo entrenador"
@@ -5496,7 +5496,7 @@ function setAdminTab(tab) {
   document.getElementById('admin-tab-support').classList.toggle('active', tab === 'support');
   document.getElementById('admin-tab-trainers').classList.toggle('active', tab === 'trainers');
   document.getElementById('admin-chat-list').style.display = tab === 'support' ? 'block' : 'none';
-  document.getElementById('admin-trainers-list').style.display = tab === 'trainers' ? 'flex' : 'none';
+  document.getElementById('admin-trainers-list').style.display = tab === 'trainers' ? 'block' : 'none';
   document.getElementById('admin-fab-add-trainer').style.display = tab === 'trainers' ? 'flex' : 'none';
   if (tab === 'support') loadAdminChats();
   else loadAdminTrainers();
