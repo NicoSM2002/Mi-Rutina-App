@@ -70,6 +70,33 @@ async function getAthlete(env, clientId) {
   return await env.DB.get(`athlete:${clientId}`, 'json');
 }
 
+// ── Trainers ──
+const SEED_TRAINERS = [
+  { username: 'entrenador', name: 'Entrenador Principal', email: 'juansaravia2002@gmail.com', phone: '', photoUrl: null }
+];
+
+async function bootstrapTrainersIfNeeded(env) {
+  const existing = await env.DB.get('trainer-index', 'json');
+  if (existing !== null) return existing;
+  const ids = [];
+  for (const t of SEED_TRAINERS) {
+    await env.DB.put(`trainer:${t.username}`, JSON.stringify({ ...t, createdAt: Date.now() }));
+    ids.push(t.username);
+  }
+  await env.DB.put('trainer-index', JSON.stringify(ids));
+  return ids;
+}
+
+async function listTrainers(env) {
+  const ids = await bootstrapTrainersIfNeeded(env);
+  const out = [];
+  for (const id of ids) {
+    const t = await env.DB.get(`trainer:${id}`, 'json');
+    if (t) out.push(t);
+  }
+  return out;
+}
+
 function slugifyUsername(name) {
   return (name || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -193,7 +220,8 @@ export default {
     if (url.pathname === '/upload-photo') {
       const formData = await request.formData();
       const file = formData.get('photo');
-      const key = `meals/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+      const folder = (formData.get('folder') || 'meals').toString().replace(/[^a-z0-9_\-]/gi, '');
+      const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
       await env.PHOTOS.put(key, file.stream(), {
         httpMetadata: { contentType: file.type || 'image/jpeg' }
       });
@@ -774,6 +802,56 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     if (body.action === 'get-payment') {
       const payment = await env.DB.get(`payment:${client}`, 'json');
       return new Response(JSON.stringify({ ok: true, payment: payment || null }), { headers: cors });
+    }
+
+    // ── LIST TRAINERS (public: safe fields / admin: full) ──
+    if (body.action === 'list-trainers') {
+      const trainers = await listTrainers(env);
+      if (body.admin === 'admin2026') {
+        return new Response(JSON.stringify({ ok: true, trainers }), { headers: cors });
+      }
+      const safe = trainers.map(t => ({ username: t.username, name: t.name, photoUrl: t.photoUrl }));
+      return new Response(JSON.stringify({ ok: true, trainers: safe }), { headers: cors });
+    }
+
+    // ── CREATE TRAINER (admin only) ──
+    if (body.action === 'create-trainer') {
+      if (body.admin !== 'admin2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      const t = body.trainer || {};
+      const username = (t.username || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const name = (t.name || '').trim();
+      if (!username || !name) {
+        return new Response(JSON.stringify({ ok: false, error: 'Nombre y usuario son obligatorios' }), { headers: cors });
+      }
+      const ids = await bootstrapTrainersIfNeeded(env);
+      if (ids.includes(username)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Ese usuario ya existe' }), { headers: cors });
+      }
+      const record = {
+        username, name,
+        email: (t.email || '').trim() || null,
+        phone: (t.phone || '').trim() || null,
+        photoUrl: t.photoUrl || null,
+        createdAt: Date.now()
+      };
+      await env.DB.put(`trainer:${username}`, JSON.stringify(record));
+      await env.DB.put('trainer-index', JSON.stringify([...ids, username]));
+      return new Response(JSON.stringify({ ok: true, trainer: record }), { headers: cors });
+    }
+
+    // ── DELETE TRAINER (admin only) ──
+    if (body.action === 'delete-trainer') {
+      if (body.admin !== 'admin2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
+      }
+      const username = body.username;
+      if (!username) return new Response(JSON.stringify({ ok: false, error: 'Falta username' }), { headers: cors });
+      await env.DB.delete(`trainer:${username}`);
+      const ids = (await env.DB.get('trainer-index', 'json')) || [];
+      await env.DB.put('trainer-index', JSON.stringify(ids.filter(x => x !== username)));
+      return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
     // ── SAVE PAYMENT ──

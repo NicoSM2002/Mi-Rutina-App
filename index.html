@@ -619,6 +619,18 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 .admin-chat-preview { font-size:12px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .admin-chat-time { font-size:10px; color:var(--t3); margin-top:4px; }
 .admin-chat-empty { text-align:center; color:var(--t2); font-size:14px; padding:60px 20px; }
+.admin-tabs { display:flex; border-bottom:1px solid var(--b); padding:0 16px; gap:4px; flex-shrink:0; }
+.admin-tab { flex:1; background:none; border:none; padding:12px 8px; font-family:var(--font-d); font-size:13px; font-weight:700; color:var(--t3); cursor:pointer; position:relative; }
+.admin-tab.active { color:var(--acl); }
+.admin-tab.active::after { content:''; position:absolute; left:12px; right:12px; bottom:-1px; height:2px; background:var(--ac); border-radius:2px; }
+.admin-trainer-card { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.admin-trainer-avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:700; font-size:14px; flex-shrink:0; overflow:hidden; }
+.admin-trainer-avatar img { width:100%; height:100%; object-fit:cover; }
+.admin-trainer-info { flex:1; min-width:0; }
+.admin-trainer-name { font-family:var(--font-d); font-size:14px; font-weight:700; color:var(--t1); }
+.admin-trainer-meta { font-size:11px; color:var(--t2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.admin-trainer-del { background:none; border:none; color:var(--t3); font-size:20px; cursor:pointer; padding:4px 8px; flex-shrink:0; }
+.admin-trainer-del:active { color:#f87171; }
 .admin-secret-btn { background:none; border:none; color:var(--t3); font-size:10px; cursor:pointer; padding:8px; opacity:.3; }
 
 /* ── MEALS SCREEN ── */
@@ -1641,14 +1653,55 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
   <button class="admin-secret-btn" onclick="adminLogin()">Admin</button>
 </div>
 
-<!-- ══ ADMIN SUPPORT PANEL ══ -->
+<!-- ══ ADMIN PANEL ══ -->
 <div class="screen" id="admin-support">
   <div class="admin-header">
     <button class="back-btn" onclick="show('role-select')">‹</button>
-    <div class="admin-header-title">🛠️ Panel de Soporte</div>
+    <div class="admin-header-title">🛠️ Panel Admin</div>
   </div>
-  <div class="admin-chat-list" id="admin-chat-list">
+  <div class="admin-tabs">
+    <button class="admin-tab active" id="admin-tab-support" onclick="setAdminTab('support')">💬 Soporte</button>
+    <button class="admin-tab" id="admin-tab-trainers" onclick="setAdminTab('trainers')">👥 Entrenadores</button>
+  </div>
+  <div class="admin-chat-list" id="admin-chat-list" style="display:block">
     <div class="admin-chat-empty">Cargando...</div>
+  </div>
+  <div class="admin-trainers-list" id="admin-trainers-list" style="display:none;flex:1;overflow-y:auto;padding:16px">
+    <div class="admin-chat-empty">Cargando...</div>
+  </div>
+  <button class="new-athlete-btn" id="admin-fab-add-trainer" onclick="openCreateTrainerForm()" title="Nuevo entrenador"
+    style="position:absolute;bottom:24px;right:20px;width:56px;height:56px;font-size:28px;display:none;z-index:5">+</button>
+</div>
+
+<!-- ══ CREATE TRAINER FORM ══ -->
+<div class="screen" id="admin-create-trainer">
+  <div class="tportal-header">
+    <button class="back-btn" onclick="show('admin-support')">‹ Volver</button>
+    <div class="tportal-title">Nuevo entrenador</div>
+  </div>
+  <div class="tportal-body" style="padding-bottom:40px">
+    <form id="ct-form" onsubmit="event.preventDefault(); submitCreateTrainer();" autocomplete="off">
+      <div class="na-field"><label class="na-label">Nombre completo <span class="na-req">*</span></label>
+        <input class="na-input" id="ct-name" type="text" required></div>
+      <div class="na-field"><label class="na-label">Usuario (para login) <span class="na-req">*</span></label>
+        <input class="na-input" id="ct-username" type="text" pattern="[a-z0-9]+" required>
+        <div class="na-hint">Solo minúsculas y números.</div></div>
+      <div class="na-field"><label class="na-label">Email</label>
+        <input class="na-input" id="ct-email" type="email"></div>
+      <div class="na-field"><label class="na-label">Teléfono</label>
+        <input class="na-input" id="ct-phone" type="tel"></div>
+      <div class="na-field">
+        <label class="na-label">Foto de perfil (opcional)</label>
+        <input id="ct-photo-input" type="file" accept="image/*" hidden onchange="handleTrainerPhoto(event)">
+        <button type="button" class="na-pdf-btn" onclick="document.getElementById('ct-photo-input').click()" id="ct-photo-btn">
+          <span class="na-pdf-icon">📷</span>
+          <span class="na-pdf-text"><span class="na-pdf-title" id="ct-photo-title">Subir foto</span>
+          <span class="na-pdf-sub" id="ct-photo-sub">Opcional</span></span>
+        </button>
+      </div>
+      <div id="ct-error" class="tlogin-error"></div>
+      <button type="submit" class="tlogin-btn" id="ct-submit" style="margin-top:18px">Crear entrenador</button>
+    </form>
   </div>
 </div>
 
@@ -3248,17 +3301,23 @@ let _pickerCatalog = [];
 const TRAINER_TOKEN = 'ent2026';
 const MUSC_LABELS = { pecho:'Pecho', espalda:'Espalda', biceps:'Bíceps', triceps:'Tríceps', hombros:'Hombros', cuadriceps:'Cuádriceps', isquio:'Isquiotibiales', gluteo:'Glúteo', pantorrilla:'Pantorrilla', trapecio:'Trapecio', abdomen:'Abdomen' };
 
-function trainerLogin() {
+async function trainerLogin() {
   const user = document.getElementById('trainer-username').value.trim().toLowerCase();
   const errEl = document.getElementById('trainer-error');
-  if (!TRAINER_USERS[user]) {
-    errEl.textContent = 'Usuario no encontrado.';
-    return;
-  }
   errEl.textContent = '';
-  document.getElementById('trainer-username').value = '';
-  show('trainer-portal');
-  loadTrainerExtraClients();
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'list-trainers' })
+    });
+    const json = await res.json();
+    const found = (json.trainers || []).some(t => t.username === user);
+    if (!found) { errEl.textContent = 'Usuario no encontrado.'; return; }
+    document.getElementById('trainer-username').value = '';
+    show('trainer-portal');
+    loadTrainerExtraClients();
+  } catch (e) {
+    errEl.textContent = 'Error de red'; }
 }
 
 /* Render dynamically-created athletes as additional client cards */
@@ -5423,11 +5482,129 @@ let adminPollId = null;
 let adminChatTrainerId = null;
 let currentTrainerId = 'trainer1'; // default trainer ID for support
 
+const ADMIN_PW = 'admin2026';
+
 function adminLogin() {
   const pw = prompt('Contraseña admin:');
-  if (pw === 'admin2026') {
+  if (pw === ADMIN_PW) {
     show('admin-support');
-    loadAdminChats();
+    setAdminTab('support');
+  }
+}
+
+function setAdminTab(tab) {
+  document.getElementById('admin-tab-support').classList.toggle('active', tab === 'support');
+  document.getElementById('admin-tab-trainers').classList.toggle('active', tab === 'trainers');
+  document.getElementById('admin-chat-list').style.display = tab === 'support' ? 'block' : 'none';
+  document.getElementById('admin-trainers-list').style.display = tab === 'trainers' ? 'flex' : 'none';
+  document.getElementById('admin-fab-add-trainer').style.display = tab === 'trainers' ? 'flex' : 'none';
+  if (tab === 'support') loadAdminChats();
+  else loadAdminTrainers();
+}
+
+async function loadAdminTrainers() {
+  const list = document.getElementById('admin-trainers-list');
+  list.innerHTML = '<div class="admin-chat-empty">Cargando...</div>';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'list-trainers', admin: ADMIN_PW })
+    });
+    const json = await res.json();
+    const trainers = json.trainers || [];
+    if (!trainers.length) { list.innerHTML = '<div class="admin-chat-empty">No hay entrenadores.<br>Tocá "+" para crear el primero.</div>'; return; }
+    list.innerHTML = trainers.map(t => {
+      const initials = (t.name || t.username).split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
+      const avatarInner = t.photoUrl
+        ? `<img src="${t.photoUrl}" alt="${t.name}">`
+        : initials;
+      const meta = [t.email, t.phone].filter(Boolean).join(' · ') || `@${t.username}`;
+      return `<div class="admin-trainer-card">
+        <div class="admin-trainer-avatar">${avatarInner}</div>
+        <div class="admin-trainer-info">
+          <div class="admin-trainer-name">${t.name}</div>
+          <div class="admin-trainer-meta">@${t.username} · ${meta}</div>
+        </div>
+        <button class="admin-trainer-del" onclick="deleteTrainer('${t.username}','${(t.name||'').replace(/'/g,'&#39;')}')" title="Eliminar">×</button>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="admin-chat-empty">Error al cargar.</div>';
+  }
+}
+
+async function deleteTrainer(username, name) {
+  if (!confirm('¿Eliminar a ' + (name || username) + '? No se puede deshacer.')) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'delete-trainer', admin: ADMIN_PW, username })
+    });
+    const json = await res.json();
+    if (json.ok) loadAdminTrainers();
+    else alert('Error: ' + (json.error || 'no se pudo eliminar'));
+  } catch { alert('Error de red'); }
+}
+
+let _ctPhotoUrl = null;
+function openCreateTrainerForm() {
+  document.getElementById('ct-form').reset();
+  document.getElementById('ct-error').textContent = '';
+  document.getElementById('ct-photo-title').textContent = 'Subir foto';
+  document.getElementById('ct-photo-sub').textContent = 'Opcional';
+  _ctPhotoUrl = null;
+  show('admin-create-trainer');
+}
+
+async function handleTrainerPhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const titleEl = document.getElementById('ct-photo-title');
+  const subEl = document.getElementById('ct-photo-sub');
+  titleEl.textContent = 'Subiendo…';
+  subEl.textContent = file.name;
+  const fd = new FormData();
+  fd.append('photo', file);
+  fd.append('folder', 'trainers');
+  try {
+    const res = await fetch(WORKER_URL + '/upload-photo', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.ok && json.url) {
+      _ctPhotoUrl = json.url;
+      titleEl.textContent = '✅ Foto lista';
+      subEl.textContent = 'Tocá para cambiar';
+    } else {
+      titleEl.textContent = 'Error';
+      subEl.textContent = 'Reintentá';
+    }
+  } catch {
+    titleEl.textContent = 'Error de red';
+  }
+}
+
+async function submitCreateTrainer() {
+  const btn = document.getElementById('ct-submit');
+  const errEl = document.getElementById('ct-error');
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = 'Creando…';
+  const trainer = {
+    name:     document.getElementById('ct-name').value.trim(),
+    username: document.getElementById('ct-username').value.trim().toLowerCase(),
+    email:    document.getElementById('ct-email').value.trim(),
+    phone:    document.getElementById('ct-phone').value.trim(),
+    photoUrl: _ctPhotoUrl
+  };
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'create-trainer', admin: ADMIN_PW, trainer })
+    });
+    const json = await res.json();
+    if (!json.ok) { errEl.textContent = json.error || 'Error al crear'; btn.disabled = false; btn.textContent = 'Crear entrenador'; return; }
+    btn.textContent = '✅ Creado';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Crear entrenador'; show('admin-support'); setAdminTab('trainers'); }, 800);
+  } catch {
+    errEl.textContent = 'Error de red'; btn.disabled = false; btn.textContent = 'Crear entrenador';
   }
 }
 
