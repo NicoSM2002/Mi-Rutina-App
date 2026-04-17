@@ -3136,15 +3136,17 @@ function render() {
     let wuIdx = 0;
     const hombroItems = Array.isArray(day.warmupHombro) ? day.warmupHombro : [];
     const warmupItems = Array.isArray(day.warmup) ? day.warmup : [];
+    const wuN = parseInt(day.warmupSeries) || 2;
+    const wuLabel = `× ${wuN} vuelta${wuN===1?'':'s'}`;
     if (hombroItems.length > 0) {
-      html += `<div class="wu-section-title">Hombro <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">× 2 vueltas</span></div>`;
+      html += `<div class="wu-section-title">Hombro <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">${wuLabel}</span></div>`;
       html += `<div class="warmup-items">`;
       hombroItems.forEach(item => { html += renderWuItem(item, `wu_h_${wuIdx++}`); });
       html += `</div>`;
       if (warmupItems.length > 0) html += `<hr class="wu-divider">`;
     }
     if (warmupItems.length > 0) {
-      html += `<div class="wu-section-title">Del día <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">× 2 vueltas</span></div>`;
+      html += `<div class="wu-section-title">Del día <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">${wuLabel}</span></div>`;
       html += `<div class="warmup-items">`;
       warmupItems.forEach(item => { html += renderWuItem(item, `wu_d_${wuIdx++}`); });
       html += `</div>`;
@@ -3158,10 +3160,11 @@ function render() {
     /* circuit */
     const ci = routineStep - 1;
     const c = day.circuits[ci];
+    const nSeries = parseInt(c.series) || 4;
     html += `<div class="circuit-section ${c.cls || ('c'+(((ci)%3)+1))}">
       <div class="circuit-hdr">
         <span class="circuit-num">Circuito ${ci+1}</span>
-        <span class="circuit-badge">4 SERIES</span>
+        <span class="circuit-badge">${nSeries} SERIE${nSeries===1?'':'S'}</span>
         <button class="circuit-rest" onclick="startTimer(${parseInt(c.rest)||60})">⏱ ${parseInt(c.rest)||60}s descanso</button>
       </div>
       <div class="ex-cards">`;
@@ -4906,7 +4909,13 @@ function renderRoutineEditor() {
   }
   // Warmup editor (single list, picker-based)
   html += `<div class="re-warmup-card">`;
-  html += `<div class="re-wu-title">🔥 Calentamiento del día</div>`;
+  const wuSeries = parseInt(day.warmupSeries) || 2;
+  html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <div class="re-wu-title" style="margin-bottom:0;flex:1">🔥 Calentamiento del día</div>
+    <select class="re-rest-select" onchange="setWarmupSeries('${editorDay}',this.value)" title="Series">
+      ${[1,2,3,4,5].map(n => `<option value="${n}"${wuSeries===n?' selected':''}>${n} vuelta${n===1?'':'s'}</option>`).join('')}
+    </select>
+  </div>`;
   (day.warmup || []).forEach((it, wi) => {
     const obj = (typeof it === 'object' && it) ? it : { text: String(it||'') };
     const name = obj.text || obj.name || '';
@@ -4950,10 +4959,14 @@ function renderRoutineEditor() {
     const cls = circuit.cls || ('c' + (((ci) % 3) + 1));
     const restSec = parseInt(circuit.rest) || 60;
     const restVal = [60,90,120].includes(restSec) ? restSec : 60;
+    const seriesVal = parseInt(circuit.series) || 4;
     html += `<div class="re-circuit-card ${cls}">
       <div class="re-circuit-hdr-row">
         <span class="re-circuit-title">Circuito ${ci+1}</span>
-        <select class="re-rest-select" onchange="setCircuitRest('${editorDay}',${ci},this.value)">
+        <select class="re-rest-select" onchange="setCircuitSeries('${editorDay}',${ci},this.value)" title="Series">
+          ${[1,2,3,4,5].map(n => `<option value="${n}"${seriesVal===n?' selected':''}>${n} serie${n===1?'':'s'}</option>`).join('')}
+        </select>
+        <select class="re-rest-select" onchange="setCircuitRest('${editorDay}',${ci},this.value)" title="Descanso">
           <option value="60"${restVal===60?' selected':''}>60s</option>
           <option value="90"${restVal===90?' selected':''}>90s</option>
           <option value="120"${restVal===120?' selected':''}>120s</option>
@@ -5277,6 +5290,14 @@ function updateWarmupText(day, key, wi, value) {
   const it = arr[wi];
   if (typeof it === 'string') arr[wi] = { text: value };
   else it.text = value;
+}
+
+function setCircuitSeries(day, ci, value) {
+  editorData[day].circuits[ci].series = parseInt(value) || 4;
+}
+
+function setWarmupSeries(day, value) {
+  editorData[day].warmupSeries = parseInt(value) || 2;
 }
 
 function setCircuitRest(day, ci, value) {
