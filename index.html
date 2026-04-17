@@ -1034,12 +1034,12 @@ html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif;
 /* ══════════════════════════════
    TRAINER PORTAL
 ══════════════════════════════ */
-#trainer-portal, #trainer-new-athlete {
+#trainer-portal, #trainer-new-athlete, #trainer-edit-profile {
   background:var(--bg);
   display:flex; flex-direction:column;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
-#trainer-portal::-webkit-scrollbar, #trainer-new-athlete::-webkit-scrollbar { display:none; }
+#trainer-portal::-webkit-scrollbar, #trainer-new-athlete::-webkit-scrollbar, #trainer-edit-profile::-webkit-scrollbar { display:none; }
 .tportal-header {
   background:var(--s1); border-bottom:1px solid var(--b);
   padding:calc(var(--sat) + 16px) 16px 16px;
@@ -2893,6 +2893,14 @@ function nextStep() {
   document.getElementById('content').scrollTop = 0;
 }
 
+function prevStep() {
+  if (routineStep > 0) {
+    routineStep--;
+    render();
+    document.getElementById('content').scrollTop = 0;
+  }
+}
+
 function renderWuItem(item, uid) {
   const text = typeof item === 'string' ? item : (item.text || item.name || '');
   const img  = typeof item === 'object' && item.img ? item.img : null;
@@ -2982,16 +2990,25 @@ function render() {
     /* warmup */
     html += `<div class="warmup-card"><h3>🔥 Calentamiento</h3>`;
     let wuIdx = 0;
-    if (day.warmupHombro) {
+    const hombroItems = Array.isArray(day.warmupHombro) ? day.warmupHombro : [];
+    const warmupItems = Array.isArray(day.warmup) ? day.warmup : [];
+    if (hombroItems.length > 0) {
       html += `<div class="wu-section-title">Hombro <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">× 2 vueltas</span></div>`;
       html += `<div class="warmup-items">`;
-      day.warmupHombro.forEach(item => { html += renderWuItem(item, `wu_h_${wuIdx++}`); });
-      html += `</div><hr class="wu-divider">`;
+      hombroItems.forEach(item => { html += renderWuItem(item, `wu_h_${wuIdx++}`); });
+      html += `</div>`;
+      if (warmupItems.length > 0) html += `<hr class="wu-divider">`;
     }
-    html += `<div class="wu-section-title">Del día <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">× 2 vueltas</span></div>`;
-    html += `<div class="warmup-items">`;
-    day.warmup.forEach(item => { html += renderWuItem(item, `wu_d_${wuIdx++}`); });
-    html += `</div></div>`;
+    if (warmupItems.length > 0) {
+      html += `<div class="wu-section-title">Del día <span style="font-weight:400;color:var(--pu);text-transform:none;letter-spacing:0">× 2 vueltas</span></div>`;
+      html += `<div class="warmup-items">`;
+      warmupItems.forEach(item => { html += renderWuItem(item, `wu_d_${wuIdx++}`); });
+      html += `</div>`;
+    }
+    if (hombroItems.length === 0 && warmupItems.length === 0) {
+      html += `<div style="padding:20px;text-align:center;color:var(--t3);font-size:13px">Sin calentamiento esta sesión</div>`;
+    }
+    html += `</div>`;
 
   } else if (routineStep <= day.circuits.length) {
     /* circuit */
@@ -3016,10 +3033,13 @@ function render() {
   html += `<div class="nota-card"><h4>💬 Nota del entrenador</h4><p>${day.nota}</p></div>`;
 
   /* botón */
+  const backBtnHtml = routineStep > 0
+    ? `<button class="step-next-btn" onclick="prevStep()" style="background:var(--s1);color:var(--t2);box-shadow:none;border:1px solid rgba(255,255,255,.08);flex:1">‹ Anterior</button>`
+    : '';
   if (isLast) {
-    html += `<div class="complete-wrap"><button class="complete-btn" onclick="openComplete()">✅ Completar rutina del día</button></div>`;
+    html += `<div class="complete-wrap" style="display:flex;gap:10px">${backBtnHtml}<button class="complete-btn" onclick="openComplete()" style="flex:2">✅ Completar rutina del día</button></div>`;
   } else {
-    html += `<div class="complete-wrap"><button class="step-next-btn" onclick="nextStep()">Listo ✓ &nbsp;→&nbsp; Siguiente</button></div>`;
+    html += `<div class="complete-wrap" style="display:flex;gap:10px">${backBtnHtml}<button class="step-next-btn" onclick="nextStep()" style="flex:2">Listo ✓ &nbsp;→&nbsp; Siguiente</button></div>`;
   }
 
   document.getElementById('content').innerHTML = html;
@@ -3175,6 +3195,30 @@ async function athleteLogin() {
   loadAthletePayment(currentAthlete);
 }
 
+function computeAge(birthdate) {
+  if (!birthdate) return null;
+  const b = new Date(birthdate);
+  if (isNaN(b)) return null;
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}
+
+function computeBMI(weightKg, heightCm) {
+  if (!weightKg || !heightCm) return null;
+  const h = heightCm / 100;
+  return Math.round((weightKg / (h * h)) * 10) / 10;
+}
+
+function computeBMR(weightKg, heightCm, age, sex = 'm') {
+  if (!weightKg || !heightCm || !age) return null;
+  // Mifflin-St Jeor
+  const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+  return Math.round(base + (sex === 'f' ? -161 : 5));
+}
+
 function showGenericProfile(athlete) {
   const p = athlete.profile || {};
   document.getElementById('pg-name').textContent = athlete.name || athlete.username || '—';
@@ -3183,8 +3227,11 @@ function showGenericProfile(athlete) {
   document.getElementById('pg-weight').textContent = fmt(p.weight);
   document.getElementById('pg-bf').textContent     = fmt(p.bodyFat, '%');
   document.getElementById('pg-muscle').textContent = fmt(p.muscleMass);
-  document.getElementById('pg-bmi').textContent    = fmt(p.bmi);
-  document.getElementById('pg-bmr').textContent    = fmt(p.bmr);
+  const age = computeAge(athlete.birthdate);
+  const bmi = p.bmi ?? computeBMI(p.weight, p.height);
+  const bmr = p.bmr ?? computeBMR(p.weight, p.height, age, p.sex || 'm');
+  document.getElementById('pg-bmi').textContent    = fmt(bmi);
+  document.getElementById('pg-bmr').textContent    = fmt(bmr);
   const notes = p.notes || '';
   const wrap  = document.getElementById('pg-notes-wrap');
   if (notes) { wrap.style.display = ''; document.getElementById('pg-notes').textContent = notes; }
