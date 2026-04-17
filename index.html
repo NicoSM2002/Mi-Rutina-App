@@ -46,7 +46,12 @@ body.kbd-open #app-shell {
   --font-b: 'DM Sans', sans-serif;
 }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html, body { height:100%; overflow:hidden; font-family:var(--font-b),sans-serif; background:var(--bg); color:var(--t1); }
+html, body {
+  height:100%; overflow:hidden;
+  font-family:var(--font-b),sans-serif;
+  background:var(--bg); color:var(--t1);
+  -webkit-text-size-adjust:100%; text-size-adjust:100%;
+}
 
 /* ── SCREENS ── */
 .screen { position:fixed; inset:0; opacity:0; pointer-events:none; transition:opacity .4s ease; }
