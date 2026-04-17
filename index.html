@@ -4836,40 +4836,10 @@ async function loadRoutine() {
         for (const [k, v] of Object.entries(data)) { migrated[dayToSession[k] || k] = v; }
         data = migrated;
       }
-      // Always restore img paths from fallback so GIF reorganizations never break the app
-      const fb = currentAthlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
-      for (const day of Object.keys(fb)) {
-        if (!data[day]) continue;
-        const fbDay = fb[day];
-        // Restore warmup GIFs
-        ['warmup','warmupHombro'].forEach(key => {
-          if (!fbDay[key]) return;
-          fbDay[key].forEach((item, i) => {
-            if (!data[day][key]?.[i] || !item.img) return;
-            if (typeof data[day][key][i] === 'string') {
-              data[day][key][i] = { text: data[day][key][i], img: item.img };
-            } else {
-              data[day][key][i].img = item.img;
-            }
-          });
-        });
-        // Restore circuit exercise GIFs — only if the exercise name still matches
-        // the original fallback at that position (means trainer didn't change it,
-        // just need to refresh img path in case GIFs got reorganized on disk).
-        // If name changed, keep the saved img (trainer picked a new exercise).
-        for (let ci = 0; ci < (data[day].circuits||[]).length; ci++) {
-          const fbCircuit = fbDay.circuits?.[ci];
-          if (!fbCircuit) continue;
-          for (let ei = 0; ei < (data[day].circuits[ci].exercises||[]).length; ei++) {
-            const fbEx = fbCircuit.exercises?.[ei];
-            const savedEx = data[day].circuits[ci].exercises[ei];
-            if (fbEx && savedEx && savedEx.name === fbEx.name) {
-              savedEx.img  = fbEx.img;
-              savedEx.img2 = fbEx.img2;
-            }
-          }
-        }
-      }
+      // Note: we used to "restore" img paths from FALLBACK_DATA here to handle
+      // GIF folder renames. That logic destructively overwrote dynamic athletes'
+      // img paths (warmup items in particular) with Nicolás's hardcoded fallback
+      // at the same array index. Removed — KV data already has correct paths.
     }
   } catch(e) { /* keep FALLBACK_DATA */ }
 }
