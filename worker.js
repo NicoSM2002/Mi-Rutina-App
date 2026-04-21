@@ -1,5 +1,8 @@
 // ── Shared constants ──
-const TRAINER_EMAIL = 'juansaravia2002@gmail.com';
+// Fallback destination for trainer notifications when the athlete's trainerId
+// is missing or the trainer record has no email. Real routing uses
+// resolveTrainerEmail(env, athlete) which looks up the trainer in KV.
+const DEFAULT_TRAINER_EMAIL = 'juansaravia2002@gmail.com';
 
 // ── Athletes: dynamic KV-backed store ──
 // Schema:
@@ -95,6 +98,84 @@ async function listTrainers(env) {
     if (t) out.push(t);
   }
   return out;
+}
+
+async function getTrainer(env, username) {
+  if (!username) return null;
+  return await env.DB.get(`trainer:${username}`, 'json');
+}
+
+// Resolve the trainer email to notify for an athlete's events. Returns
+// DEFAULT_TRAINER_EMAIL if the athlete has no trainerId or the trainer has
+// no email configured.
+async function resolveTrainerEmail(env, athlete) {
+  if (!athlete || !athlete.trainerId) return DEFAULT_TRAINER_EMAIL;
+  const t = await getTrainer(env, athlete.trainerId);
+  return (t && t.email) || DEFAULT_TRAINER_EMAIL;
+}
+
+// ── Self-token (athlete session auth) ──
+// Atletas se loguean contra `athlete-login` y reciben `selfToken = sha256(clientId + ATHLETE_SECRET)`.
+// Se adjunta en cada request que opere sobre data propia (meals, complete, reads).
+async function sha256Hex(input) {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function computeSelfToken(env, clientId) {
+  const secret = env.ATHLETE_SECRET || 'fallback-dev-secret-change-me';
+  return await sha256Hex(`${clientId}:${secret}`);
+}
+
+async function verifySelfToken(env, clientId, token) {
+  if (!clientId || !token) return false;
+  const expected = await computeSelfToken(env, clientId);
+  return expected === token;
+}
+
+// Authorize a read of a specific athlete's private data (routine, completions,
+// meals, payment, etc.). Accepts: admin token, trainer-owner token, or self-token.
+// Returns null if authorized, else a Response.
+async function authorizeReadForClient(env, body, clientId, corsHeaders) {
+  if (!clientId) {
+    return new Response(JSON.stringify({ ok: false, error: 'Falta clientId' }), { headers: corsHeaders, status: 400 });
+  }
+  if (body.admin === 'admin2026') return null;
+  if (body.selfToken) {
+    const ok = await verifySelfToken(env, clientId, body.selfToken);
+    if (ok) return null;
+  }
+  if (body.token === 'ent2026' && body.trainerUsername) {
+    const athlete = await getAthlete(env, clientId);
+    if (athlete && athlete.trainerId === body.trainerUsername) return null;
+  }
+  return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: corsHeaders, status: 401 });
+}
+
+// Authorize a trainer operation on an athlete: caller must provide token +
+// trainerUsername, and the athlete's trainerId must match trainerUsername.
+// Returns null if authorized, else a Response with the appropriate error.
+async function authorizeTrainerForAthlete(env, body, corsHeaders) {
+  if (body.token !== 'ent2026') {
+    return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: corsHeaders, status: 401 });
+  }
+  const trainerUsername = body.trainerUsername;
+  if (!trainerUsername) {
+    return new Response(JSON.stringify({ ok: false, error: 'Falta trainerUsername' }), { headers: corsHeaders, status: 400 });
+  }
+  const clientId = body.clientId || body.client;
+  if (!clientId) {
+    return new Response(JSON.stringify({ ok: false, error: 'Falta clientId' }), { headers: corsHeaders, status: 400 });
+  }
+  const athlete = await getAthlete(env, clientId);
+  if (!athlete) {
+    return new Response(JSON.stringify({ ok: false, error: 'Atleta no encontrado' }), { headers: corsHeaders, status: 404 });
+  }
+  if (athlete.trainerId && athlete.trainerId !== trainerUsername) {
+    return new Response(JSON.stringify({ ok: false, error: 'Este atleta no te pertenece' }), { headers: corsHeaders, status: 403 });
+  }
+  return null;
 }
 
 function slugifyUsername(name) {
@@ -243,12 +324,39 @@ export default {
     }
 
     const body = await request.json();
-    const client = body.client || 'nicolas';
-    const athleteRecord = await getAthlete(env, client);
+    const client = body.client || '';
+    const athleteRecord = client ? await getAthlete(env, client) : null;
     const athleteName = athleteRecord?.name || client;
+
+    // ── ATHLETE LOGIN (issue a selfToken so the athlete can write own data) ──
+    if (body.action === 'athlete-login') {
+      const username = (body.username || '').trim().toLowerCase();
+      if (!username) {
+        return new Response(JSON.stringify({ ok: false, error: 'Falta username' }), { headers: cors });
+      }
+      const all = await listAthletes(env);
+      const match = all.find(a => (a.username || a.clientId) === username);
+      if (!match) {
+        return new Response(JSON.stringify({ ok: false, error: 'Usuario no encontrado' }), { headers: cors });
+      }
+      const selfToken = await computeSelfToken(env, match.clientId);
+      return new Response(JSON.stringify({
+        ok: true,
+        athlete: {
+          clientId: match.clientId, username: match.username, name: match.name,
+          photoUrl: match.photoUrl || null, trainerId: match.trainerId || null,
+          sessionsPerWeek: match.sessionsPerWeek || null,
+          profile: match.profile || {}
+        },
+        selfToken
+      }), { headers: cors });
+    }
 
     // ── COMPLETE ROUTINE ──
     if (body.action === 'complete') {
+      // Solo el propio atleta (o su trainer / admin) puede marcar completado.
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
       const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
       const isoDate = `${nowCO.getFullYear()}-${String(nowCO.getMonth()+1).padStart(2,'0')}-${String(nowCO.getDate()).padStart(2,'0')}`;
       const entry = {
@@ -263,6 +371,10 @@ export default {
 
       const kvKey = `completions:${client}`;
       let records = await env.DB.get(kvKey, 'json') || [];
+      // Dedup: si ya hay una completion hoy, no re-agregamos (evita doble-click).
+      if (records.some(r => r.day === isoDate)) {
+        return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: cors });
+      }
       records.unshift(entry);
       if (records.length > 200) records = records.slice(0, 200);
       await env.DB.put(kvKey, JSON.stringify(records));
@@ -306,25 +418,30 @@ export default {
 </table>
 </body></html>`;
 
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'Mi Rutina <noreply@mirutinapp.com>',
-          to: TRAINER_EMAIL,
-          subject: `✅ ${athleteName} completó: ${body.dayLabel || body.day}`,
-          html: emailHtml
-        })
-      });
+      if (env.RESEND_API_KEY) {
+        const trainerEmail = await resolveTrainerEmail(env, athleteRecord);
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'Mi Rutina <noreply@mirutinapp.com>',
+            to: trainerEmail,
+            subject: `✅ ${athleteName} completó: ${body.dayLabel || body.day}`,
+            html: emailHtml
+          })
+        }).catch(err => console.error('complete email failed:', err?.message));
+      }
 
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
     // ── MEALS ──
     if (body.action === 'meals') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
       const slot = body.slot; // single slot being submitted
       const photoUrl = body.photos?.[slot];
       let analysis = null;
@@ -405,6 +522,8 @@ export default {
 
     // ── GET DATA ──
     if (body.action === 'get-data') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
       const [completions, meals] = await Promise.all([
         env.DB.get(`completions:${client}`, 'json'),
         env.DB.get(`meals:${client}`, 'json')
@@ -418,6 +537,8 @@ export default {
 
     // ── GET WEEKLY SUMMARY ──
     if (body.action === 'get-weekly-summary') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
       const week = getWeekRange(body.weekOf || null);
       const dateSet = new Set(week.dates);
 
@@ -467,15 +588,16 @@ export default {
 
     // ── GET ROUTINE ──
     if (body.action === 'get-routine') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
       const routine = await env.DB.get(`routine:${client}`, 'json');
       return new Response(JSON.stringify({ ok: true, routine: routine || null }), { headers: cors });
     }
 
     // ── SAVE ROUTINE ──
     if (body.action === 'save-routine') {
-      if (body.token !== 'ent2026') {
-        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
-      }
+      const authErr = await authorizeTrainerForAthlete(env, { ...body, clientId: client }, cors);
+      if (authErr) return authErr;
       const routine = body.routine || {};
       // AI-generate title/sub for each session based on exercises
       try {
@@ -576,13 +698,42 @@ Devolvé SOLO un JSON así, sin texto extra:
     // ── LIST ATHLETES (public read) ──
     if (body.action === 'list-athletes') {
       const athletes = await listAthletes(env, { includeArchived: !!body.includeArchived });
-      return new Response(JSON.stringify({ ok: true, athletes }), { headers: cors });
+      // Full record solo con token de trainer o admin. Público → solo campos mínimos
+      // necesarios para login y para que el portal muestre cards.
+      const isPrivileged = body.token === 'ent2026' || body.admin === 'admin2026';
+      if (isPrivileged) {
+        return new Response(JSON.stringify({ ok: true, athletes }), { headers: cors });
+      }
+      const safe = athletes.map(a => ({
+        clientId: a.clientId, username: a.username, name: a.name,
+        photoUrl: a.photoUrl || null, trainerId: a.trainerId || null,
+        sessionsPerWeek: a.sessionsPerWeek || null
+      }));
+      return new Response(JSON.stringify({ ok: true, athletes: safe }), { headers: cors });
     }
 
-    // ── GET ATHLETE (public read) ──
+    // ── GET ATHLETE ──
+    // Public path: solo safe fields. Privileged (trainer owner o admin o self con selfToken) → full record.
     if (body.action === 'get-athlete') {
-      const athlete = await getAthlete(env, body.clientId || client);
-      return new Response(JSON.stringify({ ok: true, athlete: athlete || null }), { headers: cors });
+      const targetId = body.clientId || client;
+      const athlete = await getAthlete(env, targetId);
+      if (!athlete) {
+        return new Response(JSON.stringify({ ok: true, athlete: null }), { headers: cors });
+      }
+      const isTrainerOwner = body.token === 'ent2026' && athlete.trainerId && athlete.trainerId === body.trainerUsername;
+      const isAdmin = body.admin === 'admin2026';
+      const isSelf = body.selfToken && await verifySelfToken(env, targetId, body.selfToken);
+      if (isTrainerOwner || isAdmin || isSelf) {
+        return new Response(JSON.stringify({ ok: true, athlete }), { headers: cors });
+      }
+      // Fallback público — solo campos no sensibles
+      const safe = {
+        clientId: athlete.clientId, username: athlete.username, name: athlete.name,
+        photoUrl: athlete.photoUrl || null, trainerId: athlete.trainerId || null,
+        sessionsPerWeek: athlete.sessionsPerWeek || null,
+        profile: { goal: athlete.profile?.goal || '' }
+      };
+      return new Response(JSON.stringify({ ok: true, athlete: safe }), { headers: cors });
     }
 
     // ── CREATE ATHLETE (trainer only) ──
@@ -597,6 +748,18 @@ Devolvé SOLO un JSON así, sin texto extra:
       if (!name || !username || !sessionsPerWeek) {
         return new Response(JSON.stringify({ ok: false, error: 'Nombre, username y sesiones son obligatorios' }), { headers: cors });
       }
+      // Validar trainerId: si viene, debe existir en trainer-index
+      const trainerIdRaw = (body.trainerId || '').trim() || null;
+      if (trainerIdRaw) {
+        const trainerIds = await bootstrapTrainersIfNeeded(env);
+        if (!trainerIds.includes(trainerIdRaw)) {
+          return new Response(JSON.stringify({ ok: false, error: 'trainerId no existe' }), { headers: cors, status: 400 });
+        }
+      }
+      // Validar email formato si viene
+      if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Email inválido' }), { headers: cors, status: 400 });
+      }
       // Ensure the index exists and username is unique (also used as clientId)
       const existingIds = await bootstrapAthletesIfNeeded(env);
       if (existingIds.includes(username)) {
@@ -606,7 +769,7 @@ Devolvé SOLO un JSON así, sin texto extra:
         clientId: username,
         username,
         name,
-        trainerId:       (body.trainerId || '').trim() || null,
+        trainerId:       trainerIdRaw,
         email:           (input.email || '').trim() || null,
         phone:           (input.phone || '').trim() || null,
         birthdate:       input.birthdate || null,
@@ -678,20 +841,17 @@ Devolvé SOLO un JSON así, sin texto extra:
 
     // ── UPDATE ATHLETE (trainer only) ──
     if (body.action === 'update-athlete') {
-      if (body.token !== 'ent2026') {
-        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
-      }
+      const authErr = await authorizeTrainerForAthlete(env, body, cors);
+      if (authErr) return authErr;
       const id = body.clientId;
       const existing = await getAthlete(env, id);
-      if (!existing) {
-        return new Response(JSON.stringify({ ok: false, error: 'Atleta no encontrado' }), { headers: cors });
-      }
       const patch = body.fields || {};
       const updated = {
         ...existing,
         ...patch,
         clientId: existing.clientId,        // immutable
         username: existing.username,        // immutable
+        trainerId: existing.trainerId,      // immutable — solo admin hard-delete lo cambia
         profile: { ...(existing.profile || {}), ...(patch.profile || {}) }
       };
       await env.DB.put(`athlete:${id}`, JSON.stringify(updated));
@@ -775,14 +935,10 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
     // ── DELETE ATHLETE (trainer only) ──
     if (body.action === 'delete-athlete') {
-      if (body.token !== 'ent2026') {
-        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
-      }
+      const authErr = await authorizeTrainerForAthlete(env, body, cors);
+      if (authErr) return authErr;
       const id = body.clientId;
       const existing = await getAthlete(env, id);
-      if (!existing) {
-        return new Response(JSON.stringify({ ok: false, error: 'Atleta no encontrado' }), { headers: cors });
-      }
       const ids = (await env.DB.get('athlete-index', 'json')) || [];
       await env.DB.put('athlete-index', JSON.stringify(ids.filter(x => x !== id)));
       if (body.hard) {
@@ -801,6 +957,8 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
     // ── GET PAYMENT ──
     if (body.action === 'get-payment') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
       const payment = await env.DB.get(`payment:${client}`, 'json');
       return new Response(JSON.stringify({ ok: true, payment: payment || null }), { headers: cors });
     }
@@ -932,11 +1090,10 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
-    // ── SAVE PAYMENT ──
+    // ── SAVE PAYMENT (trainer only, ownership validado) ──
     if (body.action === 'save-payment') {
-      if (body.token !== 'ent2026' && !body.fields) {
-        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
-      }
+      const authErr = await authorizeTrainerForAthlete(env, { ...body, clientId: client }, cors);
+      if (authErr) return authErr;
       const existing = await env.DB.get(`payment:${client}`, 'json') || {};
       const updated = { ...existing, ...body.fields };
       await env.DB.put(`payment:${client}`, JSON.stringify(updated));
@@ -956,16 +1113,17 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       if (msgs.length > 500) msgs = msgs.slice(-500);
       await env.DB.put(kvKey, JSON.stringify(msgs));
 
-      // Email notification when trainer sends a message
-      if (body.role === 'trainer') {
-        const trainerRec = await getAthlete(env, body.trainerId);
+      // Email notification when trainer sends a message to admin support.
+      // Destination is always the admin inbox (DEFAULT_TRAINER_EMAIL).
+      if (body.role === 'trainer' && env.RESEND_API_KEY) {
+        const trainerRec = await getTrainer(env, body.trainerId);
         const trainerName = trainerRec?.name || body.trainerId;
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'Mi Rutina <noreply@mirutinapp.com>',
-            to: TRAINER_EMAIL,
+            to: DEFAULT_TRAINER_EMAIL,
             subject: `💬 Nuevo mensaje de soporte — ${trainerName}`,
             html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0" bgcolor="#0f1117">
@@ -1106,16 +1264,19 @@ async function sendDailyMealReport(env) {
   </td></tr>
 </table></body></html>`;
 
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'Mi Rutina <noreply@mirutinapp.com>',
-        to: TRAINER_EMAIL,
-        subject: `🍽️ Reporte diario — ${athlete.name} (${filledSlots.length}/${MEAL_SLOTS.length} comidas)`,
-        html: emailHtml
-      })
-    });
+    if (env.RESEND_API_KEY) {
+      const trainerEmail = await resolveTrainerEmail(env, athlete);
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Mi Rutina <noreply@mirutinapp.com>',
+          to: trainerEmail,
+          subject: `🍽️ Reporte diario — ${athlete.name} (${filledSlots.length}/${MEAL_SLOTS.length} comidas)`,
+          html: emailHtml
+        })
+      }).catch(err => console.error('daily meal report failed for', athlete.clientId, err?.message));
+    }
   }
 }
 
@@ -1280,15 +1441,18 @@ async function sendWeeklyReport(env) {
   </td></tr>
 </table></body></html>`;
 
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'Mi Rutina <noreply@mirutinapp.com>',
-        to: TRAINER_EMAIL,
-        subject: `📊 Resumen semanal — ${athlete.name} (${week.label})`,
-        html: emailHtml
-      })
-    });
+    if (env.RESEND_API_KEY) {
+      const trainerEmail = await resolveTrainerEmail(env, athlete);
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Mi Rutina <noreply@mirutinapp.com>',
+          to: trainerEmail,
+          subject: `📊 Resumen semanal — ${athlete.name} (${week.label})`,
+          html: emailHtml
+        })
+      }).catch(err => console.error('weekly report failed for', athlete.clientId, err?.message));
+    }
   }
 }

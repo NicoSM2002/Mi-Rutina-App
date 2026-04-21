@@ -2308,7 +2308,7 @@ async function showRoutine() {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get-data', client: currentAthlete })
+      body: JSON.stringify({ action: 'get-data', client: currentAthlete, selfToken: getSelfToken() })
     });
     const data = await res.json();
     serverCompletions = data.completions || [];
@@ -3332,21 +3332,45 @@ async function fetchDynamicAthletes() {
   return [];
 }
 
+let athleteSelfToken = null;  // emitted by backend at login, used for own writes/reads
+
 async function athleteLogin() {
   const user   = document.getElementById('athlete-username').value.trim().toLowerCase();
   const errEl  = document.getElementById('athlete-error');
   errEl.textContent = '';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'athlete-login', username: user })
+    });
+    const json = await res.json();
+    if (!json.ok || !json.athlete) {
+      errEl.textContent = json.error || 'Usuario no encontrado.';
+      return;
+    }
+    const dyn = json.athlete;
+    athleteSelfToken = json.selfToken;
+    try { localStorage.setItem(`selfToken_${dyn.clientId}`, json.selfToken); } catch {}
+    document.getElementById('athlete-username').value = '';
+    currentAthlete = dyn.clientId;
+    data = {};
+    loadRoutine();
+    showGenericProfile(dyn);
+    loadAthletePayment(currentAthlete);
+  } catch (e) {
+    errEl.textContent = 'Error de red';
+  }
+}
 
-  // Always fetch fresh list — don't trust cache (athlete may have been deleted)
-  const list = await fetchDynamicAthletes();
-  const dyn  = list.find(a => (a.username || a.clientId) === user);
-  if (!dyn) { errEl.textContent = 'Usuario no encontrado.'; return; }
-  document.getElementById('athlete-username').value = '';
-  currentAthlete = dyn.clientId;
-  data = {};
-  loadRoutine();
-  showGenericProfile(dyn);
-  loadAthletePayment(currentAthlete);
+function getSelfToken() {
+  if (athleteSelfToken) return athleteSelfToken;
+  if (currentAthlete) {
+    try {
+      const t = localStorage.getItem(`selfToken_${currentAthlete}`);
+      if (t) { athleteSelfToken = t; return t; }
+    } catch {}
+  }
+  return null;
 }
 
 function computeAge(birthdate) {
@@ -3767,7 +3791,7 @@ async function saveEditAthleteProfile() {
   try {
     const res = await fetch(WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update-athlete', token: TRAINER_TOKEN, clientId: trainerClientId, fields })
+      body: JSON.stringify({ action: 'update-athlete', token: TRAINER_TOKEN, trainerUsername: currentTrainer, clientId: trainerClientId, fields })
     });
     const json = await res.json();
     if (!json.ok) { errEl.textContent = json.error || 'Error al guardar'; btn.disabled = false; btn.textContent = 'Guardar cambios'; return; }
@@ -3788,7 +3812,7 @@ async function deleteCurrentAthlete() {
   try {
     const res = await fetch(WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete-athlete', token: TRAINER_TOKEN, clientId: trainerClientId, hard: true })
+      body: JSON.stringify({ action: 'delete-athlete', token: TRAINER_TOKEN, trainerUsername: currentTrainer, clientId: trainerClientId, hard: true })
     });
     const json = await res.json();
     if (json.ok) {
@@ -3819,9 +3843,9 @@ async function openTrainerClient(clientId, clientName) {
   try {
     const [dataRes, routineRes] = await Promise.all([
       fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'get-data', client: clientId }) }),
+        body: JSON.stringify({ action:'get-data', client: clientId, token: TRAINER_TOKEN, trainerUsername: currentTrainer }) }),
       fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'get-routine', client: clientId }) })
+        body: JSON.stringify({ action:'get-routine', client: clientId, token: TRAINER_TOKEN, trainerUsername: currentTrainer }) })
     ]);
     trainerData = await dataRes.json();
     const routineJson = await routineRes.json();
@@ -3956,7 +3980,7 @@ async function showResumen(weekOf) {
   nav.innerHTML = '';
   content.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando resumen…</div>';
   try {
-    const body = { action: 'get-weekly-summary', client: currentAthlete };
+    const body = { action: 'get-weekly-summary', client: currentAthlete, selfToken: getSelfToken() };
     if (weekOf) body.weekOf = weekOf;
     const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const data = await res.json();
@@ -3972,7 +3996,7 @@ async function renderTrainerResumen(weekOf) {
   const el = document.getElementById('tclient-content');
   el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando resumen…</div>';
   try {
-    const body = { action: 'get-weekly-summary', client: trainerClientId };
+    const body = { action: 'get-weekly-summary', client: trainerClientId, token: TRAINER_TOKEN, trainerUsername: currentTrainer };
     if (weekOf) body.weekOf = weekOf;
     const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const data = await res.json();
@@ -4166,7 +4190,7 @@ async function syncMealsSentFromServer() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-data', client:currentAthlete })
+      body: JSON.stringify({ action:'get-data', client:currentAthlete, selfToken: getSelfToken() })
     });
     const json = await res.json();
     const today = getTodayKey();
@@ -4313,6 +4337,7 @@ async function sendMeal(slot) {
       body: JSON.stringify({
         action: 'meals',
         client: currentAthlete,
+        selfToken: getSelfToken(),
         day: getTodayKey(),
         dayLabel,
         slot,
@@ -4507,6 +4532,7 @@ async function confirmComplete() {
       body: JSON.stringify({
         action: 'complete',
         client: currentAthlete,
+        selfToken: getSelfToken(),
         day: currentDay,
         dayLabel: DAY_NAMES[currentDay] || currentDay,
         week: 1,
@@ -4543,7 +4569,7 @@ async function loadAthletePayment(athlete) {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-payment', client: athlete })
+      body: JSON.stringify({ action:'get-payment', client: athlete, selfToken: getSelfToken() })
     });
     const data = await res.json();
     if (data.ok && data.payment) renderAthletePayment(card, data.payment);
@@ -4573,7 +4599,7 @@ async function renderTrainerPayment() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-payment', client: trainerClientId })
+      body: JSON.stringify({ action:'get-payment', client: trainerClientId, token: TRAINER_TOKEN, trainerUsername: currentTrainer })
     });
     const data = await res.json();
     if (data.ok && data.payment) p = data.payment;
@@ -4629,7 +4655,7 @@ async function togglePaymentStatus(currentlyPaid) {
   const paidDate = newStatus === 'paid' ? new Date().toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' }) : null;
   await fetch(WORKER_URL, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ action:'save-payment', client: trainerClientId, fields: { status: newStatus, paidDate } })
+    body: JSON.stringify({ action:'save-payment', token: TRAINER_TOKEN, trainerUsername: currentTrainer, client: trainerClientId, fields: { status: newStatus, paidDate } })
   });
   renderTrainerPayment();
 }
@@ -4648,7 +4674,7 @@ async function savePaymentConfig() {
   btn.textContent = 'Guardando…'; btn.disabled = true;
   await fetch(WORKER_URL, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ action:'save-payment', client: trainerClientId, fields: { amount, dueDate, payLink } })
+    body: JSON.stringify({ action:'save-payment', token: TRAINER_TOKEN, trainerUsername: currentTrainer, client: trainerClientId, fields: { amount, dueDate, payLink } })
   });
   btn.textContent = '✅ Guardado';
   setTimeout(() => renderTrainerPayment(), 800);
@@ -4842,7 +4868,7 @@ async function loadRoutine() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-routine', client:currentAthlete })
+      body: JSON.stringify({ action:'get-routine', client:currentAthlete, selfToken: getSelfToken() })
     });
     const json = await res.json();
     if (json.routine && Object.keys(json.routine).length) {
@@ -5633,7 +5659,7 @@ async function saveRoutineFromEditor() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'save-routine', token:TRAINER_TOKEN, client: trainerClientId, routine:editorData })
+      body: JSON.stringify({ action:'save-routine', token:TRAINER_TOKEN, trainerUsername: currentTrainer, client: trainerClientId, routine:editorData })
     });
     const json = await res.json();
     if (json.ok) {
@@ -5693,7 +5719,7 @@ async function loadNavPayment() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-payment', client: currentAthlete })
+      body: JSON.stringify({ action:'get-payment', client: currentAthlete, selfToken: getSelfToken() })
     });
     const data = await res.json();
     if (data.ok && data.payment) renderAthletePayment(card, data.payment);
