@@ -4658,8 +4658,10 @@ function platformPayAction() {
   alert('Enlace de pago próximamente. Contacta al soporte para más información.');
 }
 
-/* ── keep focused input visible above soft keyboard ── */
+/* ── keep focused input visible above soft keyboard (only on touch devices) ── */
 (function () {
+  const isTouch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+  if (!isTouch) return; // en desktop el browser maneja scroll nativo, no hacemos nada
   const vv = window.visualViewport;
   function updateKbdState() {
     if (!vv) return;
