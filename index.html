@@ -3325,7 +3325,11 @@ let currentAthlete = 'nicolas';
 let dynamicAthletesCache = null;
 async function fetchDynamicAthletes() {
   try {
-    const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'list-athletes' }) });
+    // Si hay trainer logueado, pedir records completos (incluye profile/biometría).
+    // Sin trainer (ej. login screen del atleta), recibimos solo campos safe.
+    const payload = { action: 'list-athletes' };
+    if (currentTrainer) payload.token = TRAINER_TOKEN;
+    const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.ok && Array.isArray(data.athletes)) {
       dynamicAthletesCache = data.athletes;
