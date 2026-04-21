@@ -846,12 +846,26 @@ Devolvé SOLO un JSON así, sin texto extra:
       const id = body.clientId;
       const existing = await getAthlete(env, id);
       const patch = body.fields || {};
+      // Username puede cambiarse: validar formato y unicidad contra otros atletas.
+      let newUsername = existing.username;
+      if (patch.username && patch.username !== existing.username) {
+        const candidate = slugifyUsername(patch.username);
+        if (!candidate) {
+          return new Response(JSON.stringify({ ok: false, error: 'Username inválido' }), { headers: cors, status: 400 });
+        }
+        const all = await listAthletes(env, { includeArchived: true });
+        const collision = all.find(a => a.clientId !== id && (a.username === candidate || a.clientId === candidate));
+        if (collision) {
+          return new Response(JSON.stringify({ ok: false, error: 'Ese username ya está en uso' }), { headers: cors, status: 409 });
+        }
+        newUsername = candidate;
+      }
       const updated = {
         ...existing,
         ...patch,
-        clientId: existing.clientId,        // immutable
-        username: existing.username,        // immutable
-        trainerId: existing.trainerId,      // immutable — solo admin hard-delete lo cambia
+        clientId: existing.clientId,        // immutable (key del KV)
+        username: newUsername,              // editable con validación
+        trainerId: existing.trainerId,      // immutable desde update (solo hard-delete + create)
         profile: { ...(existing.profile || {}), ...(patch.profile || {}) }
       };
       await env.DB.put(`athlete:${id}`, JSON.stringify(updated));

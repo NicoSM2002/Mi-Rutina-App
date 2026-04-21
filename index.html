@@ -1951,6 +1951,9 @@ html, body {
       <div class="section-label" style="margin-bottom:10px">Identidad</div>
       <div class="na-field"><label class="na-label">Nombre completo</label>
         <input class="na-input" id="ep-name" type="text" required></div>
+      <div class="na-field"><label class="na-label">Usuario (para login)</label>
+        <input class="na-input" id="ep-username" type="text" pattern="[a-z0-9]+" autocapitalize="none">
+        <div class="na-hint">Solo minúsculas y números. El atleta usa este usuario para entrar.</div></div>
       <div class="na-field"><label class="na-label">Email</label>
         <input class="na-input" id="ep-email" type="email"></div>
       <div class="na-row">
@@ -3748,6 +3751,7 @@ async function openEditAthleteProfile() {
   const p = a.profile || {};
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
   setVal('ep-name', a.name || '');
+  setVal('ep-username', a.username || '');
   setVal('ep-email', a.email || '');
   setVal('ep-phone', a.phone || '');
   setVal('ep-birthdate', a.birthdate || '');
@@ -3773,6 +3777,7 @@ async function saveEditAthleteProfile() {
   const selectedSess = document.querySelector('#ep-sessions .na-pill-active');
   const fields = {
     name: document.getElementById('ep-name').value.trim(),
+    username: document.getElementById('ep-username').value.trim().toLowerCase(),
     email: document.getElementById('ep-email').value.trim() || null,
     phone: document.getElementById('ep-phone').value.trim() || null,
     birthdate: document.getElementById('ep-birthdate').value || null,
