@@ -4794,7 +4794,7 @@ async function openChat() {
     try {
       const res = await fetch(WORKER_URL, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'get-data', client:currentAthlete })
+        body: JSON.stringify({ action:'get-data', client:currentAthlete, selfToken: getSelfToken() })
       });
       const data = await res.json();
       athleteMeals = data.meals || [];
