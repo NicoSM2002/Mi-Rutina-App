@@ -1123,7 +1123,13 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     if (body.action === 'send-support-msg') {
       const kvKey = `support-chat:${body.trainerId}`;
       let msgs = await env.DB.get(kvKey, 'json') || [];
-      msgs.push({ role: body.role, text: body.text, ts: Date.now() });
+      msgs.push({
+        role: body.role,
+        text: body.text,
+        ts: Date.now(),
+        clientId: body.clientId || null,    // quién escribió (si vino del atleta)
+        senderName: body.senderName || null  // nombre display (cache para UI admin)
+      });
       if (msgs.length > 500) msgs = msgs.slice(-500);
       await env.DB.put(kvKey, JSON.stringify(msgs));
 
@@ -1232,6 +1238,7 @@ async function sendDailyMealReport(env) {
   const dayLabel = coDate.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 
   for (const athlete of await listAthletes(env)) {
+    try {
     const clientId = athlete.clientId;
     const records = await env.DB.get(`meals:${clientId}`, 'json') || [];
     const todayRecord = records.find(r => r.day === todayKey);
@@ -1291,6 +1298,9 @@ async function sendDailyMealReport(env) {
         })
       }).catch(err => console.error('daily meal report failed for', athlete.clientId, err?.message));
     }
+    } catch (err) {
+      console.error('[sendDailyMealReport] error for', athlete.clientId, err?.message);
+    }
   }
 }
 
@@ -1302,6 +1312,7 @@ async function sendWorkoutReminder(env) {
   if (coDate.getDay() === 0) return; // domingo libre
 
   for (const athlete of await listAthletes(env)) {
+    try {
     const clientId = athlete.clientId;
     if (!athlete.email) continue;
     const routine = await env.DB.get(`routine:${clientId}`, 'json');
@@ -1329,16 +1340,21 @@ async function sendWorkoutReminder(env) {
   </td></tr>
 </table></body></html>`;
 
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'Mi Rutina <noreply@mirutinapp.com>',
-        to: athlete.email,
-        subject: `💪 Recordatorio de entrenamiento — ${athlete.name}`,
-        html
-      })
-    }).catch(() => {});
+    if (env.RESEND_API_KEY) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Mi Rutina <noreply@mirutinapp.com>',
+          to: athlete.email,
+          subject: `💪 Recordatorio de entrenamiento — ${athlete.name}`,
+          html
+        })
+      }).catch(err => console.error('workout reminder failed for', clientId, err?.message));
+    }
+    } catch (err) {
+      console.error('[sendWorkoutReminder] error for', athlete.clientId, err?.message);
+    }
   }
 }
 
@@ -1371,6 +1387,7 @@ async function sendWeeklyReport(env) {
   const dateSet = new Set(week.dates);
 
   for (const athlete of await listAthletes(env)) {
+    try {
     const clientId = athlete.clientId;
     const [completions, meals] = await Promise.all([
       env.DB.get(`completions:${clientId}`, 'json'),
@@ -1467,6 +1484,9 @@ async function sendWeeklyReport(env) {
           html: emailHtml
         })
       }).catch(err => console.error('weekly report failed for', athlete.clientId, err?.message));
+    }
+    } catch (err) {
+      console.error('[sendWeeklyReport] error for', athlete.clientId, err?.message);
     }
   }
 }
