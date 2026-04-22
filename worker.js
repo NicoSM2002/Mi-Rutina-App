@@ -956,12 +956,13 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       const ids = (await env.DB.get('athlete-index', 'json')) || [];
       await env.DB.put('athlete-index', JSON.stringify(ids.filter(x => x !== id)));
       if (body.hard) {
-        // Hard delete: wipe all data
-        await Promise.all([
-          env.DB.delete(`athlete:${id}`), env.DB.delete(`routine:${id}`),
-          env.DB.delete(`completions:${id}`), env.DB.delete(`meals:${id}`),
-          env.DB.delete(`payment:${id}`)
-        ]);
+        // Hard delete secuencial: si alguno falla, loggeamos y seguimos los
+        // otros (sin Promise.all para que un error no deje huérfanos los otros).
+        const keys = [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `meals:${id}`, `payment:${id}`, `support-chat:${id}`];
+        for (const k of keys) {
+          try { await env.DB.delete(k); }
+          catch (err) { console.error(`[delete-athlete] failed to delete ${k}:`, err?.message); }
+        }
       } else {
         // Soft delete: keep record archived for potential restore
         await env.DB.put(`athlete:${id}`, JSON.stringify({ ...existing, archived: true }));

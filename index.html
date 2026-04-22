@@ -1775,7 +1775,7 @@ html, body {
 <!-- ══ TRAINER PORTAL ══ -->
 <div class="screen" id="trainer-portal">
   <div class="tportal-header">
-    <button class="back-btn" onclick="show('role-select')">‹ Salir</button>
+    <button class="back-btn" onclick="logoutTrainer(); show('role-select')">‹ Salir</button>
     <div class="tportal-title">Portal Entrenador</div>
     <div style="display:flex;gap:6px">
       <button class="new-athlete-btn" onclick="openTrainerOwnProfile()" title="Mi perfil" style="background:linear-gradient(135deg,#6366f1,#818cf8);font-size:18px">⚙️</button>
@@ -2365,7 +2365,20 @@ function showProfile() {
     else show('profile-generic');
   });
 }
-window.addEventListener('load', () => { setTimeout(() => show('role-select'), 2600); });
+window.addEventListener('load', () => {
+  setTimeout(async () => {
+    // Si hay trainer guardado, restaurar directamente al portal
+    if (typeof tryRestoreTrainerSession === 'function') {
+      const ok = await tryRestoreTrainerSession();
+      if (ok) {
+        show('trainer-portal');
+        if (typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
+        return;
+      }
+    }
+    show('role-select');
+  }, 2600);
+});
 
 /* ── state ── */
 let currentWeek  = 1;
@@ -3464,6 +3477,37 @@ const TRAINER_TOKEN = 'ent2026';
 const MUSC_LABELS = { pecho:'Pecho', espalda:'Espalda', biceps:'Bíceps', triceps:'Tríceps', hombros:'Hombros', cuadriceps:'Cuádriceps', isquio:'Isquiotibiales', gluteo:'Glúteo', pantorrilla:'Pantorrilla', trapecio:'Trapecio', abdomen:'Abdomen' };
 
 let currentTrainer = null;
+try {
+  const savedTrainer = localStorage.getItem('currentTrainer');
+  if (savedTrainer) currentTrainer = savedTrainer;
+} catch {}
+
+async function tryRestoreTrainerSession() {
+  if (!currentTrainer) return false;
+  // Validar contra KV — si el entrenador fue eliminado, limpiar sesión.
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'list-trainers' })
+    });
+    const json = await res.json();
+    const stillExists = (json.trainers || []).some(t => t.username === currentTrainer);
+    if (!stillExists) {
+      localStorage.removeItem('currentTrainer');
+      currentTrainer = null;
+      return false;
+    }
+    return true;
+  } catch {
+    // red caída: confiamos en el estado local
+    return true;
+  }
+}
+
+function logoutTrainer() {
+  currentTrainer = null;
+  try { localStorage.removeItem('currentTrainer'); } catch {}
+}
 
 async function trainerLogin() {
   const user = document.getElementById('trainer-username').value.trim().toLowerCase();
@@ -3478,6 +3522,7 @@ async function trainerLogin() {
     const found = (json.trainers || []).some(t => t.username === user);
     if (!found) { errEl.textContent = 'Usuario no encontrado.'; return; }
     currentTrainer = user;
+    try { localStorage.setItem('currentTrainer', user); } catch {}
     document.getElementById('trainer-username').value = '';
     show('trainer-portal');
     loadTrainerExtraClients();
