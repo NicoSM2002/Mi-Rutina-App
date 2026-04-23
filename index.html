@@ -4174,15 +4174,7 @@ function renderTrainerTab() {
       el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">💪</div>Aún no hay rutinas completadas.</div>';
       return;
     }
-    el.innerHTML = records.map(r => `
-      <div class="trecord-card">
-        <div class="trecord-header">
-          <div class="trecord-day">${r.dayLabel || r.day}</div>
-          <div class="trecord-date">${r.date || ''}</div>
-        </div>
-        <div class="trecord-week">Sesión completada</div>
-        ${r.notes ? `<div class="trecord-notes">${r.notes}</div>` : ''}
-      </div>`).join('');
+    el.innerHTML = records.map(r => renderCompletionCard(r)).join('');
   } else {
     const records = trainerData.meals || [];
     if (!records.length) {
