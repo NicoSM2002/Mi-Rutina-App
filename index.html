@@ -5090,6 +5090,35 @@ const ATHLETE_PROFILES = {
 - Objetivo: Pérdida de grasa y tonificación muscular`
 };
 
+// Devuelve el bloque de PERFIL para el contexto del asistente.
+// Prioriza el record dinámico del atleta logueado; si no hay, cae al hardcoded (Nicolás/María legacy).
+function getAthleteProfileContext() {
+  if (currentAthleteRecord && currentAthleteRecord.clientId === currentAthlete) {
+    const a = currentAthleteRecord;
+    const p = a.profile || {};
+    const parts = [];
+    if (p.weight)     parts.push(`Peso: ${p.weight} kg`);
+    if (p.height)     parts.push(`Altura: ${p.height} cm`);
+    if (p.bodyFat)    parts.push(`Grasa: ${p.bodyFat}%`);
+    if (p.muscleMass) parts.push(`Músculo: ${p.muscleMass} kg`);
+    const age = computeAge(a.birthdate);
+    const bmi = p.bmi ?? computeBMI(p.weight, p.height);
+    const bmr = p.bmr ?? computeBMR(p.weight, p.height, age, p.sex || 'm');
+    if (bmi) parts.push(`IMC: ${bmi}`);
+    if (bmr) parts.push(`BMR: ${bmr} kcal`);
+    if (p.goal)       parts.push(`Objetivo: ${p.goal}`);
+    if (p.level)      parts.push(`Nivel: ${p.level}`);
+    const name = (a.name || a.username || '').trim();
+    let txt = `PERFIL DE ${(name || 'ATLETA').toUpperCase()}:`;
+    if (parts.length) txt += `\n- ${parts.join(' | ')}`;
+    else              txt += `\n- (Sin datos de antropometría cargados aún.)`;
+    if (p.injuries) txt += `\n- Lesiones / restricciones: ${p.injuries}`;
+    if (p.notes)    txt += `\n- Notas del entrenador: ${p.notes}`;
+    return txt;
+  }
+  return ATHLETE_PROFILES[currentAthlete] || `PERFIL DEL ATLETA:\n- (Sin datos cargados.)`;
+}
+
 function buildContext() {
   const state = getSessionState(currentAthlete);
 
@@ -5102,7 +5131,7 @@ function buildContext() {
 - Responde siempre en español neutro latinoamericano, sin usar voseo ni modismos regionales.
 - ACCESO A RUTINAS: Solo tienes acceso completo a la sesión activa de hoy. De las otras sesiones solo conoces el grupo muscular general. Si alguien te pide los ejercicios, series o detalles de otra sesión, responde algo como: "Hoy solo tengo acceso a tu sesión de hoy — mañana cuando empieces esa sesión tendré todos los detalles listos para vos." Puedes mencionar el grupo muscular de otras sesiones pero nada más.\n\n`;
 
-  const profile = ATHLETE_PROFILES[currentAthlete] || ATHLETE_PROFILES.nicolas;
+  const profile = getAthleteProfileContext();
 
   if (!data || !Object.keys(data).length) return instructions + profile;
 
@@ -5152,8 +5181,17 @@ function buildContext() {
 
 async function openChat() {
   document.getElementById('chat-overlay').classList.add('show');
-  const greetings = { nicolas:'¡Hola Nico! 💪 Soy tu asistente de entrenamiento. Preguntame lo que quieras sobre tu rutina — técnica, pesos, descansos, lo que sea.', msaravia:'¡Hola María! 💪 Soy tu asistente de entrenamiento. Preguntame lo que quieras sobre tu rutina — técnica, ejercicios, descansos, lo que sea.' };
-  document.getElementById('chat-greeting').textContent = greetings[currentAthlete] || greetings.nicolas;
+  // Asegurar record dinámico cargado (para saludo + perfil del contexto).
+  if (!currentAthleteRecord || currentAthleteRecord.clientId !== currentAthlete) {
+    await refreshCurrentAthleteRecord();
+  }
+  const legacyFirstName = currentAthlete === 'nicolas' ? 'Nico'
+                       : currentAthlete === 'msaravia' ? 'María' : '';
+  const firstName = ((currentAthleteRecord?.name || '').trim().split(/\s+/)[0]) || legacyFirstName;
+  const greeting = firstName
+    ? `¡Hola ${firstName}! 💪 Soy tu asistente de entrenamiento. Preguntame lo que quieras sobre tu rutina — técnica, pesos, descansos, lo que sea.`
+    : '¡Hola! 💪 Soy tu asistente de entrenamiento. Preguntame lo que quieras sobre tu rutina — técnica, pesos, descansos, lo que sea.';
+  document.getElementById('chat-greeting').textContent = greeting;
   setTimeout(() => document.getElementById('chat-input').focus(), 400);
   if (athleteMeals.length === 0) {
     try {
