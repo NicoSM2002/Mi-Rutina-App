@@ -1004,10 +1004,61 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
         return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors });
       }
       const patch = body.fields || {};
+      if (patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Email inválido' }), { headers: cors, status: 400 });
+      }
+
+      // ── Opcional: rename de username (solo admin) ──
+      const newUsernameRaw = (body.newUsername || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isRename = newUsernameRaw && newUsernameRaw !== username;
+      if (isRename && body.admin !== 'admin2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Solo admin puede cambiar el usuario' }), { headers: cors, status: 403 });
+      }
+
+      if (isRename) {
+        const ids = (await env.DB.get('trainer-index', 'json')) || [];
+        if (ids.includes(newUsernameRaw)) {
+          return new Response(JSON.stringify({ ok: false, error: 'Ese usuario ya existe' }), { headers: cors, status: 400 });
+        }
+        const renamed = {
+          ...existing,
+          ...patch,
+          username: newUsernameRaw,
+          createdAt: existing.createdAt
+        };
+        // 1. Escribir trainer con la nueva key
+        await env.DB.put(`trainer:${newUsernameRaw}`, JSON.stringify(renamed));
+        // 2. Actualizar trainer-index (reemplazar old por new)
+        const nextIds = ids.filter(x => x !== username).concat(newUsernameRaw);
+        await env.DB.put('trainer-index', JSON.stringify(nextIds));
+        // 3. Repuntar atletas que apuntaban al trainer viejo
+        const athleteIds = (await env.DB.get('athlete-index', 'json')) || [];
+        for (const aid of athleteIds) {
+          try {
+            const athlete = await env.DB.get(`athlete:${aid}`, 'json');
+            if (athlete && athlete.trainerId === username) {
+              athlete.trainerId = newUsernameRaw;
+              await env.DB.put(`athlete:${aid}`, JSON.stringify(athlete));
+            }
+          } catch (e) { console.error(`[update-trainer rename] athlete ${aid}:`, e); }
+        }
+        // 4. Mover support-chat (si existe)
+        try {
+          const chat = await env.DB.get(`support-chat:${username}`, 'json');
+          if (chat) {
+            await env.DB.put(`support-chat:${newUsernameRaw}`, JSON.stringify(chat));
+            await env.DB.delete(`support-chat:${username}`);
+          }
+        } catch (e) { console.error('[update-trainer rename] support-chat:', e); }
+        // 5. Borrar trainer con la key vieja
+        await env.DB.delete(`trainer:${username}`);
+        return new Response(JSON.stringify({ ok: true, trainer: renamed, renamed: true }), { headers: cors });
+      }
+
       const updated = {
         ...existing,
         ...patch,
-        username: existing.username,  // immutable
+        username: existing.username,
         createdAt: existing.createdAt
       };
       await env.DB.put(`trainer:${username}`, JSON.stringify(updated));

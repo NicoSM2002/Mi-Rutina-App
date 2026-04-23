@@ -1934,9 +1934,50 @@ html, body {
   <div class="tportal-header">
     <button class="back-btn" onclick="show('admin-support')">‹ Volver</button>
     <div class="tportal-title">Detalle entrenador</div>
+    <button class="new-athlete-btn" id="atd-edit-btn" title="Editar" style="background:linear-gradient(135deg,#6366f1,#818cf8);font-size:15px;display:none">✎</button>
   </div>
   <div class="tportal-body" style="padding-bottom:40px" id="atd-body">
     Cargando...
+  </div>
+</div>
+
+<!-- ══ ADMIN EDIT TRAINER ══ -->
+<div class="screen" id="admin-edit-trainer">
+  <div class="tportal-header">
+    <button class="back-btn" onclick="show('admin-trainer-detail')">‹ Volver</button>
+    <div class="tportal-title">Editar entrenador</div>
+  </div>
+  <div class="tportal-body" style="padding-bottom:40px">
+    <form id="et-form" onsubmit="event.preventDefault(); submitEditTrainer();" autocomplete="off">
+      <div class="na-field"><label class="na-label">Nombre completo <span class="na-req">*</span></label>
+        <input class="na-input" id="et-name" type="text" required></div>
+      <div class="na-field"><label class="na-label">Usuario (para login) <span class="na-req">*</span></label>
+        <input class="na-input" id="et-username" type="text" pattern="[a-z0-9]+" required autocapitalize="none">
+        <div class="na-hint">Solo minúsculas y números. Si lo cambiás, se actualiza automáticamente en todos sus atletas.</div></div>
+      <div class="na-field"><label class="na-label">Email</label>
+        <input class="na-input" id="et-email" type="email"></div>
+      <div class="na-field"><label class="na-label">Teléfono</label>
+        <input class="na-input" id="et-phone" type="tel"></div>
+      <div class="na-field">
+        <label class="na-label">Foto de perfil</label>
+        <input id="et-photo-input" type="file" accept="image/*" hidden onchange="handleEditTrainerPhoto(event)">
+        <button type="button" class="na-pdf-btn" onclick="document.getElementById('et-photo-input').click()" id="et-photo-btn">
+          <span class="na-pdf-icon">📷</span>
+          <span class="na-pdf-text"><span class="na-pdf-title" id="et-photo-title">Subir/cambiar foto</span>
+          <span class="na-pdf-sub" id="et-photo-sub">Opcional</span></span>
+        </button>
+      </div>
+      <div class="na-field"><label class="na-label">Años de experiencia</label>
+        <input class="na-input" id="et-years" type="number" min="0" max="80"></div>
+      <div class="na-field"><label class="na-label">Especialidad</label>
+        <input class="na-input" id="et-specialty" type="text"></div>
+      <div class="na-field"><label class="na-label">Estudios</label>
+        <input class="na-input" id="et-education" type="text"></div>
+      <div class="na-field"><label class="na-label">Bio</label>
+        <textarea class="na-input" id="et-bio" rows="4" style="resize:vertical"></textarea></div>
+      <div id="et-error" class="tlogin-error"></div>
+      <button type="submit" class="tlogin-btn" id="et-submit" style="margin-top:18px">Guardar cambios</button>
+    </form>
   </div>
 </div>
 
@@ -5931,9 +5972,14 @@ async function handleTrainerPhoto(event) {
   }
 }
 
+let _atdCurrentTrainer = null;
+let _etPhotoUrl = null;
+
 async function openAdminTrainerDetail(username) {
   const body = document.getElementById('atd-body');
+  const editBtn = document.getElementById('atd-edit-btn');
   body.innerHTML = '<div class="admin-chat-empty">Cargando...</div>';
+  if (editBtn) editBtn.style.display = 'none';
   show('admin-trainer-detail');
   try {
     const [tRes, aRes] = await Promise.all([
@@ -5947,6 +5993,11 @@ async function openAdminTrainerDetail(username) {
     const t = (tJson.trainers || []).find(x => x.username === username);
     const athletes = aJson.athletes || [];
     if (!t) { body.innerHTML = '<div class="admin-chat-empty">No encontrado</div>'; return; }
+    _atdCurrentTrainer = t;
+    if (editBtn) {
+      editBtn.style.display = 'flex';
+      editBtn.onclick = () => openAdminEditTrainer(t);
+    }
     const initials = (t.name || '?').split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
     const avatar = t.photoUrl
       ? `<img src="${t.photoUrl}" style="width:100%;height:100%;object-fit:cover">`
@@ -5978,6 +6029,93 @@ async function openAdminTrainerDetail(username) {
           </div>`).join('')}
     `;
   } catch { body.innerHTML = '<div class="admin-chat-empty">Error al cargar</div>'; }
+}
+
+function openAdminEditTrainer(t) {
+  document.getElementById('et-form').reset();
+  document.getElementById('et-error').textContent = '';
+  document.getElementById('et-name').value = t.name || '';
+  document.getElementById('et-username').value = t.username || '';
+  document.getElementById('et-email').value = t.email || '';
+  document.getElementById('et-phone').value = t.phone || '';
+  document.getElementById('et-years').value = t.yearsExperience || '';
+  document.getElementById('et-specialty').value = t.specialty || '';
+  document.getElementById('et-education').value = t.education || '';
+  document.getElementById('et-bio').value = t.bio || '';
+  _etPhotoUrl = t.photoUrl || null;
+  document.getElementById('et-photo-title').textContent = t.photoUrl ? '✅ Foto actual' : 'Subir foto';
+  document.getElementById('et-photo-sub').textContent = t.photoUrl ? 'Tocá para cambiar' : 'Opcional';
+  show('admin-edit-trainer');
+}
+
+async function handleEditTrainerPhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const titleEl = document.getElementById('et-photo-title');
+  const subEl = document.getElementById('et-photo-sub');
+  titleEl.textContent = 'Subiendo…';
+  subEl.textContent = file.name;
+  const fd = new FormData();
+  fd.append('photo', file);
+  fd.append('folder', 'trainers');
+  try {
+    const res = await fetch(WORKER_URL + '/upload-photo', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.ok && json.url) {
+      _etPhotoUrl = json.url;
+      titleEl.textContent = '✅ Foto lista';
+      subEl.textContent = 'Tocá para cambiar';
+    } else {
+      titleEl.textContent = 'Error';
+      subEl.textContent = 'Reintentá';
+    }
+  } catch {
+    titleEl.textContent = 'Error de red';
+  }
+}
+
+async function submitEditTrainer() {
+  if (!_atdCurrentTrainer) return;
+  const btn = document.getElementById('et-submit');
+  const errEl = document.getElementById('et-error');
+  errEl.textContent = '';
+  const oldUsername = _atdCurrentTrainer.username;
+  const newUsername = document.getElementById('et-username').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!newUsername) { errEl.textContent = 'Usuario inválido'; return; }
+  const fields = {
+    name: document.getElementById('et-name').value.trim(),
+    email: document.getElementById('et-email').value.trim() || null,
+    phone: document.getElementById('et-phone').value.trim() || null,
+    yearsExperience: document.getElementById('et-years').value ? Number(document.getElementById('et-years').value) : null,
+    specialty: document.getElementById('et-specialty').value.trim(),
+    education: document.getElementById('et-education').value.trim(),
+    bio: document.getElementById('et-bio').value.trim(),
+    photoUrl: _etPhotoUrl
+  };
+  if (!fields.name) { errEl.textContent = 'El nombre es obligatorio'; return; }
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const payload = { action: 'update-trainer', admin: ADMIN_PW, username: oldUsername, fields };
+    if (newUsername !== oldUsername) payload.newUsername = newUsername;
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.ok) {
+      errEl.textContent = json.error || 'Error al guardar';
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      return;
+    }
+    btn.textContent = '✅ Guardado';
+    setTimeout(() => {
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      openAdminTrainerDetail(json.trainer.username);
+    }, 600);
+  } catch {
+    errEl.textContent = 'Error de red';
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+  }
 }
 
 async function submitCreateTrainer() {
