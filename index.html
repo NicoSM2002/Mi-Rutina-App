@@ -2428,14 +2428,43 @@ function renderRestDay(state) {
       <div class="rest-hint">Tu próxima sesión estará lista mañana.</div>
     </div>`;
 }
+let currentAthleteRecord = null; // cache del record completo (con profile/biometría) cargado al login
+
 function showProfile() {
+  // Priorizar el record completo que se cargó al login (tiene profile/biometría).
+  if (currentAthleteRecord && currentAthleteRecord.clientId === currentAthlete) {
+    showGenericProfile(currentAthleteRecord);
+    refreshCurrentAthleteRecord();
+    return;
+  }
+  // Fallback: cache público (sin biometría). Si tampoco hay, refrescar desde backend.
   const dyn = (dynamicAthletesCache || []).find(a => a.clientId === currentAthlete);
-  if (dyn) { showGenericProfile(dyn); return; }
-  fetchDynamicAthletes().then(list => {
-    const d = (list || []).find(a => a.clientId === currentAthlete);
-    if (d) showGenericProfile(d);
-    else show('profile-generic');
+  if (dyn) showGenericProfile(dyn);
+  refreshCurrentAthleteRecord().then(ok => {
+    if (!ok && !dyn) show('profile-generic');
   });
+}
+
+async function refreshCurrentAthleteRecord() {
+  const token = getSelfToken();
+  if (!currentAthlete || !token) return false;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-athlete', clientId: currentAthlete, selfToken: token })
+    });
+    const json = await res.json();
+    if (json.ok && json.athlete) {
+      currentAthleteRecord = json.athlete;
+      // Solo re-renderizar si seguimos en pantalla de perfil
+      const profEl = document.getElementById('profile-generic');
+      if (profEl && profEl.classList.contains('active')) {
+        showGenericProfile(json.athlete);
+      }
+      return true;
+    }
+  } catch {}
+  return false;
 }
 window.addEventListener('load', () => {
   setTimeout(async () => {
@@ -3469,10 +3498,12 @@ async function athleteLogin() {
     try { localStorage.setItem(`selfToken_${dyn.clientId}`, json.selfToken); } catch {}
     document.getElementById('athlete-username').value = '';
     currentAthlete = dyn.clientId;
+    currentAthleteRecord = dyn;
     data = {};
     loadRoutine();
     showGenericProfile(dyn);
     loadAthletePayment(currentAthlete);
+    if (typeof startInactivityTracking === 'function') startInactivityTracking();
   } catch (e) {
     errEl.textContent = 'Error de red';
   }
@@ -3578,8 +3609,74 @@ try {
   if (savedTrainer) currentTrainer = savedTrainer;
 } catch {}
 
+/* ══ INACTIVITY / AUTO-LOGOUT (10 minutes) ══ */
+const INACTIVITY_MS = 10 * 60 * 1000; // 10 min
+let _inactivityInterval = null;
+
+function _hasActiveSession() {
+  return !!(currentTrainer || currentAthlete);
+}
+
+function _touchActivity() {
+  try { localStorage.setItem('lastActivityTs', String(Date.now())); } catch {}
+}
+
+function _readLastActivity() {
+  try { return parseInt(localStorage.getItem('lastActivityTs') || '0') || 0; } catch { return 0; }
+}
+
+function _isSessionExpired() {
+  const last = _readLastActivity();
+  if (!last) return false; // nunca registró actividad → no expira todavía
+  return (Date.now() - last) >= INACTIVITY_MS;
+}
+
+function startInactivityTracking() {
+  _touchActivity();
+  if (_inactivityInterval) return;
+  _inactivityInterval = setInterval(() => {
+    if (!_hasActiveSession()) return;
+    if (_isSessionExpired()) forceLogoutByInactivity();
+  }, 30 * 1000); // check every 30s
+}
+
+function stopInactivityTracking() {
+  if (_inactivityInterval) { clearInterval(_inactivityInterval); _inactivityInterval = null; }
+}
+
+function forceLogoutByInactivity() {
+  stopInactivityTracking();
+  try { localStorage.removeItem('lastActivityTs'); } catch {}
+  // Atleta
+  if (currentAthlete) {
+    try { localStorage.removeItem(`selfToken_${currentAthlete}`); } catch {}
+  }
+  athleteSelfToken = null;
+  currentAthlete = null;
+  currentAthleteRecord = null;
+  try { data = JSON.parse(JSON.stringify(FALLBACK_DATA)); } catch {}
+  // Trainer
+  if (typeof logoutTrainer === 'function') logoutTrainer();
+  show('role-select');
+  setTimeout(() => { try { alert('Tu sesión expiró por inactividad. Ingresá de nuevo.'); } catch {} }, 50);
+}
+
+// Registrar cualquier interacción como "actividad" (throttled vía interval arriba).
+['click','keydown','touchstart','pointerdown','scroll'].forEach(evt => {
+  document.addEventListener(evt, () => { if (_hasActiveSession()) _touchActivity(); }, { passive: true });
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _hasActiveSession() && _isSessionExpired()) forceLogoutByInactivity();
+});
+
 async function tryRestoreTrainerSession() {
   if (!currentTrainer) return false;
+  // Si hubo más de 10 min de inactividad, no restaurar: forzar re-login.
+  if (_isSessionExpired()) {
+    logoutTrainer();
+    try { localStorage.removeItem('lastActivityTs'); } catch {}
+    return false;
+  }
   // Validar contra KV — si el entrenador fue eliminado, limpiar sesión.
   try {
     const res = await fetch(WORKER_URL, {
@@ -3593,9 +3690,11 @@ async function tryRestoreTrainerSession() {
       currentTrainer = null;
       return false;
     }
+    startInactivityTracking();
     return true;
   } catch {
     // red caída: confiamos en el estado local
+    startInactivityTracking();
     return true;
   }
 }
@@ -3603,6 +3702,8 @@ async function tryRestoreTrainerSession() {
 function logoutTrainer() {
   currentTrainer = null;
   try { localStorage.removeItem('currentTrainer'); } catch {}
+  try { localStorage.removeItem('lastActivityTs'); } catch {}
+  stopInactivityTracking();
 }
 
 async function trainerLogin() {
@@ -3619,6 +3720,7 @@ async function trainerLogin() {
     if (!found) { errEl.textContent = 'Usuario no encontrado.'; return; }
     currentTrainer = user;
     try { localStorage.setItem('currentTrainer', user); } catch {}
+    startInactivityTracking();
     document.getElementById('trainer-username').value = '';
     show('trainer-portal');
     loadTrainerExtraClients();

@@ -744,50 +744,8 @@ Devolvé SOLO un JSON así, sin texto extra:
       } catch (_) { /* falla silenciosa: guardamos igual */ }
 
       await env.DB.put(`routine:${client}`, JSON.stringify(routine));
-
-      const athleteEmail = athleteRecord?.email;
-      let _emailDebug = { hasRecord: !!athleteRecord, hasEmail: !!athleteEmail, email: athleteEmail || null, hasKey: !!env.RESEND_API_KEY };
-      if (athleteEmail && env.RESEND_API_KEY) {
-        const updatedAt = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' });
-        const routineHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0" bgcolor="#0f1117">
-<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
-  <tr><td align="center" style="padding:24px 16px">
-    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
-      <tr><td style="background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:16px;padding:24px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-bottom:6px">Rutina actualizada</div>
-        <div style="font-size:28px;font-weight:800;color:#fff">🔄 ${athleteName}</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px">${updatedAt}</div>
-      </td></tr>
-      <tr><td height="16"></td></tr>
-      <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
-        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Tu entrenador actualizó tu rutina. Abre la app para revisar los cambios y arrancar tu próxima sesión.</p>
-        <a href="https://mirutinapp.com/?client=${client}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
-      </td></tr>
-    </table>
-  </td></tr>
-</table></body></html>`;
-
-        try {
-          const rr = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: 'Mi Rutina <noreply@mirutinapp.com>',
-              to: athleteEmail,
-              subject: `🔄 Rutina actualizada — ${athleteName}`,
-              html: routineHtml
-            })
-          });
-          const rj = await rr.json().catch(() => ({}));
-          _emailDebug.resendStatus = rr.status;
-          _emailDebug.resendBody = rj;
-        } catch (e) {
-          _emailDebug.resendError = e.message;
-        }
-      }
-
-      return new Response(JSON.stringify({ ok: true, routine, emailDebug: _emailDebug }), { headers: cors });
+      // Nota: se eliminó el email de "Rutina actualizada" al atleta — era spam.
+      return new Response(JSON.stringify({ ok: true, routine }), { headers: cors });
     }
 
     // ── LIST ATHLETES (public read) ──
