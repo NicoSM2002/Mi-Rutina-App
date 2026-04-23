@@ -193,13 +193,10 @@ function emptyRoutineTemplate(sessionsPerWeek) {
     out[`sesion${i}`] = {
       title: `Sesión ${i}`,
       sub: '',
-      warmup: [],
-      warmupHombro: [],
+      warmup: null,
+      warmupHombro: null,
       cardio: '',
-      circuits: [
-        { label: 'Circuito 1', cls: 'c1', rest: '60s descanso', exercises: [] }
-      ],
-      nota: ''
+      circuits: []
     };
   }
   return out;

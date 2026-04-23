@@ -4056,8 +4056,8 @@ function emptyRoutineTemplateJS(n) {
   const N = Math.max(1, Math.min(7, Number(n) || 4));
   for (let i = 1; i <= N; i++) {
     out[`sesion${i}`] = {
-      title: `Sesión ${i}`, sub: '', warmup: [], warmupHombro: [], cardio: '',
-      circuits: [{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises: [] }]
+      title: `Sesión ${i}`, sub: '', warmup: null, warmupHombro: null, cardio: '',
+      circuits: []
     };
   }
   return out;
@@ -5493,8 +5493,8 @@ function addSession() {
   const keys = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k));
   const nextN = keys.length ? Math.max(...keys.map(k => parseInt(k.slice(6)))) + 1 : 1;
   const key = 'sesion' + nextN;
-  editorData[key] = { title:`Sesión ${nextN}`, sub:'', warmup:[], warmupHombro:[], cardio:'',
-    circuits:[{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises:[] }] };
+  editorData[key] = { title:`Sesión ${nextN}`, sub:'', warmup:null, warmupHombro:null, cardio:'',
+    circuits:[] };
   editorDay = key;
   renderRoutineEditor();
 }
