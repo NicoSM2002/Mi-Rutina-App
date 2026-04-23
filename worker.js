@@ -524,14 +524,16 @@ export default {
     if (body.action === 'get-data') {
       const authErr = await authorizeReadForClient(env, body, client, cors);
       if (authErr) return authErr;
-      const [completions, meals] = await Promise.all([
+      const [completions, meals, athlete] = await Promise.all([
         env.DB.get(`completions:${client}`, 'json'),
-        env.DB.get(`meals:${client}`, 'json')
+        env.DB.get(`meals:${client}`, 'json'),
+        env.DB.get(`athlete:${client}`, 'json')
       ]);
       return new Response(JSON.stringify({
         ok: true,
         completions: completions || [],
-        meals: meals || []
+        meals: meals || [],
+        sessionOffset: athlete?.sessionOffset || 0
       }), { headers: cors });
     }
 
@@ -846,6 +848,21 @@ Devolvé SOLO un JSON así, sin texto extra:
       const id = body.clientId;
       const existing = await getAthlete(env, id);
       const patch = body.fields || {};
+
+      // Opcional: el trainer define cuál sesión debe salir próximo al atleta.
+      // Guardamos sessionOffset tal que ((completions.length + offset) % total) + 1 === setNextSession.
+      const desiredNext = Number.isFinite(+body.setNextSession) ? +body.setNextSession : null;
+      if (desiredNext !== null) {
+        const routine = await env.DB.get(`routine:${id}`, 'json') || {};
+        const total = Object.keys(routine).filter(k => /^sesion\d+$/.test(k)).length || 2;
+        if (desiredNext < 1 || desiredNext > total) {
+          return new Response(JSON.stringify({ ok: false, error: `La sesión debe estar entre 1 y ${total}` }), { headers: cors, status: 400 });
+        }
+        const completions = await env.DB.get(`completions:${id}`, 'json') || [];
+        const count = completions.length;
+        patch.sessionOffset = (((desiredNext - 1 - count) % total) + total) % total;
+      }
+
       // Username puede cambiarse: validar formato y unicidad contra otros atletas.
       let newUsername = existing.username;
       if (patch.username && patch.username !== existing.username) {

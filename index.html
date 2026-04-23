@@ -2014,6 +2014,11 @@ html, body {
           <button type="button" class="na-pill" data-val="6" onclick="setEpSessions(6)">6</button>
         </div>
       </div>
+      <div class="na-field">
+        <label class="na-label">Próxima sesión del atleta</label>
+        <div class="na-pills" id="ep-next-session"></div>
+        <div class="na-hint">Elegí qué sesión verá el atleta en su próxima apertura. El ciclo sigue normal desde ahí.</div>
+      </div>
       <div class="na-field"><label class="na-label">Objetivo</label>
         <select class="na-input" id="ep-goal">
           <option value="">Seleccionar…</option>
@@ -2358,11 +2363,10 @@ async function showRoutine() {
     serverCompletions = data.completions || [];
     completedToday = serverCompletions.some(c => c.day === todayISO);
 
-    // Sync localStorage sessionIdx with server completion count
-    const fb = currentAthlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
-    const total = Object.keys(fb).length;
+    // Sync localStorage sessionIdx with server completion count + offset
     const serverIdx = serverCompletions.length;
     localStorage.setItem('sessionIdx_' + currentAthlete, serverIdx);
+    localStorage.setItem('sessionOffset_' + currentAthlete, data.sessionOffset || 0);
     if (completedToday) {
       localStorage.setItem('lastCompleted_' + currentAthlete, new Date().toDateString());
     }
@@ -2428,10 +2432,20 @@ let routineStep  = 0;
 
 /* ── session progression ── */
 function getSessionState(athlete) {
-  const fb = athlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
-  const total = Object.keys(fb).length;
-  const idx   = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
-  const num   = (idx % total) + 1;
+  // Preferir el total real de la rutina dinámica; si no hay, caer al FALLBACK.
+  const dynamicKeys = data && typeof data === 'object'
+    ? Object.keys(data).filter(k => /^sesion\d+$/.test(k))
+    : [];
+  let total;
+  if (dynamicKeys.length) {
+    total = dynamicKeys.length;
+  } else {
+    const fb = athlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
+    total = Object.keys(fb).length;
+  }
+  const idx    = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
+  const offset = parseInt(localStorage.getItem('sessionOffset_' + athlete) || '0');
+  const num    = ((idx + offset) % total) + 1;
   return { idx, total, week: 1, sessionNum: num, sessionKey: 'sesion' + num };
 }
 function advanceSession(athlete) {
@@ -3825,11 +3839,31 @@ async function submitNewAthlete() {
 }
 
 let _editingAthlete = null;
+let _epNextSessionTotal = 2;
+let _epNextSessionCurrent = 1;
 
 function setEpSessions(n) {
   document.querySelectorAll('#ep-sessions .na-pill').forEach(b => {
     b.classList.toggle('na-pill-active', parseInt(b.dataset.val) === n);
   });
+}
+
+function setEpNextSession(n) {
+  document.querySelectorAll('#ep-next-session .na-pill').forEach(b => {
+    b.classList.toggle('na-pill-active', parseInt(b.dataset.val) === n);
+  });
+}
+
+function renderEpNextSessionPills(total, currentNext) {
+  _epNextSessionTotal = total;
+  _epNextSessionCurrent = currentNext;
+  const el = document.getElementById('ep-next-session');
+  if (!el) return;
+  let html = '';
+  for (let i = 1; i <= total; i++) {
+    html += `<button type="button" class="na-pill${i===currentNext?' na-pill-active':''}" data-val="${i}" onclick="setEpNextSession(${i})">Sesión ${i}</button>`;
+  }
+  el.innerHTML = html;
 }
 
 async function openEditAthleteProfile() {
@@ -3855,6 +3889,28 @@ async function openEditAthleteProfile() {
   document.getElementById('ep-level').value = p.level || '';
   setEpSessions(a.sessionsPerWeek || 4);
   document.getElementById('ep-error').textContent = '';
+
+  // Cargar datos para el selector de próxima sesión (total desde rutina, offset + completions del atleta)
+  (async () => {
+    try {
+      const [rRes, dRes] = await Promise.all([
+        fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ action:'get-routine', client:a.clientId, token:TRAINER_TOKEN, trainerUsername:currentTrainer }) }),
+        fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ action:'get-data', client:a.clientId, token:TRAINER_TOKEN, trainerUsername:currentTrainer }) })
+      ]);
+      const rJson = await rRes.json();
+      const dJson = await dRes.json();
+      const total = Object.keys(rJson.routine || {}).filter(k => /^sesion\d+$/.test(k)).length || 2;
+      const count = (dJson.completions || []).length;
+      const offset = dJson.sessionOffset || 0;
+      const currentNext = ((count + offset) % total) + 1;
+      renderEpNextSessionPills(total, currentNext);
+    } catch (e) {
+      renderEpNextSessionPills(2, 1);
+    }
+  })();
+
   show('trainer-edit-profile');
 }
 
@@ -3865,6 +3921,8 @@ async function saveEditAthleteProfile() {
   btn.disabled = true; btn.textContent = 'Guardando…';
   const getN = id => { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; };
   const selectedSess = document.querySelector('#ep-sessions .na-pill-active');
+  const selectedNext = document.querySelector('#ep-next-session .na-pill-active');
+  const nextSessionNum = selectedNext ? parseInt(selectedNext.dataset.val) : null;
   const fields = {
     name: document.getElementById('ep-name').value.trim(),
     username: document.getElementById('ep-username').value.trim().toLowerCase(),
@@ -3884,9 +3942,11 @@ async function saveEditAthleteProfile() {
     }
   };
   try {
+    const payload = { action: 'update-athlete', token: TRAINER_TOKEN, trainerUsername: currentTrainer, clientId: trainerClientId, fields };
+    if (nextSessionNum && nextSessionNum !== _epNextSessionCurrent) payload.setNextSession = nextSessionNum;
     const res = await fetch(WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update-athlete', token: TRAINER_TOKEN, trainerUsername: currentTrainer, clientId: trainerClientId, fields })
+      body: JSON.stringify(payload)
     });
     const json = await res.json();
     if (!json.ok) { errEl.textContent = json.error || 'Error al guardar'; btn.disabled = false; btn.textContent = 'Guardar cambios'; return; }
