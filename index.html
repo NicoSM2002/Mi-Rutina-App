@@ -3218,6 +3218,16 @@ function renderExCard(ex, ci, ei, w) {
 function render() {
   const day = data[currentDay];
   const w = currentWeek;
+  // Guard: sesión sin contenido todavía (warmup null, sin circuitos, sin cardio)
+  if (!day || (!Array.isArray(day.warmup) && !Array.isArray(day.warmupHombro) && (!day.circuits || !day.circuits.length) && !day.cardio)) {
+    document.getElementById('content').innerHTML = `
+      <div class="rest-card">
+        <div class="rest-emoji">📋</div>
+        <div class="rest-title">Sin rutina cargada</div>
+        <div class="rest-msg">Tu entrenador aún no cargó esta sesión. Apenas lo haga, vas a verla acá.</div>
+      </div>`;
+    return;
+  }
   const hasWarmup = Array.isArray(day.warmup) || Array.isArray(day.warmupHombro);
   const totalSteps = (hasWarmup ? 1 : 0) + day.circuits.length + (day.cardio ? 1 : 0);
   if (routineStep >= totalSteps) routineStep = totalSteps - 1;
@@ -5124,8 +5134,11 @@ async function loadRoutine() {
       body: JSON.stringify({ action:'get-routine', client:currentAthlete, selfToken: getSelfToken() })
     });
     const json = await res.json();
-    if (json.routine && Object.keys(json.routine).length) {
-      data = json.routine;
+    // Si la respuesta es OK confiamos en KV incluso si viene vacío/null,
+    // para no dejar "stuck" los datos del FALLBACK cuando el entrenador
+    // borra todo explícitamente.
+    if (json && json.ok) {
+      data = (json.routine && typeof json.routine === 'object') ? json.routine : {};
       // Migrate old day-keyed data (lunes/martes/...) to session keys (sesion1/sesion2/...)
       const dayToSession = { lunes:'sesion1', martes:'sesion2', miercoles:'sesion3', jueves:'sesion4', viernes:'sesion5' };
       if (Object.keys(data).some(k => dayToSession[k])) {
@@ -5133,11 +5146,8 @@ async function loadRoutine() {
         for (const [k, v] of Object.entries(data)) { migrated[dayToSession[k] || k] = v; }
         data = migrated;
       }
-      // Note: we used to "restore" img paths from FALLBACK_DATA here to handle
-      // GIF folder renames. That logic destructively overwrote dynamic athletes'
-      // img paths (warmup items in particular) with Nicolás's hardcoded fallback
-      // at the same array index. Removed — KV data already has correct paths.
     }
+    // Si el fetch falla (catch), mantenemos FALLBACK_DATA.
   } catch(e) { /* keep FALLBACK_DATA */ }
 }
 
