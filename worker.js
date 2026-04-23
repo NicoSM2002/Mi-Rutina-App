@@ -359,6 +359,33 @@ export default {
       if (authErr) return authErr;
       const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
       const isoDate = `${nowCO.getFullYear()}-${String(nowCO.getMonth()+1).padStart(2,'0')}-${String(nowCO.getDate()).padStart(2,'0')}`;
+
+      // Snapshot de la sesión tal como está en KV al momento de completar.
+      const routine = await env.DB.get(`routine:${client}`, 'json') || {};
+      const raw = routine[body.day] || null;
+      const snapshot = raw ? {
+        title: raw.title || '',
+        sub: raw.sub || '',
+        warmup: Array.isArray(raw.warmup) ? raw.warmup : null,
+        warmupHombro: Array.isArray(raw.warmupHombro) ? raw.warmupHombro : null,
+        warmupSeries: raw.warmupSeries || null,
+        cardio: raw.cardio || '',
+        circuits: (raw.circuits || []).map(c => ({
+          label: c.label || '',
+          rest: c.rest || '',
+          series: c.series || null,
+          exercises: (c.exercises || []).map(e => ({
+            name: e.name || '',
+            muscle: e.muscle || '',
+            reps: e.reps || '',
+            w1: e.w1 || '',
+            setType: e.setType || 'normal',
+            steps1: Array.isArray(e.steps1) ? e.steps1 : [],
+            trainerNote: e.trainerNote || ''
+          }))
+        }))
+      } : null;
+
       const entry = {
         day: isoDate,
         dayLabel: body.dayLabel,
@@ -366,7 +393,8 @@ export default {
         week: body.week,
         notes: body.notes,
         date: new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }),
-        ts: Date.now()
+        ts: Date.now(),
+        snapshot
       };
 
       const kvKey = `completions:${client}`;
@@ -379,6 +407,89 @@ export default {
       if (records.length > 200) records = records.slice(0, 200);
       await env.DB.put(kvKey, JSON.stringify(records));
 
+      // ── Email detallado ──
+      const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const muscleLabel = m => {
+        if (!m) return '';
+        const map = { isquio:'Isquio', cuadriceps:'Cuádriceps', gluteo:'Glúteo', pantorrilla:'Pantorrilla',
+          trapecio:'Trapecio', hombros:'Hombros', pecho:'Pecho', espalda:'Espalda',
+          triceps:'Tríceps', biceps:'Bíceps', abdomen:'Abdomen' };
+        return map[m] || m.charAt(0).toUpperCase() + m.slice(1);
+      };
+      const renderWarmupBlock = (snap) => {
+        const hom = Array.isArray(snap.warmupHombro) ? snap.warmupHombro : [];
+        const wu  = Array.isArray(snap.warmup) ? snap.warmup : [];
+        const all = [...hom, ...wu];
+        if (!all.length) return '';
+        const n = parseInt(snap.warmupSeries) || 2;
+        const rows = all.map(it => {
+          const obj = (typeof it === 'object' && it) ? it : { text: String(it||'') };
+          const name = obj.text || obj.name || '';
+          const w = obj.w || '';
+          const r = obj.reps || '';
+          return `<tr>
+            <td style="padding:6px 10px;border-bottom:1px solid #2d3148;color:#e2e8f0;font-size:13px">${esc(name)}</td>
+            <td style="padding:6px 10px;border-bottom:1px solid #2d3148;color:#94a3b8;font-size:12px;text-align:right;white-space:nowrap">${esc(w)} · ${esc(r)}</td>
+          </tr>`;
+        }).join('');
+        return `<tr><td height="16"></td></tr>
+        <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:16px 18px">
+          <div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:1px;margin-bottom:8px">🔥 CALENTAMIENTO · ${n} vuelta${n===1?'':'s'}</div>
+          <table width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+        </td></tr>`;
+      };
+      const renderCircuitBlock = (c, idx) => {
+        const nSeries = parseInt(c.series) || 4;
+        const restSec = parseInt(c.rest) || 60;
+        const exRows = (c.exercises || []).map(ex => {
+          const st = ex.setType || 'normal';
+          let wrHtml;
+          if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
+            const stepsText = ex.steps1.map(s => `${esc(s.w||'—')}·${esc(s.reps||'—')}`).join(' → ');
+            wrHtml = `<div style="font-size:11px;color:#fbbf24;margin-top:2px">${st.toUpperCase()}: ${stepsText}</div>`;
+          } else {
+            wrHtml = `<div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(ex.w1||'—')} · ${esc(ex.reps||'—')}</div>`;
+          }
+          const noteHtml = ex.trainerNote
+            ? `<div style="margin-top:6px;padding:6px 10px;background:rgba(251,191,36,.08);border-left:2px solid #fbbf24;border-radius:4px;font-size:12px;color:#fde68a;line-height:1.4">📌 ${esc(ex.trainerNote)}</div>`
+            : '';
+          const muscleChip = ex.muscle
+            ? `<span style="display:inline-block;font-size:10px;color:#94a3b8;background:#0f1117;border:1px solid #2d3148;border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle">${esc(muscleLabel(ex.muscle))}</span>`
+            : '';
+          return `<tr><td style="padding:10px 0;border-bottom:1px solid #2d3148">
+            <div style="font-size:14px;font-weight:600;color:#e2e8f0">${esc(ex.name)}${muscleChip}</div>
+            ${wrHtml}
+            ${noteHtml}
+          </td></tr>`;
+        }).join('');
+        return `<tr><td height="12"></td></tr>
+        <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:16px 18px">
+          <div style="font-size:11px;font-weight:700;color:#818cf8;letter-spacing:1px;margin-bottom:4px">CIRCUITO ${idx+1}${c.label && c.label !== `Circuito ${idx+1}` ? ` · ${esc(c.label)}` : ''}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">${nSeries} serie${nSeries===1?'':'s'} · ${restSec}s descanso</div>
+          <table width="100%" cellpadding="0" cellspacing="0">${exRows || '<tr><td style="font-size:12px;color:#64748b;padding:6px 0">Sin ejercicios cargados.</td></tr>'}</table>
+        </td></tr>`;
+      };
+      const warmupHtml = snapshot ? renderWarmupBlock(snapshot) : '';
+      const circuitsHtml = snapshot ? (snapshot.circuits || []).map(renderCircuitBlock).join('') : '';
+      const cardioHtml = snapshot && snapshot.cardio
+        ? `<tr><td height="12"></td></tr>
+        <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-left:3px solid #34d399;border-radius:12px;padding:14px 18px">
+          <div style="font-size:11px;font-weight:700;color:#34d399;letter-spacing:1px;margin-bottom:4px">🏃 CARDIO FINAL</div>
+          <div style="font-size:13px;color:#cbd5e1">${esc(snapshot.cardio)}</div>
+        </td></tr>` : '';
+      const notesHtml = body.notes
+        ? `<tr><td height="12"></td></tr>
+        <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-left:3px solid #34d399;border-radius:12px;padding:14px 18px">
+          <div style="font-size:11px;font-weight:700;color:#34d399;letter-spacing:1px;margin-bottom:6px">📝 NOTA DEL ATLETA</div>
+          <div style="font-size:14px;color:#cbd5e1;line-height:1.5">${esc(body.notes)}</div>
+        </td></tr>` : '';
+      const sessionTitleHtml = snapshot && snapshot.title
+        ? `<tr><td height="12"></td></tr>
+        <tr><td style="padding:0 4px">
+          <div style="font-size:18px;font-weight:700;color:#e2e8f0">${esc(snapshot.title)}</div>
+          ${snapshot.sub ? `<div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(snapshot.sub)}</div>` : ''}
+        </td></tr>` : '';
+
       const emailHtml = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0" bgcolor="#0f1117">
@@ -386,32 +497,17 @@ export default {
   <tr><td align="center" style="padding:24px 16px">
     <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
 
-      <!-- Header -->
-      <tr><td style="background:linear-gradient(135deg,#059669,#34d399);border-radius:16px;padding:24px;margin-bottom:24px">
+      <tr><td style="background:linear-gradient(135deg,#059669,#34d399);border-radius:16px;padding:24px">
         <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.7);text-transform:uppercase;margin-bottom:6px">Rutina completada</div>
-        <div style="font-size:28px;font-weight:800;color:#fff">✅ ${body.dayLabel || body.day}</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px">${entry.date} · ${athleteName}</div>
+        <div style="font-size:26px;font-weight:800;color:#fff">✅ ${esc(body.dayLabel || body.day)}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px">${entry.date} · ${esc(athleteName)}</div>
       </td></tr>
 
-      <tr><td height="16"></td></tr>
-
-      <!-- Stats card -->
-      <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td bgcolor="#0f1117" style="background:#0f1117;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:22px;font-weight:800;color:#34d399">${body.dayLabel || body.day}</div>
-              <div style="font-size:11px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.8px">Sesión completada</div>
-            </td>
-          </tr>
-          ${body.notes ? `
-          <tr><td colspan="3" height="16"></td></tr>
-          <tr><td colspan="3" bgcolor="#0f1117" style="background:#0f1117;border-left:3px solid #34d399;border-radius:0 8px 8px 0;padding:14px 16px">
-            <div style="font-size:11px;font-weight:700;color:#34d399;letter-spacing:1px;margin-bottom:6px">📝 NOTAS</div>
-            <div style="font-size:14px;color:#cbd5e1;line-height:1.5">${body.notes}</div>
-          </td></tr>` : ''}
-        </table>
-      </td></tr>
+      ${sessionTitleHtml}
+      ${warmupHtml}
+      ${circuitsHtml}
+      ${cardioHtml}
+      ${notesHtml}
 
     </table>
   </td></tr>

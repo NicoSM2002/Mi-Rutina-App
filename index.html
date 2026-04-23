@@ -1346,16 +1346,17 @@ html, body {
 .expicker-subtitle { font-family:var(--font-d); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--t3); margin-bottom:10px; }
 .expicker-empty { text-align:center; padding:40px 20px; color:var(--t3); font-size:13px; }
 
-/* Nota */
-.nota-card {
-  margin-top:16px; background:var(--s1); border:1px solid var(--b);
-  border-left:3px solid var(--ac); border-radius:12px; padding:14px 16px;
+/* Nota del entrenador por ejercicio */
+.ex-trainer-note {
+  margin:10px 0 4px; padding:10px 12px;
+  background:rgba(251,191,36,.08);
+  border:1px solid rgba(251,191,36,.18);
+  border-left:3px solid #fbbf24;
+  border-radius:10px;
+  font-size:12.5px; color:#fde68a; line-height:1.5; font-weight:500;
+  display:flex; gap:8px; align-items:flex-start;
 }
-.nota-card h4 {
-  font-size:10px; font-weight:700; color:var(--acl);
-  text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;
-}
-.nota-card p { font-size:12px; color:var(--t2); line-height:1.7; font-weight:500; }
+.ex-trainer-note::before { content:"📌"; flex-shrink:0; font-size:13px; }
 
 /* Cardio */
 .cardio-card {
@@ -1546,6 +1547,32 @@ html, body {
 .resumen-session-day { font-size:14px; font-weight:700; color:var(--t1); }
 .resumen-session-date { font-size:11px; color:var(--t3); }
 .resumen-session-notes { font-size:12px; color:var(--t2); margin-top:8px; border-left:2px solid #34d399; padding-left:10px; line-height:1.5; }
+
+.rs-expandable { padding:0; }
+.rs-expandable > .rs-summary { list-style:none; cursor:pointer; padding:14px; display:flex; align-items:center; gap:8px; }
+.rs-expandable > .rs-summary::-webkit-details-marker { display:none; }
+.rs-expandable > .rs-summary > .resumen-session-header { flex:1; }
+.rs-chevron { font-size:16px; color:var(--t3); transition:transform .2s; flex-shrink:0; }
+.rs-expandable[open] .rs-chevron { transform:rotate(90deg); }
+.rs-detail { padding:0 14px 14px; border-top:1px solid var(--b); padding-top:12px; }
+.rs-snap-title { font-size:14px; font-weight:700; color:var(--t1); margin-bottom:10px; }
+.rs-snap-sub { font-size:12px; font-weight:500; color:var(--t3); }
+.rs-block { background:var(--s0); border:1px solid rgba(255,255,255,.04); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+.rs-block-title { font-size:11px; font-weight:700; color:var(--acl); text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+.rs-block-sub { font-size:11px; color:var(--t3); margin-bottom:8px; }
+.rs-wu-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:12.5px; }
+.rs-wu-row:last-child { border-bottom:none; }
+.rs-wu-name { color:var(--t2); }
+.rs-wu-wr { color:var(--t3); font-size:11px; white-space:nowrap; }
+.rs-ex { padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.rs-ex:last-child { border-bottom:none; }
+.rs-ex-name { font-size:13px; font-weight:600; color:var(--t1); }
+.rs-ex-muscle { display:inline-block; font-size:10px; color:var(--t3); background:var(--s1); border:1px solid var(--b); border-radius:8px; padding:1px 7px; margin-left:6px; vertical-align:middle; }
+.rs-ex-wr { font-size:12px; color:var(--t2); margin-top:2px; }
+.rs-ex-steps { color:#fbbf24; font-size:11px; font-weight:600; }
+.rs-ex-note { margin-top:5px; padding:6px 10px; background:rgba(251,191,36,.08); border-left:2px solid #fbbf24; border-radius:4px; font-size:12px; color:#fde68a; line-height:1.4; }
+.rs-cardio-text { font-size:12.5px; color:var(--t2); }
+.rs-empty { font-size:12px; color:var(--t3); font-style:italic; padding:4px 0; }
 .resumen-day-card {
   background:var(--s1); border:1px solid var(--b); border-radius:12px; overflow:hidden; margin-bottom:8px;
 }
@@ -3162,6 +3189,9 @@ function renderExCard(ex, ci, ei, w) {
     : st === 'piramidal' ? `<span class="ex-set-badge pir">PIRAMIDAL</span>` : '';
   const stepsHtml = isSpecial
     ? `<div class="ex-steps-view">${currentSteps.map(s=>`<div class="ex-step-pill"><span class="sp-w">${s.w||'—'}</span><span class="sp-r">${s.reps||'—'}</span></div>`).join('')}</div>` : '';
+  const trainerNoteHtml = ex.trainerNote
+    ? `<div class="ex-trainer-note"><span>${ex.trainerNote}</span></div>`
+    : '';
   return `<div class="ex-card">
     <div class="ex-top">
       <div class="ex-left">
@@ -3174,6 +3204,7 @@ function renderExCard(ex, ci, ei, w) {
       </div>`:''}
     </div>
     ${stepsHtml}
+    ${trainerNoteHtml}
     <div class="ex-actions">
       <button class="ex-act-btn tip-btn" onclick="toggleTip('${tid}')">📋 Técnica</button>
       ${currentImg?`<button class="ex-act-btn gif-btn" onclick="togglePhoto('${pid}','${currentImg}')">🎬 Ver GIF</button>`:''}
@@ -3187,11 +3218,13 @@ function renderExCard(ex, ci, ei, w) {
 function render() {
   const day = data[currentDay];
   const w = currentWeek;
-  const totalSteps = 1 + day.circuits.length + (day.cardio ? 1 : 0);
+  const hasWarmup = Array.isArray(day.warmup) || Array.isArray(day.warmupHombro);
+  const totalSteps = (hasWarmup ? 1 : 0) + day.circuits.length + (day.cardio ? 1 : 0);
   if (routineStep >= totalSteps) routineStep = totalSteps - 1;
   const isLast = routineStep === totalSteps - 1;
 
-  const stepLabels = ['🔥 Calentamiento',
+  const stepLabels = [
+    ...(hasWarmup ? ['🔥 Calentamiento'] : []),
     ...day.circuits.map(c => c.label),
     ...(day.cardio ? ['🏃 Cardio'] : [])];
 
@@ -3208,7 +3241,8 @@ function render() {
   html += `</div></div>`;
 
   /* content for current step */
-  if (routineStep === 0) {
+  const circuitOffset = hasWarmup ? 1 : 0;
+  if (hasWarmup && routineStep === 0) {
     /* warmup */
     html += `<div class="warmup-card"><h3>🔥 Calentamiento</h3>`;
     let wuIdx = 0;
@@ -3234,9 +3268,9 @@ function render() {
     }
     html += `</div>`;
 
-  } else if (routineStep <= day.circuits.length) {
+  } else if (routineStep < circuitOffset + day.circuits.length) {
     /* circuit */
-    const ci = routineStep - 1;
+    const ci = routineStep - circuitOffset;
     const c = day.circuits[ci];
     const nSeries = parseInt(c.series) || 4;
     html += `<div class="circuit-section ${c.cls || ('c'+(((ci)%3)+1))}">
@@ -3253,9 +3287,6 @@ function render() {
     /* cardio */
     html += `<div class="cardio-card"><div class="cardio-icon">🏃</div><div class="cardio-body"><div class="cardio-label">Cardio Final</div><div class="cardio-detail">${day.cardio}</div><div class="cardio-sub">Al finalizar los circuitos</div></div></div>`;
   }
-
-  /* nota — siempre visible */
-  html += `<div class="nota-card"><h4>💬 Nota del entrenador</h4><p>${day.nota}</p></div>`;
 
   /* botón */
   const backBtnHtml = routineStep > 0
@@ -4026,14 +4057,94 @@ function emptyRoutineTemplateJS(n) {
   for (let i = 1; i <= N; i++) {
     out[`sesion${i}`] = {
       title: `Sesión ${i}`, sub: '', warmup: [], warmupHombro: [], cardio: '',
-      circuits: [{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises: [] }],
-      nota: ''
+      circuits: [{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises: [] }]
     };
   }
   return out;
 }
 
 function reEscAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function escHtmlText(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function muscleNameLabel(m) {
+  if (!m) return '';
+  const map = { isquio:'Isquio', cuadriceps:'Cuádriceps', gluteo:'Glúteo', pantorrilla:'Pantorrilla',
+    trapecio:'Trapecio', hombros:'Hombros', pecho:'Pecho', espalda:'Espalda',
+    triceps:'Tríceps', biceps:'Bíceps', abdomen:'Abdomen' };
+  return map[m] || (m.charAt(0).toUpperCase() + m.slice(1));
+}
+
+function renderCompletionCard(c) {
+  const header = `<div class="resumen-session-header">
+    <span class="resumen-session-day">${escHtmlText(c.dayLabel || c.day)}</span>
+    <span class="resumen-session-date">${escHtmlText(c.date || '')}</span>
+  </div>`;
+  const athleteNotes = c.notes ? `<div class="resumen-session-notes">${escHtmlText(c.notes)}</div>` : '';
+  if (!c.snapshot) {
+    return `<div class="resumen-session-card">${header}${athleteNotes}</div>`;
+  }
+  const snap = c.snapshot;
+  const wuItems = [...(Array.isArray(snap.warmupHombro) ? snap.warmupHombro : []), ...(Array.isArray(snap.warmup) ? snap.warmup : [])];
+  const wuN = parseInt(snap.warmupSeries) || 2;
+  let wuHtml = '';
+  if (wuItems.length) {
+    const rows = wuItems.map(it => {
+      const obj = (typeof it === 'object' && it) ? it : { text: String(it || '') };
+      const name = obj.text || obj.name || '';
+      return `<div class="rs-wu-row">
+        <span class="rs-wu-name">${escHtmlText(name)}</span>
+        <span class="rs-wu-wr">${escHtmlText(obj.w || '—')} · ${escHtmlText(obj.reps || '—')}</span>
+      </div>`;
+    }).join('');
+    wuHtml = `<div class="rs-block">
+      <div class="rs-block-title">🔥 Calentamiento · ${wuN} vuelta${wuN===1?'':'s'}</div>
+      ${rows}
+    </div>`;
+  }
+  const circuitsHtml = (snap.circuits || []).map((c2, idx) => {
+    const nSeries = parseInt(c2.series) || 4;
+    const restSec = parseInt(c2.rest) || 60;
+    const exHtml = (c2.exercises || []).map(ex => {
+      const st = ex.setType || 'normal';
+      let wrHtml;
+      if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
+        const stepsText = ex.steps1.map(s => `${escHtmlText(s.w || '—')}·${escHtmlText(s.reps || '—')}`).join(' → ');
+        wrHtml = `<div class="rs-ex-wr rs-ex-steps">${st.toUpperCase()}: ${stepsText}</div>`;
+      } else {
+        wrHtml = `<div class="rs-ex-wr">${escHtmlText(ex.w1 || '—')} · ${escHtmlText(ex.reps || '—')}</div>`;
+      }
+      const muscleChip = ex.muscle ? `<span class="rs-ex-muscle">${escHtmlText(muscleNameLabel(ex.muscle))}</span>` : '';
+      const note = ex.trainerNote ? `<div class="rs-ex-note">📌 ${escHtmlText(ex.trainerNote)}</div>` : '';
+      return `<div class="rs-ex">
+        <div class="rs-ex-name">${escHtmlText(ex.name)}${muscleChip}</div>
+        ${wrHtml}
+        ${note}
+      </div>`;
+    }).join('');
+    const lbl = c2.label && c2.label !== `Circuito ${idx+1}` ? ` · ${escHtmlText(c2.label)}` : '';
+    return `<div class="rs-block">
+      <div class="rs-block-title">Circuito ${idx+1}${lbl}</div>
+      <div class="rs-block-sub">${nSeries} serie${nSeries===1?'':'s'} · ${restSec}s descanso</div>
+      ${exHtml || '<div class="rs-empty">Sin ejercicios.</div>'}
+    </div>`;
+  }).join('');
+  const cardioHtml = snap.cardio ? `<div class="rs-block rs-cardio">
+    <div class="rs-block-title">🏃 Cardio final</div>
+    <div class="rs-cardio-text">${escHtmlText(snap.cardio)}</div>
+  </div>` : '';
+  const titleHtml = snap.title ? `<div class="rs-snap-title">${escHtmlText(snap.title)}${snap.sub ? `<span class="rs-snap-sub"> · ${escHtmlText(snap.sub)}</span>` : ''}</div>` : '';
+  return `<details class="resumen-session-card rs-expandable">
+    <summary class="rs-summary">${header}<span class="rs-chevron">›</span></summary>
+    <div class="rs-detail">
+      ${titleHtml}
+      ${wuHtml}
+      ${circuitsHtml}
+      ${cardioHtml}
+      ${athleteNotes}
+    </div>
+  </details>`;
+}
 
 function setTrainerTab(tab) {
   activeTrainerTab = tab;
@@ -4215,15 +4326,7 @@ function renderResumenContent(data, navId, contentId, isTrainer) {
   if (!completions.length) {
     html += '<div class="resumen-empty">No hubo sesiones esta semana</div>';
   } else {
-    html += completions.map(c => `
-      <div class="resumen-session-card">
-        <div class="resumen-session-header">
-          <span class="resumen-session-day">${c.dayLabel || c.day}</span>
-          <span class="resumen-session-date">${c.date || ''}</span>
-        </div>
-        ${c.notes ? `<div class="resumen-session-notes">${c.notes}</div>` : ''}
-      </div>
-    `).join('');
+    html += completions.map(c => renderCompletionCard(c)).join('');
   }
   html += '</div>';
 
@@ -4914,9 +5017,12 @@ function buildContext() {
       if (day.cardio) routineText += `Cardio: ${day.cardio}\n`;
       (day.circuits || []).forEach(c => {
         routineText += `${c.label}: `;
-        routineText += c.exercises.map(e => `${e.name} (${e.w1}×${e.reps})`).join(', ') + '\n';
+        routineText += c.exercises.map(e => {
+          let base = `${e.name} (${e.w1}×${e.reps})`;
+          if (e.trainerNote) base += ` [nota: ${e.trainerNote}]`;
+          return base;
+        }).join(', ') + '\n';
       });
-      if (day.nota) routineText += `Nota entrenador: ${day.nota}\n`;
     } else {
       // Only muscle group for other sessions
       routineText += `${dayKey.toUpperCase()}: ${day.title} (sin acceso a detalles hoy)\n`;
@@ -5071,12 +5177,17 @@ function renderRoutineEditor() {
   }
   html += `</div>`;
 
-  // Migrate legacy warmupHombro → warmup (one single list going forward)
-  if (Array.isArray(day.warmupHombro) && day.warmupHombro.length) {
+  // Migrate legacy warmupHombro → warmup (one single list going forward).
+  // Si warmup es null (warmup removido explícitamente), no re-poblar.
+  if (Array.isArray(day.warmupHombro) && day.warmupHombro.length && day.warmup !== null) {
     day.warmup = [...(day.warmupHombro || []), ...(day.warmup || [])];
     day.warmupHombro = [];
   }
-  // Warmup editor (single list, picker-based)
+  // Warmup editor (single list, picker-based) — puede removerse por completo
+  const warmupRemoved = day.warmup === null && (day.warmupHombro == null || (Array.isArray(day.warmupHombro) && day.warmupHombro.length === 0));
+  if (warmupRemoved) {
+    html += `<button class="re-add-btn" style="border-style:solid;border-color:#fbbf24;color:#fbbf24;margin-bottom:12px" onclick="restoreWarmup('${editorDay}')">+ Agregar calentamiento</button>`;
+  } else {
   html += `<div class="re-warmup-card">`;
   const wuSeries = parseInt(day.warmupSeries) || 2;
   html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -5084,6 +5195,7 @@ function renderRoutineEditor() {
     <select class="re-rest-select" onchange="setWarmupSeries('${editorDay}',this.value)" title="Series">
       ${[1,2,3,4,5].map(n => `<option value="${n}"${wuSeries===n?' selected':''}>${n} vuelta${n===1?'':'s'}</option>`).join('')}
     </select>
+    <button class="re-del-btn" onclick="removeWarmup('${editorDay}')" title="Quitar calentamiento">×</button>
   </div>`;
   (day.warmup || []).forEach((it, wi) => {
     const obj = (typeof it === 'object' && it) ? it : { text: String(it||'') };
@@ -5121,6 +5233,7 @@ function renderRoutineEditor() {
   });
   html += `<button class="re-add-btn re-wu-add" onclick="addWarmupPicker()">+ Agregar calentamiento</button>`;
   html += `</div>`;
+  } // cierre del else (warmup no removido)
 
   // Circuits
   html += `<div class="re-circuits-grid">`;
@@ -5227,6 +5340,7 @@ function renderRoutineEditor() {
             })()
           : renderSteps()
         }
+        <textarea class="re-nota re-trainer-note" rows="2" placeholder="Nota del entrenador para este ejercicio (ej: súbele 10 reps, ir más lento en la bajada)…" oninput="updateEditorTrainerNote('${editorDay}',${ci},${ei},this.value)">${reEscAttr(ex.trainerNote||'')}</textarea>
       </div>`;
     });
     html += `<button class="re-add-btn" onclick="addExercise('${editorDay}',${ci})">+ Agregar ejercicio</button>`;
@@ -5243,8 +5357,6 @@ function renderRoutineEditor() {
       </label>
     </div>
     ${day.cardio !== '' && day.cardio != null ? `<input type="text" class="re-nota" style="padding:12px;font-size:14px" placeholder="Ej: Caminadora 20 min nivel 6" value="${reEscAttr(day.cardio)}" oninput="updateEditorCardio('${editorDay}',this.value)">` : ''}
-    <div class="section-label" style="margin-top:16px;margin-bottom:6px">Nota del entrenador</div>
-    <textarea class="re-nota" rows="3" oninput="updateEditorNota('${editorDay}',this.value)">${day.nota||''}</textarea>
     <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>`;
   el.innerHTML = html;
 }
@@ -5258,8 +5370,22 @@ function updateEditorField(day, ci, ei, field, value) {
   editorData[day].circuits[ci].exercises[ei][field] = value;
 }
 
-function updateEditorNota(day, value) {
-  editorData[day].nota = value;
+function updateEditorTrainerNote(day, ci, ei, value) {
+  editorData[day].circuits[ci].exercises[ei].trainerNote = value;
+}
+
+function removeWarmup(day) {
+  if (!confirm('¿Quitar el calentamiento de esta sesión? El atleta arrancará directo en el primer circuito.')) return;
+  editorData[day].warmup = null;
+  editorData[day].warmupHombro = null;
+  renderRoutineEditor();
+}
+
+function restoreWarmup(day) {
+  editorData[day].warmup = [];
+  editorData[day].warmupHombro = [];
+  if (!editorData[day].warmupSeries) editorData[day].warmupSeries = 2;
+  renderRoutineEditor();
 }
 
 function updateEditorCardio(day, value) {
@@ -5376,7 +5502,7 @@ function addSession() {
   const nextN = keys.length ? Math.max(...keys.map(k => parseInt(k.slice(6)))) + 1 : 1;
   const key = 'sesion' + nextN;
   editorData[key] = { title:`Sesión ${nextN}`, sub:'', warmup:[], warmupHombro:[], cardio:'',
-    circuits:[{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises:[] }], nota:'' };
+    circuits:[{ label:'Circuito 1', cls:'c1', rest:'60s descanso', exercises:[] }] };
   editorDay = key;
   renderRoutineEditor();
 }
