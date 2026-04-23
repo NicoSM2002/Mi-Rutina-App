@@ -3815,7 +3815,8 @@ async function loadTrainerExtraClients() {
   const container = document.getElementById('trainer-extra-clients');
   if (!container) return;
   const list = await fetchDynamicAthletes();
-  const extras = list;
+  // Un entrenador solo ve SUS atletas (athlete.trainerId === currentTrainer).
+  const extras = (list || []).filter(a => a.trainerId === currentTrainer);
   if (!extras.length) { container.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--t3);font-size:13px">No hay atletas aún. Tocá "+" para crear el primero.</div>'; return; }
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   container.innerHTML = extras.map(a => {
