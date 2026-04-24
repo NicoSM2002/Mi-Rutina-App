@@ -107,6 +107,13 @@
 }
 </script>
 
+<!-- Preconnect to Google Fonts for faster font loading -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Preload hero LCP image (the center phone screenshot) -->
+<link rel="preload" as="image" href="/landing/img/03_atleta_perfil_home.png" fetchpriority="high">
+
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Google Analytics 4 -->
@@ -132,7 +139,7 @@
   --am: #FFB547;
   --t1: #F5F5F7;
   --t2: #A1A1A6;
-  --t3: #6E6E73;
+  --t3: #8E8E93;
   --font-d: 'Sora', system-ui, sans-serif;
   --font-b: 'DM Sans', system-ui, sans-serif;
   --r-lg: 24px;
@@ -728,7 +735,7 @@ header {
   font-size: 16px; color: #fff;
   box-shadow: 0 10px 24px -6px rgba(255,107,44,0.45);
 }
-.step h4 { margin: 10px 0 10px; font-size: 20px; font-family: var(--font-d); }
+.step h3 { margin: 10px 0 10px; font-size: 20px; font-family: var(--font-d); }
 .step p { color: var(--t2); font-size: 15px; }
 
 /* ───────── Pricing ───────── */
@@ -741,7 +748,7 @@ header {
 @media (max-width: 768px) {
   .price-grid { margin-top: 26px; gap: 14px; }
   .price-card { padding: 28px 24px; }
-  .price-card h4 { font-size: 17px; }
+  .price-card h3 { font-size: 17px; }
 }
 @media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; } }
 .price-card {
@@ -770,7 +777,7 @@ header {
   text-transform: uppercase;
   border-radius: 999px;
 }
-.price-card h4 { font-size: 18px; margin-bottom: 6px; font-family: var(--font-d); }
+.price-card h3 { font-size: 18px; margin-bottom: 6px; font-family: var(--font-d); }
 .price-card .price {
   font-family: var(--font-d);
   font-size: clamp(28px, 3.4vw, 38px);
@@ -874,7 +881,7 @@ footer {
 }
 @media (max-width: 900px) { .footer-row { grid-template-columns: 1fr 1fr; gap: 32px; } }
 @media (max-width: 560px) { .footer-row { grid-template-columns: 1fr; } }
-.footer-col h5 {
+.footer-col h3 {
   font-family: var(--font-d); font-size: 13px; font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--t2); margin-bottom: 16px;
@@ -952,9 +959,9 @@ footer {
     </div>
 
     <div class="hero-phones">
-      <div class="phone phone--md"><div class="phone__screen"><img src="/landing/img/05_atleta_rutina_circuito.png" alt="Rutina del día con circuitos"/></div></div>
-      <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/03_atleta_perfil_home.png" alt="Perfil del atleta con métricas y tarjeta del entrenador"/></div></div>
-      <div class="phone phone--md"><div class="phone__screen"><img src="/landing/img/16_atleta_resumen_semanal.png" alt="Resumen semanal del atleta"/></div></div>
+      <div class="phone phone--md"><div class="phone__screen"><img src="/landing/img/05_atleta_rutina_circuito.png" alt="Rutina del día con circuitos" width="365" height="696" loading="eager" decoding="async"/></div></div>
+      <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/03_atleta_perfil_home.png" alt="Perfil del atleta con métricas y tarjeta del entrenador" width="365" height="696" loading="eager" fetchpriority="high" decoding="async"/></div></div>
+      <div class="phone phone--md"><div class="phone__screen"><img src="/landing/img/16_atleta_resumen_semanal.png" alt="Resumen semanal del atleta" width="365" height="696" loading="eager" decoding="async"/></div></div>
     </div>
 
     <div class="trust">
@@ -1019,8 +1026,8 @@ footer {
           <li>Progreso semanal a la vista</li>
         </ul>
         <div class="phone-stack">
-          <div class="phone"><div class="phone__screen"><img src="/landing/img/05_atleta_rutina_circuito.png" alt=""/></div></div>
-          <div class="phone"><div class="phone__screen"><img src="/landing/img/08_atleta_timer_descanso.png" alt=""/></div></div>
+          <div class="phone"><div class="phone__screen"><img src="/landing/img/05_atleta_rutina_circuito.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+          <div class="phone"><div class="phone__screen"><img src="/landing/img/08_atleta_timer_descanso.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></div></div>
         </div>
       </div>
 
@@ -1037,8 +1044,8 @@ footer {
           <li>Perfil profesional + chat con tu atleta</li>
         </ul>
         <div class="phone-stack">
-          <div class="phone"><div class="phone__screen"><img src="/landing/img/19_entrenador_lista_atletas.png" alt=""/></div></div>
-          <div class="phone"><div class="phone__screen"><img src="/landing/img/28_entrenador_editor_rutina.png" alt=""/></div></div>
+          <div class="phone"><div class="phone__screen"><img src="/landing/img/19_entrenador_lista_atletas.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+          <div class="phone"><div class="phone__screen"><img src="/landing/img/28_entrenador_editor_rutina.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></div></div>
         </div>
       </div>
     </div>
@@ -1067,9 +1074,9 @@ footer {
         </ul>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/04_atleta_rutina_calentamiento.png" alt="Calentamiento"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/05_atleta_rutina_circuito.png" alt="Circuito activo"/></div></div>
-        <div class="phone phone--back right"><div class="phone__screen"><img src="/landing/img/09_atleta_rutina_completar.png" alt="Completar rutina"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/04_atleta_rutina_calentamiento.png" alt="Calentamiento" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/05_atleta_rutina_circuito.png" alt="Circuito activo" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--back right"><div class="phone__screen"><img src="/landing/img/09_atleta_rutina_completar.png" alt="Completar rutina" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1085,8 +1092,8 @@ footer {
         </ul>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/07_atleta_rutina_tecnica.png" alt="Técnica"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/06_atleta_rutina_gif.png" alt="GIF del ejercicio"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/07_atleta_rutina_tecnica.png" alt="Técnica" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/06_atleta_rutina_gif.png" alt="GIF del ejercicio" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1102,7 +1109,7 @@ footer {
         </ul>
       </div>
       <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/08_atleta_timer_descanso.png" alt="Timer de descanso"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/08_atleta_timer_descanso.png" alt="Timer de descanso" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1118,8 +1125,8 @@ footer {
         </ul>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/12_atleta_asistente_ia_saludo.png" alt="Asistente IA saludo"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/13_atleta_asistente_ia_respuesta.png" alt="Respuesta IA"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/12_atleta_asistente_ia_saludo.png" alt="Asistente IA saludo" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/13_atleta_asistente_ia_respuesta.png" alt="Respuesta IA" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1135,8 +1142,8 @@ footer {
         </ul>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/14_atleta_comidas_registro.png" alt="Registro de comida"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/15_atleta_comidas_analisis_ia.png" alt="Análisis nutricional IA"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/14_atleta_comidas_registro.png" alt="Registro de comida" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/15_atleta_comidas_analisis_ia.png" alt="Análisis nutricional IA" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1147,7 +1154,7 @@ footer {
         <p>Calorías totales, proteína acumulada, sesiones completadas, comidas registradas. Todo lo que tu entrenador revisa los fines de semana — tú también lo ves.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/16_atleta_resumen_semanal.png" alt="Resumen semanal"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/16_atleta_resumen_semanal.png" alt="Resumen semanal" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1158,7 +1165,7 @@ footer {
         <p>Ves el monto, la fecha límite y el link para pagar (Nequi, Bancolombia, Daviplata — el que use tu entrenador). Cuando pagas, él lo marca y listo.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/17_atleta_pagos.png" alt="Pagos del atleta"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/17_atleta_pagos.png" alt="Pagos del atleta" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
   </div>
@@ -1180,7 +1187,7 @@ footer {
         <p>Cada atleta con su foto, plan y estado. Toca uno y entras a ver su rutina, sus comidas, su progreso y su pago.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/19_entrenador_lista_atletas.png" alt="Lista de atletas del entrenador"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/19_entrenador_lista_atletas.png" alt="Lista de atletas del entrenador" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1197,9 +1204,9 @@ footer {
         </ul>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/29_entrenador_selector_grupo_muscular.png" alt="Selector de grupo muscular"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/28_entrenador_editor_rutina.png" alt="Editor de rutina"/></div></div>
-        <div class="phone phone--back right"><div class="phone__screen"><img src="/landing/img/37_entrenador_editor_drop_set.png" alt="Drop set en el editor"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/29_entrenador_selector_grupo_muscular.png" alt="Selector de grupo muscular" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/28_entrenador_editor_rutina.png" alt="Editor de rutina" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--back right"><div class="phone__screen"><img src="/landing/img/37_entrenador_editor_drop_set.png" alt="Drop set en el editor" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1210,7 +1217,7 @@ footer {
         <p>Subes el documento de onboarding de tu cliente (antropometría, objetivos, historial) y la IA llena los campos por ti. Ajustas lo que quieras y guardas.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/21_entrenador_crear_atleta.png" alt="Crear atleta con IA"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/21_entrenador_crear_atleta.png" alt="Crear atleta con IA" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1221,9 +1228,9 @@ footer {
         <p>Rutinas completadas con notas del atleta. Comidas con foto y análisis IA. Resumen semanal consolidado. Sin preguntar nada.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/23_entrenador_ver_rutina_atleta.png" alt="Ver rutina del atleta"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/39_entrenador_historico_sesiones_atleta.png" alt="Histórico de sesiones"/></div></div>
-        <div class="phone phone--back right"><div class="phone__screen"><img src="/landing/img/25_entrenador_analisis_comida_atleta.png" alt="Comida del atleta con análisis"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/23_entrenador_ver_rutina_atleta.png" alt="Ver rutina del atleta" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/39_entrenador_historico_sesiones_atleta.png" alt="Histórico de sesiones" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--back right"><div class="phone__screen"><img src="/landing/img/25_entrenador_analisis_comida_atleta.png" alt="Comida del atleta con análisis" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1234,7 +1241,7 @@ footer {
         <p>Cargas el monto, la fecha límite y tu link de pago. El atleta lo ve en su app. Cuando te paga, lo marcas con un toque. Historial completo.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/27_entrenador_pagos_atleta.png" alt="Configurar pagos"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/27_entrenador_pagos_atleta.png" alt="Configurar pagos" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1245,8 +1252,8 @@ footer {
         <p>Foto, certificaciones, años de experiencia, especialidad. Apareces en el home de cada atleta — es tu marca personal cada vez que abre la app.</p>
       </div>
       <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/20_entrenador_mi_perfil.png" alt="Perfil del entrenador"/></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/03_atleta_perfil_home.png" alt="Atleta ve al entrenador"/></div></div>
+        <div class="phone phone--back left"><div class="phone__screen"><img src="/landing/img/20_entrenador_mi_perfil.png" alt="Perfil del entrenador" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone phone--lg"><div class="phone__screen"><img src="/landing/img/03_atleta_perfil_home.png" alt="Atleta ve al entrenador" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
 
@@ -1311,9 +1318,9 @@ footer {
         </ul>
       </div>
       <div class="admin-phones">
-        <div class="phone"><div class="phone__screen"><img src="/landing/img/35_admin_crear_entrenador.png" alt="Crear entrenador"/></div></div>
-        <div class="phone"><div class="phone__screen"><img src="/landing/img/33_admin_lista_entrenadores.png" alt="Lista entrenadores"/></div></div>
-        <div class="phone"><div class="phone__screen"><img src="/landing/img/34_admin_detalle_entrenador.png" alt="Detalle del entrenador"/></div></div>
+        <div class="phone"><div class="phone__screen"><img src="/landing/img/35_admin_crear_entrenador.png" alt="Crear entrenador" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone"><div class="phone__screen"><img src="/landing/img/33_admin_lista_entrenadores.png" alt="Lista entrenadores" width="365" height="696" loading="lazy" decoding="async"/></div></div>
+        <div class="phone"><div class="phone__screen"><img src="/landing/img/34_admin_detalle_entrenador.png" alt="Detalle del entrenador" width="365" height="696" loading="lazy" decoding="async"/></div></div>
       </div>
     </div>
   </div>
@@ -1330,17 +1337,17 @@ footer {
     <div class="steps">
       <div class="step reveal">
         <div class="step-num">1</div>
-        <h4>Tu entrenador te crea</h4>
+        <h3>Tu entrenador te crea</h3>
         <p>Recibes un correo de bienvenida con tu usuario y el link directo a tu rutina.</p>
       </div>
       <div class="step reveal">
         <div class="step-num">2</div>
-        <h4>Abres la app</h4>
+        <h3>Abres la app</h3>
         <p>Entras con tu usuario (sin contraseña), ves tu plan del día y a tu entrenador.</p>
       </div>
       <div class="step reveal">
         <div class="step-num">3</div>
-        <h4>Entrenas, registras, sigues</h4>
+        <h3>Entrenas, registras, sigues</h3>
         <p>Haces la rutina, marcas comidas, consultas al asistente IA y pagas la mensualidad. Todo en un solo lugar.</p>
       </div>
     </div>
@@ -1358,7 +1365,7 @@ footer {
 
     <div class="price-grid">
       <div class="price-card reveal">
-        <h4>Atleta</h4>
+        <h3>Atleta</h3>
         <p style="color: var(--t3); font-size: 14px; margin-top: 4px;">Para quien entrena con un coach.</p>
         <div class="price">Incluido</div>
         <div class="price-sub">Con tu entrenador. No pagas nada aparte.</div>
@@ -1372,7 +1379,7 @@ footer {
       </div>
 
       <div class="price-card price-card--pop reveal">
-        <h4>Entrenador</h4>
+        <h3>Entrenador</h3>
         <p style="color: var(--t3); font-size: 14px; margin-top: 4px;">Para entrenadores independientes.</p>
         <div class="price">$24.900 <small>COP / mes</small></div>
         <div class="price-sub">Atletas ilimitados durante el lanzamiento.</div>
@@ -1388,7 +1395,7 @@ footer {
       </div>
 
       <div class="price-card reveal">
-        <h4>Gimnasio</h4>
+        <h3>Gimnasio</h3>
         <p style="color: var(--t3); font-size: 14px; margin-top: 4px;">Para gyms con staff de entrenadores.</p>
         <div class="price">Hablemos</div>
         <div class="price-sub">Según nº de entrenadores.</div>
@@ -1483,7 +1490,7 @@ footer {
         <p>La app que conecta entrenadores y atletas. Hecho en Colombia 🇨🇴 para LATAM.</p>
       </div>
       <div class="footer-col">
-        <h5>Producto</h5>
+        <h3>Producto</h3>
         <ul>
           <li><a href="#atleta">Para atletas</a></li>
           <li><a href="#entrenador">Para entrenadores</a></li>
@@ -1492,7 +1499,7 @@ footer {
         </ul>
       </div>
       <div class="footer-col">
-        <h5>Compañía</h5>
+        <h3>Compañía</h3>
         <ul>
           <li><a href="#faq">FAQ</a></li>
           <li><a href="mailto:juansaravia2002@gmail.com">Contacto</a></li>
@@ -1500,7 +1507,7 @@ footer {
         </ul>
       </div>
       <div class="footer-col">
-        <h5>Legal</h5>
+        <h3>Legal</h3>
         <ul>
           <li><a href="#">Términos</a></li>
           <li><a href="#">Privacidad</a></li>
