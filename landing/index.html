@@ -1526,6 +1526,83 @@ footer {
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+  // ───────── Google Analytics · custom events ─────────
+  function track(name, params) {
+    if (typeof gtag === 'function') gtag('event', name, params || {});
+  }
+
+  // CTA: WhatsApp click (the main conversion)
+  document.querySelectorAll('a[href^="https://wa.me"]').forEach(a => {
+    a.addEventListener('click', () => {
+      const where = a.closest('section')?.id || a.closest('header') ? 'header' : 'page';
+      track('click_whatsapp', { location: where });
+    });
+  });
+
+  // CTA: Email click
+  document.querySelectorAll('a[href^="mailto:"]').forEach(a => {
+    a.addEventListener('click', () => {
+      const where = a.closest('footer') ? 'footer' : (a.closest('section')?.id || 'page');
+      track('click_email', { location: where });
+    });
+  });
+
+  // Hero + header CTAs (anchor links to key sections)
+  document.querySelectorAll('a.btn-primary, .hero-ctas a').forEach(a => {
+    a.addEventListener('click', () => {
+      const label = (a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+      const href = a.getAttribute('href') || '';
+      track('cta_click', { label, target: href });
+    });
+  });
+
+  // Section-in-view (fires once per section per session)
+  const trackSections = ['atleta', 'entrenador', 'gimnasio', 'pricing', 'faq', 'cta'];
+  const seen = new Set();
+  const secObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !seen.has(e.target.id)) {
+        seen.add(e.target.id);
+        track('section_view', { section: e.target.id });
+      }
+    });
+  }, { threshold: 0.35 });
+  trackSections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) secObs.observe(el);
+  });
+
+  // FAQ open
+  document.querySelectorAll('details.faq-item').forEach((d, i) => {
+    d.addEventListener('toggle', () => {
+      if (d.open) {
+        const q = d.querySelector('summary')?.textContent?.trim() || ('FAQ ' + (i + 1));
+        track('faq_open', { question: q.slice(0, 80) });
+      }
+    });
+  });
+
+  // Scroll depth milestones: 25 / 50 / 75 / 100
+  (function () {
+    const sent = new Set(); let max = 0;
+    const milestones = [25, 50, 75, 100];
+    const onScroll = () => {
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      if (docH <= 0) return;
+      const pct = Math.round((window.scrollY / docH) * 100);
+      if (pct > max) max = pct;
+      milestones.forEach(m => {
+        if (max >= m && !sent.has(m)) {
+          sent.add(m);
+          track('scroll_depth', { percent: m });
+        }
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+
+  // ─────────────────────────────────────────────────
+
   // Smooth anchor scroll with header offset
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', (e) => {
