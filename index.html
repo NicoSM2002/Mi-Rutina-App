@@ -5603,14 +5603,19 @@ function parseReps(s) {
 }
 
 function formatWeight(num, unit) {
-  return num ? `${num} ${unit}` : '';
+  // Sin número: preservar la unidad si no es la default (lbs), para que
+  // parseWeight pueda recuperarla cuando el usuario escriba el número.
+  if (!num) return unit === 'lbs' ? '' : unit;
+  return `${num} ${unit}`;
 }
 
 function formatReps(num, type) {
-  if (!num) return '';
   const suffix = type === 'alt' ? 'reps alternas'
                : type === 'seg' ? 'seg'
                : 'reps';
+  // Sin número: preservar el sufijo solo si el tipo NO es el default (rep),
+  // así parseReps puede recuperar el type si luego el usuario escribe el número.
+  if (!num) return type === 'rep' ? '' : suffix;
   return `${num} ${suffix}`;
 }
 
