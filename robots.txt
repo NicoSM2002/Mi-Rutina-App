@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Internal admin panel — no need for Google
+Disallow: /admin
+
+Sitemap: https://mirutinapp.com/sitemap.xml
