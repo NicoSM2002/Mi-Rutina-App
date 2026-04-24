@@ -1,11 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#0d1117"/>
-  <g fill="#58a6ff">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B2C"/>
+      <stop offset="100%" stop-color="#FFB547"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#g)"/>
+  <g fill="#fff">
     <rect x="60" y="220" width="60" height="72" rx="12"/>
     <rect x="392" y="220" width="60" height="72" rx="12"/>
     <rect x="100" y="200" width="48" height="112" rx="10"/>
     <rect x="364" y="200" width="48" height="112" rx="10"/>
     <rect x="140" y="236" width="232" height="40" rx="8"/>
   </g>
-  <text x="256" y="430" font-family="Arial,sans-serif" font-size="52" font-weight="bold" fill="#58a6ff" text-anchor="middle">RUTINA</text>
 </svg>
