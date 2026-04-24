@@ -3216,11 +3216,35 @@ function renderExCard(ex, ci, ei, w) {
   const badgeHtml = st === 'dropset'
     ? `<span class="ex-set-badge ds">DROP SET</span>`
     : st === 'piramidal' ? `<span class="ex-set-badge pir">PIRAMIDAL</span>` : '';
+  // Para dropset/piramidal: detectar por paso si son segundos y mostrar "Ns" en vez de "N reps".
   const stepsHtml = isSpecial
-    ? `<div class="ex-steps-view">${currentSteps.map(s=>`<div class="ex-step-pill"><span class="sp-w">${s.w||'—'}</span><span class="sp-r">${s.reps||'—'}</span></div>`).join('')}</div>` : '';
+    ? `<div class="ex-steps-view">${currentSteps.map(s => {
+        const pr = parseReps(s.reps || '');
+        const repsLabel = pr.num ? (pr.type === 'seg' ? `${pr.num}s` : pr.num) : '—';
+        return `<div class="ex-step-pill"><span class="sp-w">${s.w||'—'}</span><span class="sp-r">${repsLabel}</span></div>`;
+      }).join('')}</div>` : '';
   const trainerNoteHtml = ex.trainerNote
     ? `<div class="ex-trainer-note"><span>${ex.trainerNote}</span></div>`
     : '';
+  // Si la unidad de reps es "seg", armar botón de timer con ese número.
+  // Para sets normales: usar ex.reps. Para dropset/piramidal: el primer paso en segundos.
+  let timerSeconds = 0;
+  if (!isSpecial) {
+    const pr = parseReps(currentReps || '');
+    if (pr.type === 'seg' && pr.num) timerSeconds = parseInt(pr.num, 10) || 0;
+  } else {
+    const firstSeg = currentSteps.map(s => parseReps(s.reps || '')).find(pr => pr.type === 'seg' && pr.num);
+    if (firstSeg) timerSeconds = parseInt(firstSeg.num, 10) || 0;
+  }
+  const timerBtnHtml = timerSeconds > 0
+    ? `<button class="ex-act-btn" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none" onclick="startTimer(${timerSeconds})">⏱ Iniciar ${timerSeconds}s</button>`
+    : '';
+  // Display de reps en la esquina derecha: "45s" si es segundos.
+  let repsDisplay = currentReps || '';
+  if (!isSpecial) {
+    const pr = parseReps(currentReps || '');
+    if (pr.type === 'seg' && pr.num) repsDisplay = `${pr.num}s`;
+  }
   return `<div class="ex-card">
     <div class="ex-top">
       <div class="ex-left">
@@ -3229,12 +3253,13 @@ function renderExCard(ex, ci, ei, w) {
       </div>
       ${!isSpecial?`<div class="ex-right">
         <div class="ex-weight">${wv}</div>
-        <div class="ex-reps">${currentReps}</div>
+        <div class="ex-reps">${repsDisplay}</div>
       </div>`:''}
     </div>
     ${stepsHtml}
     ${trainerNoteHtml}
     <div class="ex-actions">
+      ${timerBtnHtml}
       <button class="ex-act-btn tip-btn" onclick="toggleTip('${tid}')">📋 Técnica</button>
       ${currentImg?`<button class="ex-act-btn gif-btn" onclick="togglePhoto('${pid}','${currentImg}')">🎬 Ver GIF</button>`:''}
     </div>
@@ -5367,6 +5392,7 @@ function renderRoutineEditor() {
             <select class="re-unit-select" onchange="updateWarmupRepsType(${wi},this.value)">
               <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
               <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
+              <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
             </select>
           </div>
           <div class="re-input-label">Reps</div>
@@ -5430,6 +5456,7 @@ function renderRoutineEditor() {
                 <select class="re-unit-select" onchange="updateStepRepsType('${editorDay}',${ci},${ei},1,${si},this.value)">
                   <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
                   <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
+                  <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
                 </select>
               </div>
               <div class="re-input-label">Reps</div>
@@ -5475,6 +5502,7 @@ function renderRoutineEditor() {
                     <select class="re-unit-select" onchange="updateEditorRepsType('${editorDay}',${ci},${ei},'${rField}',this.value)">
                       <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
                       <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
+                      <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
                     </select>
                   </div>
                   <div class="re-input-label">Reps</div>
@@ -5568,7 +5596,9 @@ function parseReps(s) {
   const str = String(s);
   const m = str.match(/(\d+)/);
   const num = m ? m[1] : '';
-  const type = /alterna/i.test(str) ? 'alt' : 'rep';
+  const type = /\bseg/i.test(str) ? 'seg'
+             : /alterna/i.test(str) ? 'alt'
+             : 'rep';
   return { num, type };
 }
 
@@ -5578,7 +5608,9 @@ function formatWeight(num, unit) {
 
 function formatReps(num, type) {
   if (!num) return '';
-  const suffix = type === 'alt' ? 'reps alternas' : 'reps';
+  const suffix = type === 'alt' ? 'reps alternas'
+               : type === 'seg' ? 'seg'
+               : 'reps';
   return `${num} ${suffix}`;
 }
 
