@@ -118,7 +118,9 @@
 <!-- Preload hero LCP image (the center phone screenshot) -->
 <link rel="preload" as="image" href="/landing/img/03_atleta_perfil_home.webp" fetchpriority="high" type="image/webp">
 
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Async load para no bloquear render -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
 <!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-SSCKXGKQP3"></script>
@@ -333,6 +335,49 @@ header {
 .phone--md  { --pw: 280px; }
 .phone--lg  { --pw: 330px; }
 .phone--xl  { --pw: 380px; }
+.phone--mini { --pw: 170px; }
+
+/* ───────── Mini features grid (compacto) ───────── */
+.mini-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-top: 36px;
+}
+@media (max-width: 1000px) { .mini-features-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .mini-features-grid { grid-template-columns: 1fr; gap: 14px; } }
+.mini-feature {
+  background: var(--s1);
+  border: 1px solid var(--b);
+  border-radius: var(--r-lg);
+  padding: 22px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  transition: border-color .2s, transform .2s;
+}
+.mini-feature:hover {
+  border-color: rgba(255,107,44,0.35);
+  transform: translateY(-2px);
+}
+.mini-feature__phone {
+  margin-bottom: 4px;
+}
+.mini-feature h4 {
+  font-family: var(--font-d);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--t1);
+  letter-spacing: -0.01em;
+}
+.mini-feature p {
+  font-size: 14px;
+  color: var(--t2);
+  line-height: 1.55;
+  max-width: none;
+}
 
 /* ───────── HERO ───────── */
 .hero {
@@ -446,6 +491,41 @@ header {
 .problem-card--before .icon { background: rgba(255,255,255,0.05); }
 .problem-card--before h3 { color: var(--t2); }
 .problem-card--before p { color: var(--t3); }
+.problem-card .icon svg { width: 22px; height: 22px; color: var(--t2); }
+
+/* Solution bridge — cierra el patrón Problem→Agitate→Solution */
+.solution-bridge {
+  margin-top: 32px;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, rgba(255,107,44,0.08), rgba(255,143,94,0.04));
+  border: 1px solid rgba(255,107,44,0.25);
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.solution-bridge::before {
+  content:''; position: absolute; inset: -50%;
+  background: radial-gradient(circle at 0% 50%, rgba(255,107,44,0.18), transparent 50%);
+  z-index: 0;
+}
+.solution-bridge > * { position: relative; z-index: 1; }
+.solution-bridge__icon {
+  flex: 0 0 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--ac), var(--acl));
+  display: grid; place-items: center;
+  box-shadow: 0 12px 28px -6px rgba(255,107,44,0.5);
+}
+.solution-bridge__icon svg { width: 28px; height: 28px; color: #fff; }
+.solution-bridge__copy h3 { margin-bottom: 6px; color: var(--t1); font-size: 22px; }
+.solution-bridge__copy p { font-size: 15px; color: var(--t2); max-width: none; }
+@media (max-width: 600px) {
+  .solution-bridge { flex-direction: column; text-align: center; padding: 24px 22px; }
+  .solution-bridge__icon { flex-basis: auto; }
+}
 
 /* ───────── For-who split ───────── */
 .forwho-grid {
@@ -621,7 +701,9 @@ header {
   display: grid; place-items: center;
   font-size: 22px;
   margin-bottom: 6px;
+  color: var(--ac);
 }
+.report-icon svg { width: 22px; height: 22px; }
 .report-card h4 { font-size: 17px; font-family: var(--font-d); color: var(--t1); }
 .report-card p { font-size: 14px; color: var(--t2); line-height: 1.55; max-width: none; }
 .report-time {
@@ -794,6 +876,17 @@ header {
   letter-spacing: -0.02em;
 }
 .price-card .price small { font-size: 14px; color: var(--t3); font-weight: 400; margin-left: 4px; }
+.price-card .price-old {
+  display: inline-block;
+  font-size: 0.55em;
+  color: var(--t3);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,107,44,0.6);
+  text-decoration-thickness: 2px;
+  margin-right: 8px;
+  font-weight: 500;
+  vertical-align: middle;
+}
 .price-card .price-sub { color: var(--t3); font-size: 13px; margin-bottom: 26px; }
 .price-card ul { list-style: none; display: grid; gap: 10px; margin-bottom: 28px; }
 .price-card ul li {
@@ -1136,8 +1229,8 @@ footer {
       Rutinas con GIFs, comidas con IA, seguimiento semanal y pagos — todo en un solo lugar.
     </p>
     <div class="hero-ctas">
-      <a href="#cta" class="btn btn-primary btn-lg">Soy entrenador, quiero sumar clientes <span class="btn-arrow">→</span></a>
-      <a href="#atleta" class="btn btn-ghost btn-lg">Soy atleta</a>
+      <a href="#cta" class="btn btn-primary btn-lg" data-cta="hero-trainer">Quiero la demo gratis <span class="btn-arrow">→</span></a>
+      <a href="#atleta" class="btn btn-ghost btn-lg" data-cta="hero-athlete">Soy atleta</a>
     </div>
 
     <div class="hero-phones">
@@ -1166,19 +1259,49 @@ footer {
 
     <div class="problem-grid">
       <div class="problem-card problem-card--before reveal">
-        <div class="icon">📋</div>
+        <div class="icon">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="3" width="12" height="18" rx="2"/>
+            <line x1="9" y1="7" x2="15" y2="7"/>
+            <line x1="9" y1="11" x2="15" y2="11"/>
+            <line x1="9" y1="15" x2="13" y2="15"/>
+          </svg>
+        </div>
         <h3>Rutinas en papel</h3>
         <p>Cuadernitos que se pierden, fotos borrosas del Excel del entrenador, PDFs que nadie abre.</p>
       </div>
       <div class="problem-card problem-card--before reveal">
-        <div class="icon">💬</div>
+        <div class="icon">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+        </div>
         <h3>WhatsApp infinito</h3>
-        <p>"Profe, cuántas reps del curl?" — "¿Te puedo pagar mañana?" — mezclado con memes y notas de voz.</p>
+        <p>"Profe, ¿cuántas reps del curl?" — "¿Te puedo pagar mañana?" — mezclado con memes y notas de voz.</p>
       </div>
       <div class="problem-card problem-card--before reveal">
-        <div class="icon">🤷</div>
+        <div class="icon">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
         <h3>Sin seguimiento real</h3>
         <p>¿Cumplió la semana? ¿Qué comió? ¿Le quedó la técnica? Imposible saberlo sin preguntar.</p>
+      </div>
+    </div>
+
+    <!-- La solución (cierra patrón Problem-Agitate-Solution) -->
+    <div class="solution-bridge reveal">
+      <div class="solution-bridge__icon">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="solution-bridge__copy">
+        <h3>Mi Rutina lo une todo</h3>
+        <p>Editor de rutinas, registro de comidas con IA, pagos, recordatorios automáticos y reportes — una sola herramienta, dos portales que se hablan en tiempo real.</p>
       </div>
     </div>
   </div>
@@ -1234,6 +1357,35 @@ footer {
   </div>
 </section>
 
+<!-- ═══════════ CÓMO FUNCIONA ═══════════ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Cómo funciona</span>
+      <h2>Empezar lleva <span class="gradient-text">5 minutos.</span></h2>
+      <p>Tres pasos para que tú y tus atletas estén entrenando con la app esta misma semana.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h3>Tu entrenador te crea</h3>
+        <p>Recibes un correo de bienvenida con tu usuario y el link directo a tu rutina.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <h3>Abres la app</h3>
+        <p>Entras con tu usuario (sin contraseña), ves tu plan del día y a tu entrenador.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <h3>Entrenas, registras, sigues</h3>
+        <p>Haces la rutina, marcas comidas, consultas al asistente IA y pagas la mensualidad. Todo en un solo lugar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════ FEATURES ATLETA ═══════════ -->
 <section>
   <div class="wrap">
@@ -1264,40 +1416,7 @@ footer {
 
     <div class="feature-row feature-row--reverse reveal">
       <div class="feature-copy">
-        <div class="num">02 · TÉCNICA Y GIF</div>
-        <h3>Nunca más googlear "¿cómo se hace el hip thrust?"</h3>
-        <p>Cada ejercicio trae su GIF animado y su guía de técnica escrita por profesionales. Si tienes dudas, lo miras y listo.</p>
-        <ul>
-          <li>170+ ejercicios con GIF incluido</li>
-          <li>Texto de técnica por cada movimiento</li>
-          <li>Organizados por grupo muscular</li>
-        </ul>
-      </div>
-      <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><picture><source srcset="/landing/img/07_atleta_rutina_tecnica.webp" type="image/webp"><img src="/landing/img/07_atleta_rutina_tecnica.png" alt="Técnica" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/06_atleta_rutina_gif.webp" type="image/webp"><img src="/landing/img/06_atleta_rutina_gif.png" alt="GIF del ejercicio" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
-      </div>
-    </div>
-
-    <div class="feature-row reveal">
-      <div class="feature-copy">
-        <div class="num">03 · TIMER DE DESCANSO</div>
-        <h3>Cronómetro automático entre series.</h3>
-        <p>60, 90 o 120 segundos — el que tu entrenador programó. Arranca con un toque. Puedes sumar +30s si lo necesitas.</p>
-        <ul>
-          <li>Arranca automáticamente al completar la serie</li>
-          <li>También funciona para planchas estáticas (modo segundos)</li>
-          <li>Visible, con vibración al terminar</li>
-        </ul>
-      </div>
-      <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/08_atleta_timer_descanso.webp" type="image/webp"><img src="/landing/img/08_atleta_timer_descanso.png" alt="Timer de descanso" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
-      </div>
-    </div>
-
-    <div class="feature-row feature-row--reverse reveal">
-      <div class="feature-copy">
-        <div class="num">04 · ASISTENTE IA 24/7</div>
+        <div class="num">02 · ASISTENTE IA 24/7</div>
         <h3>Dudas sobre tu rutina, a cualquier hora.</h3>
         <p>"Me duele la muñeca haciendo elevaciones" — y tu asistente IA te da respuestas basadas en tu rutina real, tus pesos y tu historial. Siempre disponible.</p>
         <ul>
@@ -1314,7 +1433,7 @@ footer {
 
     <div class="feature-row reveal">
       <div class="feature-copy">
-        <div class="num">05 · COMIDAS CON IA</div>
+        <div class="num">03 · COMIDAS CON IA</div>
         <h3>Toma la foto. La IA hace el resto.</h3>
         <p>Registra tus comidas con una foto y una descripción breve. El análisis nutricional (kcal, proteína, carbos, grasas) sale solo. Tu entrenador lo ve en su portal.</p>
         <ul>
@@ -1329,25 +1448,35 @@ footer {
       </div>
     </div>
 
-    <div class="feature-row feature-row--reverse reveal">
-      <div class="feature-copy">
-        <div class="num">06 · PROGRESO SEMANAL</div>
-        <h3>Tu semana, en un vistazo.</h3>
-        <p>Calorías totales, proteína acumulada, sesiones completadas, comidas registradas. Todo lo que tu entrenador revisa los fines de semana — tú también lo ves.</p>
+    <!-- Mini features atleta — grid compacto -->
+    <div class="mini-features-grid reveal">
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/06_atleta_rutina_gif.webp" type="image/webp"><img src="/landing/img/06_atleta_rutina_gif.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>GIFs y técnica</h4>
+        <p>170+ ejercicios con GIF y guía escrita. Cero dudas en plena serie.</p>
       </div>
-      <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/16_atleta_resumen_semanal.webp" type="image/webp"><img src="/landing/img/16_atleta_resumen_semanal.png" alt="Resumen semanal" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/08_atleta_timer_descanso.webp" type="image/webp"><img src="/landing/img/08_atleta_timer_descanso.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>Timer automático</h4>
+        <p>60, 90 o 120s entre series. Vibra al terminar — sin mirar el celular.</p>
       </div>
-    </div>
-
-    <div class="feature-row reveal">
-      <div class="feature-copy">
-        <div class="num">07 · PAGOS CLAROS</div>
-        <h3>Mensualidad, sin adivinanzas.</h3>
-        <p>Ves el monto, la fecha límite y el link para pagar (Nequi, Bancolombia, Daviplata — el que use tu entrenador). Cuando pagas, él lo marca y listo.</p>
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/16_atleta_resumen_semanal.webp" type="image/webp"><img src="/landing/img/16_atleta_resumen_semanal.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>Progreso semanal</h4>
+        <p>Sesiones, macros y adherencia. Lo mismo que ve tu entrenador.</p>
       </div>
-      <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/17_atleta_pagos.webp" type="image/webp"><img src="/landing/img/17_atleta_pagos.png" alt="Pagos del atleta" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/17_atleta_pagos.webp" type="image/webp"><img src="/landing/img/17_atleta_pagos.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>Pagos claros</h4>
+        <p>Monto, fecha y link de pago (Nequi, Bancolombia). Sin adivinanzas.</p>
       </div>
     </div>
   </div>
@@ -1362,20 +1491,9 @@ footer {
       <p>Todo lo que hoy resolvés en notas, chats y hojas de cálculo — en una sola herramienta.</p>
     </div>
 
-    <div class="feature-row reveal">
-      <div class="feature-copy">
-        <div class="num">01 · TUS ATLETAS</div>
-        <h3>Todos tus clientes, una sola pantalla.</h3>
-        <p>Cada atleta con su foto, plan y estado. Toca uno y entras a ver su rutina, sus comidas, su progreso y su pago.</p>
-      </div>
-      <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/19_entrenador_lista_atletas.webp" type="image/webp"><img src="/landing/img/19_entrenador_lista_atletas.png" alt="Lista de atletas del entrenador" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
-      </div>
-    </div>
-
     <div class="feature-row feature-row--reverse reveal">
       <div class="feature-copy">
-        <div class="num">02 · EDITOR DE RUTINAS</div>
+        <div class="num">01 · EDITOR DE RUTINAS</div>
         <h3>Arma la semana en 5 minutos.</h3>
         <p>5 sesiones, circuitos ilimitados, 170+ ejercicios con GIF en el selector. Elige NORMAL, Drop set o Piramidal. Agrega cardio final si hace falta.</p>
         <ul>
@@ -1394,7 +1512,7 @@ footer {
 
     <div class="feature-row reveal">
       <div class="feature-copy">
-        <div class="num">03 · ONBOARDING CON IA</div>
+        <div class="num">02 · ONBOARDING CON IA</div>
         <h3>¿Un PDF del atleta? La IA lo lee.</h3>
         <p>Subes el documento de onboarding de tu cliente (antropometría, objetivos, historial) y la IA llena los campos por ti. Ajustas lo que quieras y guardas.</p>
       </div>
@@ -1405,7 +1523,7 @@ footer {
 
     <div class="feature-row feature-row--reverse reveal">
       <div class="feature-copy">
-        <div class="num">04 · SEGUIMIENTO EN VIVO</div>
+        <div class="num">03 · SEGUIMIENTO EN VIVO</div>
         <h3>Sabes qué hizo, qué comió, cómo se sintió.</h3>
         <p>Rutinas completadas con notas del atleta. Comidas con foto y análisis IA. Resumen semanal consolidado. Sin preguntar nada.</p>
       </div>
@@ -1416,57 +1534,59 @@ footer {
       </div>
     </div>
 
-    <div class="feature-row reveal">
-      <div class="feature-copy">
-        <div class="num">05 · COBRO MENSUAL</div>
-        <h3>Cobrar la mensualidad, sin ser pesado.</h3>
-        <p>Cargas el monto, la fecha límite y tu link de pago. El atleta lo ve en su app. Cuando te paga, lo marcas con un toque. Historial completo.</p>
+    <!-- Mini features entrenador — grid compacto -->
+    <div class="mini-features-grid reveal">
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/19_entrenador_lista_atletas.webp" type="image/webp"><img src="/landing/img/19_entrenador_lista_atletas.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>Tus atletas, una pantalla</h4>
+        <p>Todos tus clientes con foto y plan. Toca uno y entras a su rutina, comidas, progreso y pago.</p>
       </div>
-      <div class="feature-media">
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/27_entrenador_pagos_atleta.webp" type="image/webp"><img src="/landing/img/27_entrenador_pagos_atleta.png" alt="Configurar pagos" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/27_entrenador_pagos_atleta.webp" type="image/webp"><img src="/landing/img/27_entrenador_pagos_atleta.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>Cobro mensual</h4>
+        <p>Carga el monto + link de pago. Marca como pagado en un toque. Sin perseguir clientes.</p>
       </div>
-    </div>
-
-    <div class="feature-row feature-row--reverse reveal">
-      <div class="feature-copy">
-        <div class="num">06 · PERFIL PROFESIONAL</div>
-        <h3>Tu cara en la app de tu atleta.</h3>
-        <p>Foto, certificaciones, años de experiencia, especialidad. Apareces en el home de cada atleta — es tu marca personal cada vez que abre la app.</p>
-      </div>
-      <div class="feature-media">
-        <div class="phone phone--back left"><div class="phone__screen"><picture><source srcset="/landing/img/20_entrenador_mi_perfil.webp" type="image/webp"><img src="/landing/img/20_entrenador_mi_perfil.png" alt="Perfil del entrenador" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
-        <div class="phone phone--lg"><div class="phone__screen"><picture><source srcset="/landing/img/03_atleta_perfil_home.webp" type="image/webp"><img src="/landing/img/03_atleta_perfil_home.png" alt="Atleta ve al entrenador" width="365" height="696" loading="lazy" decoding="async"/></picture></div></div>
+      <div class="mini-feature">
+        <div class="mini-feature__phone phone phone--mini">
+          <div class="phone__screen"><picture><source srcset="/landing/img/20_entrenador_mi_perfil.webp" type="image/webp"><img src="/landing/img/20_entrenador_mi_perfil.png" alt="" width="365" height="696" loading="lazy" decoding="async"/></picture></div>
+        </div>
+        <h4>Tu marca en la app</h4>
+        <p>Foto + certificaciones. Apareces en el home de cada atleta. Tu negocio, tu marca.</p>
       </div>
     </div>
 
     <!-- Reportes automáticos -->
     <div class="reports-block reveal">
       <div class="reports-head">
-        <div class="num">07 · REPORTES AUTOMÁTICOS</div>
+        <div class="num">04 · REPORTES AUTOMÁTICOS</div>
         <h3>Nunca más preguntar <span class="gradient-text">"¿entrenaste hoy?".</span></h3>
         <p>Todo lo que pasa con tus atletas te llega al correo. Sin abrir la app, sin preguntar, sin perseguir. Configurado una vez, funciona siempre.</p>
       </div>
       <div class="reports-grid">
         <div class="report-card">
-          <div class="report-icon">💪</div>
+          <div class="report-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8v8M18 8v8M3 12h3M18 12h3M6 8h12M6 16h12"/></svg></div>
           <h4>Sesión completada</h4>
           <p>Cada vez que un atleta termina su rutina, te llega al correo el detalle completo: ejercicios, pesos, reps, series, circuitos y la nota que dejó el atleta.</p>
           <span class="report-time">Al instante</span>
         </div>
         <div class="report-card">
-          <div class="report-icon">🍽️</div>
+          <div class="report-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h2v11M7 2v20M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
           <h4>Reporte diario de comidas</h4>
           <p>Todas las comidas registradas de tus atletas en el día, con foto y análisis nutricional de la IA. Llega cada noche a tu correo.</p>
           <span class="report-time">22:00 hora Colombia</span>
         </div>
         <div class="report-card">
-          <div class="report-icon">📊</div>
+          <div class="report-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/><line x1="3" y1="20" x2="21" y2="20"/></svg></div>
           <h4>Resumen semanal</h4>
           <p>Sesiones completadas, adherencia al plan, comidas registradas, totales de macros por atleta. Tu tablero de control de toda la semana.</p>
           <span class="report-time">Sábado 20:00</span>
         </div>
         <div class="report-card">
-          <div class="report-icon">⏰</div>
+          <div class="report-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/><path d="M5 3 2 6M22 6l-3-3M6 19l-2 2M18 19l2 2"/></svg></div>
           <h4>Recordatorio al atleta</h4>
           <p>Si a la 1 PM tu atleta no ha entrenado, le llega automáticamente un recordatorio por correo. Tú no mueves un dedo.</p>
           <span class="report-time">Lun – Sáb · 13:00</span>
@@ -1508,34 +1628,6 @@ footer {
   </div>
 </section>
 
-<!-- ═══════════ CÓMO FUNCIONA ═══════════ -->
-<section>
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="eyebrow">Cómo funciona</span>
-      <h2>Empezar lleva 5 minutos.</h2>
-    </div>
-
-    <div class="steps">
-      <div class="step reveal">
-        <div class="step-num">1</div>
-        <h3>Tu entrenador te crea</h3>
-        <p>Recibes un correo de bienvenida con tu usuario y el link directo a tu rutina.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-num">2</div>
-        <h3>Abres la app</h3>
-        <p>Entras con tu usuario (sin contraseña), ves tu plan del día y a tu entrenador.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-num">3</div>
-        <h3>Entrenas, registras, sigues</h3>
-        <p>Haces la rutina, marcas comidas, consultas al asistente IA y pagas la mensualidad. Todo en un solo lugar.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ═══════════ PRICING ═══════════ -->
 <section id="pricing">
   <div class="wrap">
@@ -1563,8 +1655,11 @@ footer {
       <div class="price-card price-card--pop reveal">
         <h3>Entrenador</h3>
         <p style="color: var(--t3); font-size: 14px; margin-top: 4px;">Para entrenadores independientes.</p>
-        <div class="price">$24.900 <small>COP / mes</small></div>
-        <div class="price-sub">Atletas ilimitados durante el lanzamiento.</div>
+        <div class="price">
+          <span class="price-old">$49.900</span>
+          $24.900 <small>COP / mes</small>
+        </div>
+        <div class="price-sub">🔥 Precio de lanzamiento — primeros 100 entrenadores. Atletas ilimitados.</div>
         <ul>
           <li>Portal con todos tus atletas</li>
           <li>Editor de rutinas + 170 ejercicios</li>
