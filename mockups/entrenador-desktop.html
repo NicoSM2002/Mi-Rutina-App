@@ -275,11 +275,15 @@ input, select, textarea { font: inherit; color: inherit; }
 /* ───── Content area split ───── */
 .content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 480px;
+  grid-template-columns: minmax(0, 1fr) 540px;
   overflow: hidden;
 }
-@media (max-width: 1280px) {
-  .content { grid-template-columns: minmax(0, 1fr) 420px; }
+@media (max-width: 1400px) {
+  .content { grid-template-columns: minmax(0, 1fr) 480px; }
+}
+@media (max-width: 1200px) {
+  .content { grid-template-columns: 1fr; }
+  .panel + .panel { display: none; }
 }
 .panel {
   overflow-y: auto;
@@ -480,20 +484,24 @@ tbody td {
 
 /* ───── Detail panel ───── */
 .detail-header {
-  display: flex; align-items: flex-start; gap: 14px;
-  padding-bottom: 18px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--b);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
+  align-items: center;
 }
+.detail-info { min-width: 0; }
 .detail-avatar {
-  width: 56px; height: 56px;
+  width: 52px; height: 52px;
   border-radius: 50%;
   background: linear-gradient(135deg, #2dd4a0, #14b89a);
   color: #08080A;
   font-weight: 700;
   font-family: var(--font-d);
   display: grid; place-items: center;
-  font-size: 18px;
+  font-size: 17px;
   flex-shrink: 0;
 }
 .detail-name {
@@ -501,27 +509,38 @@ tbody td {
   font-size: 19px;
   font-weight: 700;
   color: var(--t1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .detail-meta {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--t3);
   margin-top: 2px;
-  display: flex; gap: 12px;
+  display: flex; flex-wrap: wrap;
+  gap: 4px 10px;
   align-items: center;
 }
+.detail-meta span { white-space: nowrap; }
 .detail-meta span:not(:last-child)::after {
-  content:'·'; margin-left: 12px; opacity: 0.5;
+  content:'·'; margin-left: 10px; opacity: 0.5;
 }
 .detail-actions {
-  margin-left: auto;
-  display: flex; gap: 6px;
+  grid-column: 1 / -1;
+  display: flex; gap: 8px;
+  margin-top: 6px;
 }
+.detail-actions .btn { flex: 1; justify-content: center; }
 .tabs {
   display: flex;
   gap: 2px;
   margin-bottom: 18px;
   border-bottom: 1px solid var(--b);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; flex-shrink: 0; }
 .tab {
   padding: 8px 14px;
   font-family: var(--font-d);
@@ -896,7 +915,7 @@ tbody td {
         <!-- Header -->
         <div class="detail-header">
           <div class="detail-avatar">VG</div>
-          <div>
+          <div class="detail-info">
             <div class="detail-name">Viviana Galindo</div>
             <div class="detail-meta">
               <span><span class="live-dot"></span>Activa hace 4 min</span>
