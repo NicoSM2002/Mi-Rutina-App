@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mockup · Portal Entrenador Desktop · Mi Rutina</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08080A;
+  --s1: #111113;
+  --s2: #1A1A1E;
+  --s3: #242428;
+  --b:  rgba(255,255,255,0.08);
+  --b2: rgba(255,255,255,0.04);
+  --ac: #FF6B2C;
+  --acl:#FF8F5E;
+  --gr: #2DD4A0;
+  --am: #FFB547;
+  --rd: #FF4D4F;
+  --t1: #F5F5F7;
+  --t2: #A1A1A6;
+  --t3: #8E8E93;
+  --font-d: 'Sora', system-ui, sans-serif;
+  --font-b: 'DM Sans', system-ui, sans-serif;
+  --sidebar-w: 240px;
+  --topbar-h: 64px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  font-family: var(--font-b);
+  background: var(--bg);
+  color: var(--t1);
+  font-size: 14px;
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+
+/* ───── Layout ───── */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height: 100vh;
+}
+
+/* ───── Sidebar ───── */
+.sidebar {
+  background: #050506;
+  border-right: 1px solid var(--b);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 18px 22px;
+  font-family: var(--font-d);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+.brand-mark {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #FF6B2C 0%, #FFB547 100%);
+  display: grid; place-items: center;
+  box-shadow: 0 6px 16px -4px rgba(255,107,44,0.45);
+}
+.brand-mark svg { width: 20px; height: 20px; }
+.nav-section {
+  padding: 4px 12px;
+}
+.nav-label {
+  font-family: var(--font-d);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding: 12px 8px 8px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--t2);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  position: relative;
+  width: 100%;
+  text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.04); color: var(--t1); }
+.nav-item.active {
+  background: rgba(255,107,44,0.12);
+  color: var(--t1);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 22px;
+  background: var(--ac);
+  border-radius: 0 3px 3px 0;
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.nav-item .badge {
+  margin-left: auto;
+  background: var(--ac);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--b);
+}
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.user-card:hover { background: rgba(255,255,255,0.04); }
+.user-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2dd4a0, #14b89a);
+  color: #08080A;
+  font-weight: 700;
+  font-family: var(--font-d);
+  display: grid; place-items: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-info .name {
+  font-weight: 600; font-size: 13px; color: var(--t1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.user-info .role {
+  font-size: 11px; color: var(--t3);
+}
+
+/* ───── Main area ───── */
+.main {
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+.topbar {
+  background: rgba(8,8,10,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--b);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  z-index: 5;
+}
+.topbar h1 {
+  font-family: var(--font-d);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.topbar h1 .count {
+  color: var(--t3);
+  font-weight: 500;
+  margin-left: 8px;
+  font-size: 14px;
+}
+.topbar-actions {
+  margin-left: auto;
+  display: flex; align-items: center;
+  gap: 10px;
+}
+.search-wrap {
+  position: relative;
+  width: 320px;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 12px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px;
+  color: var(--t3);
+  pointer-events: none;
+}
+.search-wrap input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  background: var(--s1);
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--t1);
+  outline: none;
+  transition: border-color .15s;
+}
+.search-wrap input:focus { border-color: var(--ac); }
+.search-wrap input::placeholder { color: var(--t3); }
+.search-shortcut {
+  position: absolute;
+  right: 8px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--t3);
+  background: var(--s2);
+  border: 1px solid var(--b);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.icon-btn {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: var(--s1);
+  border: 1px solid var(--b);
+  display: grid; place-items: center;
+  color: var(--t2);
+  position: relative;
+  cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.icon-btn:hover { color: var(--t1); background: var(--s2); }
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot {
+  position: absolute;
+  top: 8px; right: 9px;
+  width: 7px; height: 7px;
+  background: var(--ac);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.btn {
+  font-family: var(--font-d);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 7px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--ac), var(--acl));
+  color: #fff;
+  box-shadow: 0 6px 14px -4px rgba(255,107,44,0.4);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -4px rgba(255,107,44,0.5); }
+.btn-ghost {
+  background: var(--s1);
+  border: 1px solid var(--b);
+  color: var(--t1);
+}
+.btn-ghost:hover { background: var(--s2); }
+.btn svg { width: 15px; height: 15px; }
+
+/* ───── Content area split ───── */
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  overflow: hidden;
+}
+@media (max-width: 1280px) {
+  .content { grid-template-columns: minmax(0, 1fr) 420px; }
+}
+.panel {
+  overflow-y: auto;
+  padding: 24px 32px 32px;
+}
+.panel + .panel {
+  border-left: 1px solid var(--b);
+  background: var(--s1);
+}
+
+/* ───── Stats cards row ───── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--s1);
+  border: 1px solid var(--b);
+  border-radius: 12px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card .label {
+  font-family: var(--font-d);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 6px;
+}
+.stat-card .value {
+  font-family: var(--font-d);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--t1);
+}
+.stat-card .delta {
+  font-size: 12px;
+  margin-top: 2px;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-weight: 500;
+}
+.stat-card .delta.up { color: var(--gr); }
+.stat-card .delta.dn { color: var(--rd); }
+.stat-card .delta.neutral { color: var(--t3); }
+
+/* ───── Athletes table ───── */
+.table-wrap {
+  background: var(--s1);
+  border: 1px solid var(--b);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table-head {
+  display: flex; align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--b);
+}
+.table-head h2 {
+  font-family: var(--font-d);
+  font-size: 15px;
+  font-weight: 600;
+}
+.table-head .filters {
+  margin-left: auto;
+  display: flex; gap: 6px;
+}
+.filter-pill {
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--s2);
+  color: var(--t2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.filter-pill:hover { color: var(--t1); }
+.filter-pill.active {
+  background: rgba(255,107,44,0.15);
+  color: var(--ac);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+thead th {
+  text-align: left;
+  padding: 10px 18px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--b);
+  font-family: var(--font-d);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+tbody tr {
+  border-bottom: 1px solid var(--b2);
+  transition: background .12s;
+  cursor: pointer;
+}
+tbody tr:last-child { border-bottom: 0; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody tr.selected {
+  background: rgba(255,107,44,0.08);
+}
+tbody tr.selected:hover { background: rgba(255,107,44,0.10); }
+tbody td {
+  padding: 14px 18px;
+  vertical-align: middle;
+}
+.athlete-cell {
+  display: flex; align-items: center; gap: 11px;
+}
+.athlete-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 700;
+  font-family: var(--font-d);
+  font-size: 13px;
+  color: #08080A;
+  flex-shrink: 0;
+}
+.athlete-avatar.a { background: linear-gradient(135deg, #2dd4a0, #14b89a); }
+.athlete-avatar.b { background: linear-gradient(135deg, #ffb547, #ff8f1f); }
+.athlete-avatar.c { background: linear-gradient(135deg, #b794f4, #805ad5); }
+.athlete-avatar.d { background: linear-gradient(135deg, #fc8181, #c53030); }
+.athlete-avatar.e { background: linear-gradient(135deg, #4fd1c5, #319795); }
+.athlete-name {
+  font-weight: 600;
+  color: var(--t1);
+  font-size: 14px;
+}
+.athlete-username {
+  font-size: 12px;
+  color: var(--t3);
+}
+.tag-plan {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255,107,44,0.10);
+  color: var(--ac);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.progress-bar {
+  width: 80px;
+  height: 6px;
+  background: var(--s3);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--ac), var(--acl));
+}
+.status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.status::before {
+  content:''; width: 7px; height: 7px;
+  border-radius: 50%;
+}
+.status.ok { color: var(--gr); }
+.status.ok::before { background: var(--gr); }
+.status.pending { color: var(--am); }
+.status.pending::before { background: var(--am); }
+.status.late { color: var(--rd); }
+.status.late::before { background: var(--rd); }
+.row-actions {
+  display: flex; gap: 4px;
+  justify-content: flex-end;
+}
+.row-actions button {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: grid; place-items: center;
+  color: var(--t3);
+}
+.row-actions button:hover { background: var(--s2); color: var(--t1); }
+.row-actions svg { width: 14px; height: 14px; }
+
+/* ───── Detail panel ───── */
+.detail-header {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--b);
+  margin-bottom: 18px;
+}
+.detail-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2dd4a0, #14b89a);
+  color: #08080A;
+  font-weight: 700;
+  font-family: var(--font-d);
+  display: grid; place-items: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.detail-name {
+  font-family: var(--font-d);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--t1);
+}
+.detail-meta {
+  font-size: 13px;
+  color: var(--t3);
+  margin-top: 2px;
+  display: flex; gap: 12px;
+  align-items: center;
+}
+.detail-meta span:not(:last-child)::after {
+  content:'·'; margin-left: 12px; opacity: 0.5;
+}
+.detail-actions {
+  margin-left: auto;
+  display: flex; gap: 6px;
+}
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--b);
+}
+.tab {
+  padding: 8px 14px;
+  font-family: var(--font-d);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--t2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.tab:hover { color: var(--t1); }
+.tab.active {
+  color: var(--ac);
+  border-bottom-color: var(--ac);
+}
+
+/* Detail content sections */
+.section-title {
+  font-family: var(--font-d);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin: 18px 0 10px;
+}
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.metric {
+  background: var(--s2);
+  border: 1px solid var(--b);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.metric .label {
+  font-family: var(--font-d);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+.metric .value {
+  font-family: var(--font-d);
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+  letter-spacing: -0.01em;
+}
+.metric.protein .value { color: var(--gr); }
+.metric.carbs .value { color: #b794f4; }
+.metric.fat .value { color: var(--am); }
+
+.activity-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--b2);
+  font-size: 13px;
+}
+.activity-item:last-child { border-bottom: 0; }
+.activity-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: rgba(255,107,44,0.10);
+  color: var(--ac);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.activity-icon svg { width: 14px; height: 14px; }
+.activity-icon.green { background: rgba(45,212,160,0.10); color: var(--gr); }
+.activity-icon.amber { background: rgba(255,181,71,0.10); color: var(--am); }
+.activity-text { flex: 1; }
+.activity-text strong { color: var(--t1); font-weight: 600; }
+.activity-text .meta { color: var(--t3); font-size: 12px; }
+
+.payment-card {
+  background: var(--s2);
+  border: 1px solid var(--b);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+}
+.payment-card .amount {
+  font-family: var(--font-d);
+  font-size: 24px;
+  font-weight: 700;
+}
+.payment-card .meta {
+  font-size: 12.5px;
+  color: var(--t3);
+  margin-top: 2px;
+}
+.payment-actions { margin-top: 12px; display: flex; gap: 6px; }
+.payment-actions .btn { flex: 1; justify-content: center; }
+
+/* Pulse para indicador "in app" */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gr);
+  animation: pulse 2s infinite;
+  margin-right: 5px;
+}
+
+/* Top banner mockup notice */
+.banner {
+  background: linear-gradient(90deg, rgba(255,107,44,0.12), rgba(255,143,94,0.06));
+  border-bottom: 1px solid rgba(255,107,44,0.25);
+  padding: 8px 24px;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--t2);
+}
+.banner strong { color: var(--ac); }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <strong>📐 MOCKUP</strong> — Esto es un preview de cómo se vería el portal del entrenador en desktop. No tiene funcionalidad. ·
+  <a href="/landing" style="color:var(--ac);font-weight:600">← volver al landing</a>
+</div>
+
+<div class="app">
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#fff">
+            <rect x="60" y="220" width="60" height="72" rx="12"/>
+            <rect x="392" y="220" width="60" height="72" rx="12"/>
+            <rect x="100" y="200" width="48" height="112" rx="10"/>
+            <rect x="364" y="200" width="48" height="112" rx="10"/>
+            <rect x="140" y="236" width="232" height="40" rx="8"/>
+          </g>
+        </svg>
+      </span>
+      Mi Rutina
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">General</div>
+      <button class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Atletas
+        <span class="badge">3</span>
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8v8M18 8v8M3 12h3M18 12h3M6 8h12M6 16h12"/></svg>
+        Editor de rutinas
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h2v11M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/></svg>
+        Comidas
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Pagos
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+        Reportes
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Comunicación</div>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Mensajes
+        <span class="badge">2</span>
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Soporte
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Configuración</div>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg>
+        Mi perfil
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Ajustes
+      </button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar">NS</div>
+        <div class="user-info">
+          <div class="name">Nicolás Saravia</div>
+          <div class="role">Entrenador</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <div class="main">
+    <!-- Top bar -->
+    <header class="topbar">
+      <h1>Atletas <span class="count">3 activos · 1 con pago pendiente</span></h1>
+      <div class="topbar-actions">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Buscar atleta, ejercicio, comida...">
+          <span class="search-shortcut">⌘ K</span>
+        </div>
+        <button class="icon-btn" title="Notificaciones">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="dot"></span>
+        </button>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo atleta
+        </button>
+      </div>
+    </header>
+
+    <!-- Split view: list (left) + detail (right) -->
+    <div class="content">
+      <!-- ═══ Left: list + stats ═══ -->
+      <div class="panel">
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="label">Atletas activos</div>
+            <div class="value">3</div>
+            <div class="delta up">↑ +1 este mes</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Sesiones esta semana</div>
+            <div class="value">12 / 15</div>
+            <div class="delta up">80% adherencia</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Comidas registradas</div>
+            <div class="value">28</div>
+            <div class="delta neutral">en los últimos 7 días</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Por cobrar</div>
+            <div class="value" style="color:var(--am)">$250.000</div>
+            <div class="delta dn">1 pago pendiente</div>
+          </div>
+        </div>
+
+        <!-- Athletes table -->
+        <div class="table-wrap">
+          <div class="table-head">
+            <h2>Mis atletas</h2>
+            <div class="filters">
+              <button class="filter-pill active">Todos · 3</button>
+              <button class="filter-pill">Al día · 2</button>
+              <button class="filter-pill">Pendiente · 1</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Atleta</th>
+                <th>Plan</th>
+                <th>Sesiones esta semana</th>
+                <th>Próxima sesión</th>
+                <th>Pago</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="selected">
+                <td>
+                  <div class="athlete-cell">
+                    <div class="athlete-avatar a">VG</div>
+                    <div>
+                      <div class="athlete-name">Viviana Galindo <span class="live-dot" title="Activa ahora"></span></div>
+                      <div class="athlete-username">@vgalindo</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="tag-plan">Fuerza</span></td>
+                <td>
+                  <div class="progress-bar"><span style="width: 80%"></span></div>
+                  <span style="font-weight:600">4 / 5</span>
+                </td>
+                <td>
+                  <div style="font-weight:500;color:var(--t1)">Sesión 2</div>
+                  <div style="font-size:12px;color:var(--t3)">Mañana, 7:00 am</div>
+                </td>
+                <td><span class="status pending">Pendiente · vence 20 may</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button title="Más"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="athlete-cell">
+                    <div class="athlete-avatar b">AR</div>
+                    <div>
+                      <div class="athlete-name">Alberto Rodríguez</div>
+                      <div class="athlete-username">@arodriguez</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="tag-plan">Hipertrofia</span></td>
+                <td>
+                  <div class="progress-bar"><span style="width: 60%"></span></div>
+                  <span style="font-weight:600">3 / 5</span>
+                </td>
+                <td>
+                  <div style="font-weight:500;color:var(--t1)">Sesión 4</div>
+                  <div style="font-size:12px;color:var(--t3)">Hoy, 6:30 pm</div>
+                </td>
+                <td><span class="status ok">Al día</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button title="Más"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="athlete-cell">
+                    <div class="athlete-avatar c">MS</div>
+                    <div>
+                      <div class="athlete-name">María Saravia</div>
+                      <div class="athlete-username">@msaravia</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="tag-plan">Pérdida de grasa</span></td>
+                <td>
+                  <div class="progress-bar"><span style="width: 100%"></span></div>
+                  <span style="font-weight:600">5 / 5</span>
+                </td>
+                <td>
+                  <div style="font-weight:500;color:var(--t1)">Sesión 1</div>
+                  <div style="font-size:12px;color:var(--t3)">Lunes, 8:00 am</div>
+                </td>
+                <td><span class="status ok">Al día</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button title="Más"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ Right: detail panel ═══ -->
+      <div class="panel">
+        <!-- Header -->
+        <div class="detail-header">
+          <div class="detail-avatar">VG</div>
+          <div>
+            <div class="detail-name">Viviana Galindo</div>
+            <div class="detail-meta">
+              <span><span class="live-dot"></span>Activa hace 4 min</span>
+              <span>Plan: Fuerza</span>
+              <span>5 sem/sem</span>
+            </div>
+          </div>
+          <div class="detail-actions">
+            <button class="btn btn-ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Mensaje
+            </button>
+            <button class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar rutina
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tab active">Resumen</div>
+          <div class="tab">Rutinas</div>
+          <div class="tab">Comidas</div>
+          <div class="tab">Pagos</div>
+          <div class="tab">Antropometría</div>
+          <div class="tab">Notas</div>
+        </div>
+
+        <!-- Resumen content -->
+        <div class="section-title">Macros de la semana</div>
+        <div class="metrics-grid">
+          <div class="metric protein">
+            <div class="label">Proteína</div>
+            <div class="value">63g</div>
+          </div>
+          <div class="metric carbs">
+            <div class="label">Carbos</div>
+            <div class="value">80g</div>
+          </div>
+          <div class="metric fat">
+            <div class="label">Grasas</div>
+            <div class="value">38g</div>
+          </div>
+          <div class="metric">
+            <div class="label">Total kcal</div>
+            <div class="value">970</div>
+          </div>
+        </div>
+
+        <div class="section-title">Actividad reciente</div>
+        <div class="activity-item">
+          <div class="activity-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="activity-text">
+            <strong>Completó Sesión 1 — Hombros</strong> · "Me sentí súper!"
+            <div class="meta">Hoy · 24 abr · 11:42 am</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h2v11M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/></svg>
+          </div>
+          <div class="activity-text">
+            <strong>Registró Desayuno</strong> · 520 kcal · 18g proteína
+            <div class="meta">Hoy · 24 abr · 9:15 am</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="activity-text">
+            <strong>Completó Sesión 4 — Piernas + Glúteos</strong>
+            <div class="meta">Ayer · 23 abr · 6:30 pm</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+          </div>
+          <div class="activity-text">
+            <strong>Te envió un mensaje</strong> · "Profe, ¿el martes podemos cambiar a 7am?"
+            <div class="meta">22 abr · 4:18 pm</div>
+          </div>
+        </div>
+
+        <div class="section-title">Pago pendiente</div>
+        <div class="payment-card">
+          <div class="amount">$250.000 <small style="font-size:13px;color:var(--am);font-weight:500">· vence en 26 días</small></div>
+          <div class="meta">Mensualidad mayo · Fecha límite 20 may 2026</div>
+          <div class="payment-actions">
+            <button class="btn btn-ghost">Ver historial</button>
+            <button class="btn btn-primary">Marcar como pagado</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Solo demo: clickear filas selecciona
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('.row-actions')) return;
+      document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
+      tr.classList.add('selected');
+    });
+  });
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.filter-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
