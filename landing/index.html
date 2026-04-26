@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#08080A" />
 
 <!-- ═══════════ SEO · meta tags ═══════════ -->
-<title>Mi Rutina · La app para entrenadores y atletas · Rutinas, comidas, IA y pagos en un solo lugar</title>
+<title>Mi Rutina · App para entrenadores y atletas | Rutinas, IA, pagos</title>
 <meta name="description" content="La app que conecta al entrenador con su atleta fuera del gym. Rutinas con GIFs, comidas con análisis IA, timer, pagos y seguimiento semanal. Todo en un solo lugar." />
 <meta name="keywords" content="app entrenador personal, rutinas de gimnasio, plan de entrenamiento personalizado, app fitness Colombia, seguimiento cliente gym, software entrenador online, hipertrofia, plan nutricional, IA entrenamiento" />
 <meta name="author" content="Mi Rutina" />
@@ -910,20 +910,184 @@ footer {
   color: var(--t3);
 }
 
+/* ───────── Lead form ───────── */
+.lead-form {
+  margin: 36px auto 0;
+  max-width: 560px;
+  text-align: left;
+  display: grid;
+  gap: 14px;
+}
+.lead-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) { .lead-row { grid-template-columns: 1fr; } }
+.lead-field { display: grid; gap: 6px; }
+.lead-field > span {
+  font-family: var(--font-d);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t2);
+}
+.lead-field > span small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--t3);
+  margin-left: 4px;
+}
+.lead-field input,
+.lead-field select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--b);
+  background: rgba(255,255,255,0.03);
+  color: var(--t1);
+  font-family: var(--font-b);
+  font-size: 16px;
+  transition: border-color .15s, background .15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.lead-field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A6' stroke-width='2' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 42px;
+}
+.lead-field input:focus,
+.lead-field select:focus {
+  outline: none;
+  border-color: var(--ac);
+  background: rgba(255,255,255,0.05);
+}
+.lead-field input::placeholder { color: var(--t3); }
+.lead-field input.invalid,
+.lead-field select.invalid { border-color: #FF4D4F; }
+
+.lead-submit {
+  margin-top: 6px;
+  width: 100%;
+  justify-content: center;
+}
+.lead-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.lead-trust {
+  margin: 4px auto 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--t3);
+  max-width: none;
+}
+
+.lead-success {
+  margin: 36px auto 0;
+  max-width: 480px;
+  text-align: center;
+  padding: 28px 24px;
+  border-radius: var(--r-lg);
+  background: rgba(45,212,160,0.06);
+  border: 1px solid rgba(45,212,160,0.25);
+}
+.lead-success-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--gr);
+  color: #08080A;
+  font-size: 32px; font-weight: 700;
+  display: grid; place-items: center;
+  margin: 0 auto 14px;
+}
+.lead-success h3 { margin-bottom: 8px; color: var(--t1); }
+.lead-success p { margin: 0 auto 18px; max-width: 36ch; color: var(--t2); font-size: 15px; }
+.lead-alt-ctas { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.lead-divider {
+  margin: 28px auto 18px;
+  display: flex; align-items: center; gap: 14px;
+  max-width: 480px;
+  color: var(--t3); font-size: 13px;
+}
+.lead-divider::before,
+.lead-divider::after {
+  content:''; flex: 1; height: 1px; background: var(--b);
+}
+.lead-direct-ctas {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+}
+
+/* ───────── Sticky mobile CTA ───────── */
+.sticky-cta {
+  display: none;
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  background: linear-gradient(135deg, var(--ac), var(--acl));
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-family: var(--font-d);
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  box-shadow: 0 12px 30px -8px rgba(255,107,44,0.55), 0 4px 12px rgba(0,0,0,0.4);
+}
+.sticky-cta:hover { transform: translateX(-50%) translateY(-1px); }
+@media (max-width: 768px) {
+  .sticky-cta { display: inline-flex; align-items: center; gap: 8px; }
+}
+
+/* ───────── Skip link (accesibilidad) ───────── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--ac);
+  color: #fff;
+  padding: 12px 18px;
+  font-family: var(--font-d);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 0 0 8px 0;
+  z-index: 1000;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 2px solid var(--t1);
+  outline-offset: 2px;
+}
+
 /* ───────── Reveal on scroll ───────── */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
 .reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+}
 
 </style>
 </head>
 <body>
+
+<a href="#main-content" class="skip-link">Saltar al contenido</a>
+
+<!-- Sticky CTA visible solo en mobile -->
+<a href="#cta" class="sticky-cta" aria-label="Agendar demo gratis">Agendar demo →</a>
 
 <!-- ═══════════ HEADER ═══════════ -->
 <header>
   <div class="wrap header-row">
     <a href="#" class="logo">
       <span class="logo-mark">
-        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <svg aria-hidden="true" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
           <g fill="#fff">
             <rect x="60" y="220" width="60" height="72" rx="12"/>
             <rect x="392" y="220" width="60" height="72" rx="12"/>
@@ -946,7 +1110,7 @@ footer {
   </div>
 </header>
 
-<main>
+<main id="main-content">
 
 <!-- ═══════════ HERO ═══════════ -->
 <section class="hero">
@@ -972,10 +1136,10 @@ footer {
     </div>
 
     <div class="trust">
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Sin descargar app</span>
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> iPhone, Android y web</span>
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> 170+ ejercicios con GIF</span>
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> IA integrada</span>
+      <span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Sin descargar app</span>
+      <span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> iPhone, Android y web</span>
+      <span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> 170+ ejercicios con GIF</span>
+      <span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> IA integrada</span>
     </div>
   </div>
 </section>
@@ -1468,12 +1632,57 @@ footer {
 <section class="cta-final" id="cta">
   <div class="wrap">
     <div class="cta-box reveal">
-      <span class="eyebrow">Empezá hoy</span>
-      <h2>Deja el Excel. <br/><span class="gradient-text">Suma 10 clientes este mes.</span></h2>
-      <p>Agenda una demo de 15 minutos y te mostramos cómo armar tu primera rutina en vivo.</p>
-      <div class="hero-ctas" style="margin: 0 0 0; justify-content: center;">
-        <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Hablar por WhatsApp <span class="btn-arrow">→</span></a>
-        <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn btn-ghost btn-lg">Escribir por email</a>
+      <span class="eyebrow">Empieza hoy</span>
+      <h2>Deja el Excel. <br/><span class="gradient-text">Suma clientes este mes.</span></h2>
+      <p>Déjanos tu correo y te contactamos en menos de 1 hora para una demo de 15 minutos.</p>
+
+      <form id="leadForm" class="lead-form" novalidate>
+        <div class="lead-row">
+          <label class="lead-field">
+            <span>Nombre</span>
+            <input type="text" name="name" required autocomplete="name" placeholder="Tu nombre" />
+          </label>
+          <label class="lead-field">
+            <span>Email</span>
+            <input type="email" name="email" required autocomplete="email" placeholder="tu@correo.com" inputmode="email" />
+          </label>
+        </div>
+        <div class="lead-row">
+          <label class="lead-field">
+            <span>WhatsApp <small>(opcional)</small></span>
+            <input type="tel" name="whatsapp" autocomplete="tel" placeholder="+57 300 123 4567" inputmode="tel" />
+          </label>
+          <label class="lead-field">
+            <span>Soy</span>
+            <select name="type" required>
+              <option value="entrenador">Entrenador independiente</option>
+              <option value="gimnasio">Dueño de gimnasio</option>
+              <option value="atleta">Atleta interesado</option>
+              <option value="otro">Otro</option>
+            </select>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg lead-submit">
+          <span class="lead-submit-text">Quiero la demo gratis</span>
+          <span class="btn-arrow">→</span>
+        </button>
+        <p class="lead-trust">💬 Te contactamos en menos de 1 hora · Sin compromiso · Demo de 15 min</p>
+      </form>
+
+      <div id="leadSuccess" class="lead-success" hidden>
+        <div class="lead-success-icon">✓</div>
+        <h3>¡Recibido!</h3>
+        <p>Te escribimos al correo o WhatsApp en la próxima hora. Mientras tanto, puedes contactarnos directo:</p>
+        <div class="lead-alt-ctas">
+          <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn btn-ghost">WhatsApp directo</a>
+          <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn btn-ghost">Email directo</a>
+        </div>
+      </div>
+
+      <div class="lead-divider"><span>o contáctanos directo</span></div>
+      <div class="lead-direct-ctas">
+        <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn btn-ghost">WhatsApp</a>
+        <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn btn-ghost">Email</a>
       </div>
     </div>
   </div>
@@ -1488,7 +1697,7 @@ footer {
       <div class="footer-col">
         <a href="#" class="logo" style="margin-bottom: 16px;">
           <span class="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <path d="M6 8v8M18 8v8M3 12h3M18 12h3M6 8h12M6 16h12"/>
             </svg>
           </span>
@@ -1616,6 +1825,57 @@ footer {
   })();
 
   // ─────────────────────────────────────────────────
+
+  // ───────── Lead form submit ─────────
+  const WORKER_URL = 'https://mirutina.nicolas-f07.workers.dev';
+  const leadForm = document.getElementById('leadForm');
+  const leadSuccess = document.getElementById('leadSuccess');
+
+  if (leadForm) {
+    leadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = leadForm.querySelector('.lead-submit');
+      const submitText = leadForm.querySelector('.lead-submit-text');
+      const data = Object.fromEntries(new FormData(leadForm).entries());
+
+      // Basic validation
+      const inputs = leadForm.querySelectorAll('input,select');
+      let valid = true;
+      inputs.forEach(i => i.classList.remove('invalid'));
+      if (!data.name || data.name.trim().length < 2) {
+        leadForm.querySelector('input[name="name"]').classList.add('invalid');
+        valid = false;
+      }
+      if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        leadForm.querySelector('input[name="email"]').classList.add('invalid');
+        valid = false;
+      }
+      if (!valid) return;
+
+      submitBtn.disabled = true;
+      submitText.textContent = 'Enviando...';
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'landing-lead', ...data })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          leadForm.style.display = 'none';
+          if (leadSuccess) leadSuccess.hidden = false;
+          track('lead_form_submit', { type: data.type, has_whatsapp: !!data.whatsapp });
+        } else {
+          throw new Error(json.error || 'Error al enviar');
+        }
+      } catch (err) {
+        submitText.textContent = 'Reintentar';
+        submitBtn.disabled = false;
+        alert('No pudimos enviar tu mensaje. Por favor escríbenos por WhatsApp o email.');
+      }
+    });
+  }
 
   // Smooth anchor scroll with header offset
   document.querySelectorAll('a[href^="#"]').forEach(a => {

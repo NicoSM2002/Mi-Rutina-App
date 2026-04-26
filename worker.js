@@ -41,6 +41,10 @@ const SEED_ATHLETES = [
   },
 ];
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 async function bootstrapAthletesIfNeeded(env) {
   const existing = await env.DB.get('athlete-index', 'json');
   // Bootstrap only on the very first call (index never existed).
@@ -1284,6 +1288,54 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 </table></body></html>`
           })
         }).catch(() => {});
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { headers: cors });
+    }
+
+    // ── LANDING LEAD CAPTURE (form de demo desde mirutinapp.com/landing) ──
+    if (body.action === 'landing-lead') {
+      const name = (body.name || '').toString().trim().slice(0, 80);
+      const email = (body.email || '').toString().trim().slice(0, 120).toLowerCase();
+      const type = (body.type || 'otro').toString().slice(0, 20);
+      const whatsapp = (body.whatsapp || '').toString().trim().slice(0, 30);
+      const message = (body.message || '').toString().trim().slice(0, 500);
+
+      // Basic validation
+      if (!name || !email || !email.includes('@') || !email.includes('.')) {
+        return new Response(JSON.stringify({ ok: false, error: 'Datos incompletos' }), { headers: cors });
+      }
+
+      const leadId = `lead:${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const lead = { name, email, type, whatsapp, message, ts: Date.now(), source: 'landing' };
+      await env.DB.put(leadId, JSON.stringify(lead));
+
+      if (env.RESEND_API_KEY) {
+        const typeLabel = { entrenador: 'Entrenador', gimnasio: 'Dueño de gimnasio', atleta: 'Atleta' }[type] || 'Otro';
+        const html = `
+          <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111">
+            <h2 style="margin:0 0 16px;color:#FF6B2C">🎯 Nuevo lead desde la landing</h2>
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:8px 0;color:#666;width:120px">Nombre</td><td style="font-weight:600">${escapeHtml(name)}</td></tr>
+              <tr><td style="padding:8px 0;color:#666">Email</td><td><a href="mailto:${escapeHtml(email)}" style="color:#FF6B2C">${escapeHtml(email)}</a></td></tr>
+              <tr><td style="padding:8px 0;color:#666">Tipo</td><td>${typeLabel}</td></tr>
+              ${whatsapp ? `<tr><td style="padding:8px 0;color:#666">WhatsApp</td><td><a href="https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}" style="color:#FF6B2C">${escapeHtml(whatsapp)}</a></td></tr>` : ''}
+              ${message ? `<tr><td style="padding:8px 0;color:#666;vertical-align:top">Mensaje</td><td style="white-space:pre-wrap">${escapeHtml(message)}</td></tr>` : ''}
+            </table>
+            <p style="margin-top:24px;color:#888;font-size:13px">Recibido en ${new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' })} (Colombia)</p>
+          </div>`;
+
+        ctx.waitUntil(fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Mi Rutina <noreply@mirutinapp.com>',
+            to: 'juansaravia2002@gmail.com',
+            reply_to: email,
+            subject: `🎯 Nuevo lead landing — ${name} (${typeLabel})`,
+            html
+          })
+        }));
       }
 
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
