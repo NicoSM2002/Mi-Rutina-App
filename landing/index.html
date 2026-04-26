@@ -1022,13 +1022,14 @@ footer {
   display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
 }
 
-/* ───────── Sticky mobile CTA ───────── */
+/* ───────── Sticky CTA (mobile + desktop, aparece al hacer scroll) ───────── */
 .sticky-cta {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   position: fixed;
-  bottom: 14px;
+  bottom: 18px;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 90;
   background: linear-gradient(135deg, var(--ac), var(--acl));
   color: #fff;
@@ -1039,10 +1040,20 @@ footer {
   font-size: 15px;
   text-decoration: none;
   box-shadow: 0 12px 30px -8px rgba(255,107,44,0.55), 0 4px 12px rgba(0,0,0,0.4);
+  /* Hidden inicialmente — aparece cuando el hero sale del viewport */
+  transform: translateX(-50%) translateY(120px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .35s ease, opacity .35s ease;
 }
-.sticky-cta:hover { transform: translateX(-50%) translateY(-1px); }
-@media (max-width: 768px) {
-  .sticky-cta { display: inline-flex; align-items: center; gap: 8px; }
+.sticky-cta.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.sticky-cta:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 16px 36px -8px rgba(255,107,44,0.65), 0 6px 16px rgba(0,0,0,0.4);
 }
 
 /* ───────── Skip link (accesibilidad) ───────── */
@@ -1825,6 +1836,36 @@ footer {
   })();
 
   // ─────────────────────────────────────────────────
+
+  // ───────── Sticky CTA visibility ─────────
+  // Muestra el sticky solo después de que el hero sale del viewport
+  // y lo oculta cuando el form CTA final entra (para no duplicar)
+  (function () {
+    const stickyCta = document.querySelector('.sticky-cta');
+    if (!stickyCta) return;
+
+    let heroVisible = true;
+    let ctaVisible = false;
+    const update = () => {
+      stickyCta.classList.toggle('visible', !heroVisible && !ctaVisible);
+    };
+
+    const heroCtas = document.querySelector('.hero-ctas');
+    if (heroCtas) {
+      new IntersectionObserver((entries) => {
+        heroVisible = entries[0].isIntersecting;
+        update();
+      }, { threshold: 0 }).observe(heroCtas);
+    }
+
+    const ctaSection = document.getElementById('cta');
+    if (ctaSection) {
+      new IntersectionObserver((entries) => {
+        ctaVisible = entries[0].isIntersecting;
+        update();
+      }, { threshold: 0.1 }).observe(ctaSection);
+    }
+  })();
 
   // ───────── Lead form submit ─────────
   const WORKER_URL = 'https://mirutina.nicolas-f07.workers.dev';
