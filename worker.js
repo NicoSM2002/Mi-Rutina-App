@@ -672,6 +672,10 @@ export default {
       const mondaySet = new Set();
       for (const r of allCompletions) { if (r.day) mondaySet.add(getMondayForDate(r.day)); }
       for (const r of allMeals) { if (r.day) mondaySet.add(getMondayForDate(r.day)); }
+      // Always include the requested week and the current week so the
+      // navigator buttons (◀ ▶) stay enabled even on weeks with no data
+      mondaySet.add(week.monday);
+      mondaySet.add(getWeekRange(null).monday);
       const availableWeeks = [...mondaySet].sort().reverse();
 
       return new Response(JSON.stringify({
