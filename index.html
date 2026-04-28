@@ -2498,12 +2498,20 @@ async function refreshCurrentAthleteRecord() {
 }
 window.addEventListener('load', () => {
   setTimeout(async () => {
-    // Si hay trainer guardado, restaurar directamente al portal
+    // 1) Si hay trainer guardado, restaurar al portal de entrenador
     if (typeof tryRestoreTrainerSession === 'function') {
       const ok = await tryRestoreTrainerSession();
       if (ok) {
         show('trainer-portal');
         if (typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
+        return;
+      }
+    }
+    // 2) Si hay atleta guardado y sesión válida, restaurar a perfil del atleta
+    if (typeof tryRestoreAthleteSession === 'function') {
+      const ok = await tryRestoreAthleteSession();
+      if (ok) {
+        show('profile-generic');
         return;
       }
     }
@@ -3551,6 +3559,7 @@ async function athleteLogin() {
     const dyn = json.athlete;
     athleteSelfToken = json.selfToken;
     try { localStorage.setItem(`selfToken_${dyn.clientId}`, json.selfToken); } catch {}
+    try { localStorage.setItem('currentAthlete', dyn.clientId); } catch {}
     document.getElementById('athlete-username').value = '';
     currentAthlete = dyn.clientId;
     currentAthleteRecord = dyn;
@@ -3558,7 +3567,7 @@ async function athleteLogin() {
     loadRoutine();
     showGenericProfile(dyn);
     loadAthletePayment(currentAthlete);
-    if (typeof startInactivityTracking === 'function') startInactivityTracking();
+    if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
   } catch (e) {
     errEl.textContent = 'Error de red';
   }
@@ -3710,6 +3719,7 @@ function forceLogoutByInactivity() {
   if (currentAthlete) {
     try { localStorage.removeItem(`selfToken_${currentAthlete}`); } catch {}
   }
+  try { localStorage.removeItem('currentAthlete'); } catch {}
   athleteSelfToken = null;
   currentAthlete = null;
   currentAthleteRecord = null;
@@ -3773,9 +3783,69 @@ function logoutAthlete() {
   currentAthlete = null;
   currentAthleteRecord = null;
   try { data = JSON.parse(JSON.stringify(FALLBACK_DATA)); } catch {}
+  try { localStorage.removeItem('currentAthlete'); } catch {}
   try { localStorage.removeItem('lastActivityTs'); } catch {}
   stopInactivityTracking();
   show('role-select');
+}
+
+async function tryRestoreAthleteSession() {
+  let saved = null;
+  try { saved = localStorage.getItem('currentAthlete'); } catch {}
+  if (!saved) return false;
+
+  // Set currentAthlete first so _isSessionExpired uses ATLETA timeout (2h)
+  currentAthlete = saved;
+
+  if (_isSessionExpired()) {
+    // Pasaron > 2h: limpiar todo
+    try { localStorage.removeItem('currentAthlete'); } catch {}
+    try { localStorage.removeItem(`selfToken_${saved}`); } catch {}
+    try { localStorage.removeItem('lastActivityTs'); } catch {}
+    currentAthlete = null;
+    return false;
+  }
+
+  let token = null;
+  try { token = localStorage.getItem(`selfToken_${saved}`); } catch {}
+  if (!token) {
+    try { localStorage.removeItem('currentAthlete'); } catch {}
+    currentAthlete = null;
+    return false;
+  }
+  athleteSelfToken = token;
+
+  // Cargar el record del atleta desde el servidor
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get-athlete', client: saved, selfToken: token })
+    });
+    const json = await res.json();
+    if (!json.ok || !json.athlete) {
+      // Token inválido o atleta eliminado: limpiar
+      try { localStorage.removeItem('currentAthlete'); } catch {}
+      try { localStorage.removeItem(`selfToken_${saved}`); } catch {}
+      currentAthlete = null;
+      athleteSelfToken = null;
+      return false;
+    }
+    currentAthleteRecord = json.athlete;
+    data = {};
+    loadRoutine();
+    showGenericProfile(json.athlete);
+    loadAthletePayment(saved);
+    _touchActivity();
+    startInactivityTracking();
+    return true;
+  } catch (e) {
+    // Red caída: confiamos en el estado local (mantenemos la sesión)
+    currentAthleteRecord = null;
+    data = {};
+    _touchActivity();
+    startInactivityTracking();
+    return true;
+  }
 }
 
 async function trainerLogin() {
