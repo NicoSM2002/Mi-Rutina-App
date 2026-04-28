@@ -20,4 +20,4 @@ bucket_name = "mi-rutina-fotos"
 #  - 01:00 UTC domingo → 20:00 Colombia sábado, reporte semanal
 #  - 18:00 UTC daily  → 13:00 Colombia, recordatorio si no se ha entrenado
 [triggers]
-crons = ["0 3 * * *", "0 1 * * 7", "0 18 * * *"]
+crons = ["0 3 * * *", "0 1 * * SUN", "0 18 * * *"]

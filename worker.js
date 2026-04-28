@@ -1384,13 +1384,32 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
   // ── CRON HANDLERS ──
   async scheduled(event, env, ctx) {
-    if (event.cron === '0 1 * * 7') {
+    const ts = new Date().toISOString();
+    console.log(`[CRON] fired at ${ts} | cron=${event.cron} | scheduledTime=${event.scheduledTime}`);
+
+    // Detect by hour (more robust than string match in case Cloudflare normalizes the cron)
+    const utcHour = new Date(event.scheduledTime || Date.now()).getUTCHours();
+    const utcDay = new Date(event.scheduledTime || Date.now()).getUTCDay(); // 0=Sun..6=Sat
+
+    // Weekly report: Sunday 01:00 UTC = Saturday 20:00 Colombia
+    if (utcHour === 1 && utcDay === 0) {
+      console.log('[CRON] -> sendWeeklyReport');
       await sendWeeklyReport(env);
-    } else if (event.cron === '0 18 * * *') {
-      await sendWorkoutReminder(env);
-    } else {
-      await sendDailyMealReport(env);
+      return;
     }
+    // Workout reminder: 18:00 UTC = 13:00 Colombia
+    if (utcHour === 18) {
+      console.log('[CRON] -> sendWorkoutReminder');
+      await sendWorkoutReminder(env);
+      return;
+    }
+    // Daily meal report: 03:00 UTC = 22:00 Colombia (previous day)
+    if (utcHour === 3) {
+      console.log('[CRON] -> sendDailyMealReport');
+      await sendDailyMealReport(env);
+      return;
+    }
+    console.log('[CRON] -> no handler matched, skipping');
   }
 };
 

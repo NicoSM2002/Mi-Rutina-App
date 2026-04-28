@@ -2139,6 +2139,14 @@ html, body {
         </div>
       </div>
     </div>
+
+    <!-- Cerrar sesión (atleta) -->
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)">
+      <button onclick="logoutAthlete()" style="width:100%;padding:14px;background:none;border:1px solid rgba(255,255,255,.12);border-radius:12px;color:var(--t2);font-family:var(--font-d);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2198,6 +2206,14 @@ html, body {
         <div class="prog-row"><span class="prog-label">Edad metabólica</span><span class="prog-val">21 años</span></div>
       </div>
     </div>
+
+    <!-- Cerrar sesión (atleta) -->
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)">
+      <button onclick="logoutAthlete()" style="width:100%;padding:14px;background:none;border:1px solid rgba(255,255,255,.12);border-radius:12px;color:var(--t2);font-family:var(--font-d);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
   </div>
 
 </div>
@@ -2234,6 +2250,14 @@ html, body {
         <div class="prog-row"><span class="prog-label">Proteína</span><span class="prog-val">15.4%</span></div>
         <div class="prog-row"><span class="prog-label">Edad metabólica</span><span class="prog-val">33 años</span></div>
       </div>
+    </div>
+
+    <!-- Cerrar sesión (atleta) -->
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)">
+      <button onclick="logoutAthlete()" style="width:100%;padding:14px;background:none;border:1px solid rgba(255,255,255,.12);border-radius:12px;color:var(--t2);font-family:var(--font-d);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar sesión
+      </button>
     </div>
   </div>
 
@@ -3640,8 +3664,11 @@ try {
   if (savedTrainer) currentTrainer = savedTrainer;
 } catch {}
 
-/* ══ INACTIVITY / AUTO-LOGOUT (10 minutes) ══ */
-const INACTIVITY_MS = 10 * 60 * 1000; // 10 min
+/* ══ INACTIVITY / AUTO-LOGOUT ══
+   Atleta: 2 horas (UX prioriza estar siempre logueado entre sesiones)
+   Entrenador: 10 minutos (seguridad — datos de todos los atletas) */
+const INACTIVITY_MS_TRAINER = 10 * 60 * 1000;       // 10 min
+const INACTIVITY_MS_ATLETA  = 2 * 60 * 60 * 1000;   // 2 horas
 let _inactivityInterval = null;
 
 function _hasActiveSession() {
@@ -3659,7 +3686,8 @@ function _readLastActivity() {
 function _isSessionExpired() {
   const last = _readLastActivity();
   if (!last) return false; // nunca registró actividad → no expira todavía
-  return (Date.now() - last) >= INACTIVITY_MS;
+  const limit = currentAthlete ? INACTIVITY_MS_ATLETA : INACTIVITY_MS_TRAINER;
+  return (Date.now() - last) >= limit;
 }
 
 function startInactivityTracking() {
@@ -3689,7 +3717,7 @@ function forceLogoutByInactivity() {
   // Trainer
   if (typeof logoutTrainer === 'function') logoutTrainer();
   show('role-select');
-  setTimeout(() => { try { alert('Tu sesión expiró por inactividad. Ingresá de nuevo.'); } catch {} }, 50);
+  setTimeout(() => { try { alert('Tu sesión expiró por inactividad. Inicia sesión de nuevo.'); } catch {} }, 50);
 }
 
 // Registrar cualquier interacción como "actividad" (throttled vía interval arriba).
@@ -3702,7 +3730,7 @@ document.addEventListener('visibilitychange', () => {
 
 async function tryRestoreTrainerSession() {
   if (!currentTrainer) return false;
-  // Si hubo más de 10 min de inactividad, no restaurar: forzar re-login.
+  // Si superó el timeout de inactividad del entrenador (10 min), no restaurar.
   if (_isSessionExpired()) {
     logoutTrainer();
     try { localStorage.removeItem('lastActivityTs'); } catch {}
@@ -3735,6 +3763,19 @@ function logoutTrainer() {
   try { localStorage.removeItem('currentTrainer'); } catch {}
   try { localStorage.removeItem('lastActivityTs'); } catch {}
   stopInactivityTracking();
+}
+
+function logoutAthlete() {
+  if (currentAthlete) {
+    try { localStorage.removeItem(`selfToken_${currentAthlete}`); } catch {}
+  }
+  athleteSelfToken = null;
+  currentAthlete = null;
+  currentAthleteRecord = null;
+  try { data = JSON.parse(JSON.stringify(FALLBACK_DATA)); } catch {}
+  try { localStorage.removeItem('lastActivityTs'); } catch {}
+  stopInactivityTracking();
+  show('role-select');
 }
 
 async function trainerLogin() {
