@@ -1345,6 +1345,44 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
     }
 
+    // ── ADMIN: shift latest completion of a given day to the previous day ──
+    // Used when the trainer/atleta envió una sesión por error y quiere que
+    // siga contando pero NO bloquee la rutina de hoy.
+    if (body.action === 'admin-shift-completion') {
+      const adminEmail = (body.adminEmail || '').toString().toLowerCase().trim();
+      const ADMIN = (env.ADMIN_EMAIL || 'juansaravia2002@gmail.com').toLowerCase();
+      if (adminEmail !== ADMIN) {
+        return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), { headers: cors });
+      }
+      const clientId = (body.client || '').toString();
+      const day = (body.day || '').toString();
+      if (!clientId || !day) {
+        return new Response(JSON.stringify({ ok: false, error: 'Faltan client o day' }), { headers: cors });
+      }
+      const completions = await env.DB.get(`completions:${clientId}`, 'json') || [];
+      // Buscar la completion más reciente con ese día
+      let targetIdx = -1;
+      for (let i = completions.length - 1; i >= 0; i--) {
+        if (completions[i].day === day) { targetIdx = i; break; }
+      }
+      if (targetIdx === -1) {
+        return new Response(JSON.stringify({ ok: false, error: `No hay completions con day=${day}` }), { headers: cors });
+      }
+      // Calcular el día anterior
+      const [y, m, d] = day.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      dt.setUTCDate(dt.getUTCDate() - 1);
+      const newDay = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+      const oldDay = completions[targetIdx].day;
+      completions[targetIdx].day = newDay;
+      await env.DB.put(`completions:${clientId}`, JSON.stringify(completions));
+      console.log(`[ADMIN] Shifted completion of ${clientId}: ${oldDay} -> ${newDay}`);
+      return new Response(JSON.stringify({
+        ok: true,
+        moved: { client: clientId, from: oldDay, to: newDay, sesion: completions[targetIdx].sesion || completions[targetIdx].sessionKey || null }
+      }), { headers: cors });
+    }
+
     if (body.action === 'list-support-chats') {
       const list = await env.DB.list({ prefix: 'support-chat:' });
       const chats = [];
