@@ -1730,6 +1730,7 @@ html, body {
   <div class="admin-tabs">
     <button class="admin-tab active" id="admin-tab-support" onclick="setAdminTab('support')">💬 Soporte</button>
     <button class="admin-tab" id="admin-tab-trainers" onclick="setAdminTab('trainers')">👥 Entrenadores</button>
+    <button class="admin-tab" id="admin-tab-tools" onclick="setAdminTab('tools')">🛠️ Herramientas</button>
   </div>
   <div class="admin-chat-list" id="admin-chat-list" style="display:block">
     <div class="admin-chat-empty">Cargando...</div>
@@ -1737,6 +1738,27 @@ html, body {
   <div class="admin-trainers-list" id="admin-trainers-list" style="display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column">
     <div class="admin-chat-empty">Cargando...</div>
   </div>
+
+  <!-- Herramientas admin -->
+  <div class="admin-tools-list" id="admin-tools-list" style="display:none;flex:1;overflow-y:auto;padding:20px 16px;flex-direction:column;gap:18px">
+    <div style="background:var(--s1);border:1px solid var(--b);border-radius:14px;padding:20px">
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:6px">Mover sesión a un día atrás</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.55;margin-bottom:18px">
+        Si una sesión completada se registró en el día equivocado y bloquea la rutina del atleta hoy,
+        muévela al día anterior. Conserva el registro y libera la rutina actual.
+      </div>
+      <div class="na-field"><label class="na-label">Atleta</label>
+        <select class="na-input" id="tool-shift-client">
+          <option value="">Cargando atletas…</option>
+        </select>
+      </div>
+      <div class="na-field"><label class="na-label">Día de la sesión a mover</label>
+        <input class="na-input" id="tool-shift-day" type="date" required></div>
+      <button class="tlogin-btn" onclick="adminShiftCompletion()" style="margin-top:6px">Mover sesión un día atrás</button>
+      <div id="tool-shift-result" style="margin-top:14px;font-size:13.5px;line-height:1.5"></div>
+    </div>
+  </div>
+
   <button class="new-athlete-btn" id="admin-fab-add-trainer" onclick="openCreateTrainerForm()" title="Nuevo entrenador"
     style="position:absolute;bottom:24px;right:20px;width:56px;height:56px;font-size:28px;display:none;z-index:5">+</button>
 </div>
@@ -6398,11 +6420,66 @@ function adminLogin() {
 function setAdminTab(tab) {
   document.getElementById('admin-tab-support').classList.toggle('active', tab === 'support');
   document.getElementById('admin-tab-trainers').classList.toggle('active', tab === 'trainers');
+  document.getElementById('admin-tab-tools').classList.toggle('active', tab === 'tools');
   document.getElementById('admin-chat-list').style.display = tab === 'support' ? 'block' : 'none';
-  document.getElementById('admin-trainers-list').style.display = tab === 'trainers' ? 'block' : 'none';
+  document.getElementById('admin-trainers-list').style.display = tab === 'trainers' ? 'flex' : 'none';
+  document.getElementById('admin-tools-list').style.display = tab === 'tools' ? 'flex' : 'none';
   document.getElementById('admin-fab-add-trainer').style.display = tab === 'trainers' ? 'flex' : 'none';
   if (tab === 'support') loadAdminChats();
-  else loadAdminTrainers();
+  else if (tab === 'trainers') loadAdminTrainers();
+  else if (tab === 'tools') loadAdminToolsAthletes();
+}
+
+async function loadAdminToolsAthletes() {
+  const sel = document.getElementById('tool-shift-client');
+  // Default day = hoy Bogotá
+  const dayInput = document.getElementById('tool-shift-day');
+  if (!dayInput.value) {
+    const now = new Date();
+    const bog = new Date(now.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    dayInput.value = fmt(bog);
+  }
+  if (sel.options.length > 1) return; // ya cargado
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'list-athletes' })
+    });
+    const json = await res.json();
+    const list = (json.athletes || []).slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    sel.innerHTML = '<option value="">Selecciona atleta…</option>' + list.map(a =>
+      `<option value="${a.clientId}">${a.name || a.clientId} (@${a.clientId})</option>`
+    ).join('');
+  } catch (e) {
+    sel.innerHTML = '<option value="">Error cargando</option>';
+  }
+}
+
+async function adminShiftCompletion() {
+  const result = document.getElementById('tool-shift-result');
+  const client = document.getElementById('tool-shift-client').value;
+  const day = document.getElementById('tool-shift-day').value;
+  if (!client || !day) {
+    result.innerHTML = '<span style="color:var(--rd)">Selecciona atleta y día.</span>';
+    return;
+  }
+  result.innerHTML = '<span style="color:var(--t3)">Procesando…</span>';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'admin-shift-completion',
+        adminEmail: 'juansaravia2002@gmail.com',
+        client, day,
+      })
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Error');
+    result.innerHTML = `<span style="color:var(--gr)">✓ Sesión movida de ${json.moved.from} a ${json.moved.to}. Avísale al atleta que recargue la app.</span>`;
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--rd)">✗ ${e.message}</span>`;
+  }
 }
 
 async function loadAdminTrainers() {
