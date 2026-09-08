@@ -857,36 +857,48 @@ html, body {
   background:var(--bg); display:flex; flex-direction:column; overflow:hidden;
 }
 .admin-header {
-  background:var(--s1); border-bottom:1px solid rgba(255,255,255,.04);
-  padding:calc(var(--sat) + 16px) 20px 14px;
-  display:flex; align-items:center; gap:12px; flex-shrink:0;
+  background:var(--bg); border-bottom:none;
+  padding:calc(var(--sat) + 14px) var(--pad) 4px;
+  display:flex; align-items:center; gap:10px; flex-shrink:0;
 }
-.admin-header-title { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); }
+.admin-header-title { font-family:var(--font-d); font-size:34px; font-weight:800; color:var(--t1); letter-spacing:-1.1px; }
 .admin-chat-list {
-  flex:1; overflow-y:auto; padding:16px;
+  flex:1; overflow-y:auto; padding:4px var(--pad) calc(24px + var(--sab));
   -webkit-overflow-scrolling:touch;
 }
 .admin-chat-card {
-  background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:14px;
-  padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color .15s;
+  background:var(--s1); border:none; border-radius:var(--r-group);
+  padding:20px 18px; margin-bottom:12px; cursor:pointer; transition:background .15s;
 }
-.admin-chat-card:active { border-color:var(--ac); }
-.admin-chat-name { font-family:var(--font-d); font-size:14px; font-weight:700; color:var(--t1); margin-bottom:4px; }
-.admin-chat-preview { font-size:12px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.admin-chat-time { font-size:10px; color:var(--t3); margin-top:4px; }
-.admin-chat-empty { text-align:center; color:var(--t2); font-size:14px; padding:60px 20px; }
-.admin-tabs { display:flex; border-bottom:1px solid var(--b); padding:0 16px; gap:4px; flex-shrink:0; }
-.admin-tab { flex:1; background:none; border:none; padding:12px 8px; font-family:var(--font-d); font-size:13px; font-weight:700; color:var(--t3); cursor:pointer; position:relative; }
-.admin-tab.active { color:var(--acl); }
-.admin-tab.active::after { content:''; position:absolute; left:12px; right:12px; bottom:-1px; height:2px; background:var(--ac); border-radius:2px; }
-.admin-trainer-card { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-.admin-trainer-avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:700; font-size:14px; flex-shrink:0; overflow:hidden; }
+.admin-chat-card:active { background:#F1F1EC; }
+.admin-chat-name { font-family:var(--font-d); font-size:19px; font-weight:700; color:var(--t1); margin-bottom:5px; letter-spacing:-.4px; }
+.admin-chat-preview { font-size:16px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.2px; }
+.admin-chat-time { font-size:14px; color:var(--t3); margin-top:6px; }
+.admin-chat-empty { text-align:center; color:var(--t2); font-size:16px; padding:60px 20px; letter-spacing:-.2px; }
+/* Pestañas del panel: segmented control claro */
+.admin-tabs {
+  display:flex; border-bottom:none; margin:14px var(--pad) 6px; gap:4px; flex-shrink:0;
+  background:var(--s2); border-radius:14px; padding:4px;
+}
+.admin-tab {
+  flex:1; background:none; border:none; padding:12px 8px; border-radius:11px;
+  font-family:var(--font-d); font-size:15px; font-weight:600; color:var(--t2);
+  cursor:pointer; position:relative; letter-spacing:-.2px; transition:background .15s, color .15s;
+}
+.admin-tab.active { color:var(--t1); background:var(--s1); }
+.admin-tab.active::after { content:none; }
+.admin-trainer-card { background:var(--s1); border:none; border-radius:var(--r-group); padding:18px; display:flex; align-items:center; gap:15px; margin-bottom:12px; }
+.admin-trainer-avatar { width:56px; height:56px; border-radius:100px; background:var(--s2); color:var(--t2); display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:700; font-size:17px; flex-shrink:0; overflow:hidden; }
 .admin-trainer-avatar img { width:100%; height:100%; object-fit:cover; }
 .admin-trainer-info { flex:1; min-width:0; }
-.admin-trainer-name { font-family:var(--font-d); font-size:14px; font-weight:700; color:var(--t1); }
-.admin-trainer-meta { font-size:11px; color:var(--t2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.admin-trainer-del { background:none; border:none; color:var(--t3); font-size:20px; cursor:pointer; padding:4px 8px; flex-shrink:0; }
-.admin-trainer-del:active { color:#f87171; }
+.admin-trainer-name { font-family:var(--font-d); font-size:19px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+.admin-trainer-meta { font-size:15px; color:var(--t2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.2px; }
+.admin-trainer-del { background:none; border:none; color:var(--t2); font-size:20px; cursor:pointer; padding:8px; flex-shrink:0; display:flex; align-items:center; }
+.admin-trainer-del:active { color:var(--t1); }
+/* Tarjeta de herramienta del panel */
+.admin-tool-card { background:var(--s1); border:none; border-radius:var(--r-group); padding:22px 18px; }
+.admin-tool-title { font-family:var(--font-d); font-size:22px; font-weight:700; color:var(--t1); letter-spacing:-.5px; margin-bottom:8px; }
+.admin-tool-desc { font-size:16px; color:var(--t2); line-height:1.55; margin-bottom:22px; letter-spacing:-.2px; }
 .admin-secret-btn {
   position:absolute; left:0; right:0;
   bottom:calc(var(--sab) + 34px);
@@ -1263,21 +1275,21 @@ html, body {
 }
 .role-card {
   width:100%; background:var(--s1); border:none;
-  border-radius:var(--r-group); padding:20px 18px;
-  display:flex; align-items:center; gap:15px;
+  border-radius:var(--r-group); padding:20px 16px;
+  display:flex; align-items:center; gap:13px;
   cursor:pointer; text-align:left;
   transition:background .18s;
 }
 .role-card:active { background:#F1F1EC; }
 .role-card-icon {
-  width:56px; height:56px; border-radius:100px;
+  width:52px; height:52px; border-radius:100px;
   background:var(--s2); color:var(--t1);
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
 }
 .role-card-text { flex:1; min-width:0; }
 .role-card-title { font-family:var(--font-d); font-size:19px; font-weight:700; color:var(--t1); margin-bottom:3px; letter-spacing:-.4px; }
-.role-card-sub { font-size:14px; color:var(--t2); font-weight:400; letter-spacing:-.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.role-card-sub { font-size:13.5px; color:var(--t2); font-weight:400; letter-spacing:-.25px; }
 .role-card-arrow { color:#B8B8B3; width:20px; height:20px; stroke-width:2; }
 
 /* ══════════════════════════════
@@ -1438,10 +1450,11 @@ select.na-input {
 .na-pdf-box { margin-bottom:18px; }
 .na-pdf-btn {
   width:100%; display:flex; align-items:center; gap:14px;
-  background:linear-gradient(135deg, rgba(6,182,212,.12), rgba(99,102,241,.12));
-  border:1.5px dashed rgba(99,102,241,.45); border-radius:14px;
-  padding:16px; color:var(--t1); cursor:pointer; text-align:left;
+  background:transparent;
+  border:1px dashed #CFCFC9; border-radius:14px;
+  padding:18px 16px; color:var(--t1); cursor:pointer; text-align:left;
 }
+.na-pdf-btn:active { border-color:var(--ac); }
 .na-pdf-btn:active { opacity:.85; }
 .na-pdf-btn[disabled] { opacity:.6; cursor:default; }
 .na-pdf-icon { font-size:28px; }
@@ -2130,13 +2143,13 @@ select.na-input {
 <!-- ══ ADMIN PANEL ══ -->
 <div class="screen" id="admin-support">
   <div class="admin-header">
-    <button class="back-btn" onclick="show('role-select')">‹</button>
-    <div class="admin-header-title">🛠️ Panel Admin</div>
+    <button class="back-btn" onclick="show('role-select')" aria-label="Volver"><svg class="ic"><use href="#i-chevron-l"/></svg></button>
+    <div class="admin-header-title">Panel admin</div>
   </div>
   <div class="admin-tabs">
-    <button class="admin-tab active" id="admin-tab-support" onclick="setAdminTab('support')">💬 Soporte</button>
-    <button class="admin-tab" id="admin-tab-trainers" onclick="setAdminTab('trainers')">👥 Entrenadores</button>
-    <button class="admin-tab" id="admin-tab-tools" onclick="setAdminTab('tools')">🛠️ Herramientas</button>
+    <button class="admin-tab active" id="admin-tab-support" onclick="setAdminTab('support')">Soporte</button>
+    <button class="admin-tab" id="admin-tab-trainers" onclick="setAdminTab('trainers')">Entrenadores</button>
+    <button class="admin-tab" id="admin-tab-tools" onclick="setAdminTab('tools')">Herramientas</button>
   </div>
   <div class="admin-chat-list" id="admin-chat-list" style="display:block">
     <div class="admin-chat-empty">Cargando...</div>
@@ -2147,9 +2160,9 @@ select.na-input {
 
   <!-- Herramientas admin -->
   <div class="admin-tools-list" id="admin-tools-list" style="display:none;flex:1;overflow-y:auto;padding:20px 16px;flex-direction:column;gap:18px">
-    <div style="background:var(--s1);border:1px solid var(--b);border-radius:14px;padding:20px">
-      <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:6px">Mover sesión a un día atrás</div>
-      <div style="font-size:13px;color:var(--t2);line-height:1.55;margin-bottom:18px">
+    <div class="admin-tool-card">
+      <div class="admin-tool-title">Mover sesión a un día atrás</div>
+      <div class="admin-tool-desc">
         Si una sesión completada se registró en el día equivocado y bloquea la rutina del atleta hoy,
         muévela al día anterior. Conserva el registro y libera la rutina actual.
       </div>
@@ -2173,13 +2186,13 @@ select.na-input {
 <div class="screen" id="admin-create-trainer">
   <div class="tportal-header">
     <button class="back-btn" onclick="show('admin-support')"><svg class="ic"><use href="#i-chevron-l"/></svg>Volver</button>
-    <div class="tportal-title">Nuevo entrenador</div>
   </div>
   <div class="tportal-body" style="padding-bottom:40px">
+    <h1 class="h-page" style="margin-bottom:22px">Nuevo entrenador</h1>
     <form id="ct-form" onsubmit="event.preventDefault(); submitCreateTrainer();" autocomplete="off">
       <div class="na-field"><label class="na-label">Nombre completo <span class="na-req">*</span></label>
         <input class="na-input" id="ct-name" type="text" required></div>
-      <div class="na-field"><label class="na-label">Usuario (para login) <span class="na-req">*</span></label>
+      <div class="na-field"><label class="na-label">Usuario <span class="na-req">*</span></label>
         <input class="na-input" id="ct-username" type="text" pattern="[a-z0-9]+" required>
         <div class="na-hint">Solo minúsculas y números.</div></div>
       <div class="na-field"><label class="na-label">Email</label>
@@ -2388,9 +2401,9 @@ select.na-input {
       <div class="na-field"><label class="na-label">Años de experiencia</label>
         <input class="na-input" id="top-years" type="number" inputmode="numeric"></div>
       <div class="na-field"><label class="na-label">Especialidad</label>
-        <input class="na-input" id="top-specialty" type="text" placeholder="Ej: Hipertrofia y fuerza"></div>
+        <input class="na-input" id="top-specialty" type="text" placeholder="Ej.: Hipertrofia y fuerza"></div>
       <div class="na-field"><label class="na-label">Estudios y certificaciones</label>
-        <textarea class="na-input" id="top-education" rows="3" placeholder="Ej: Lic. Ciencias del Deporte, Certificación NSCA"></textarea></div>
+        <textarea class="na-input" id="top-education" rows="3" placeholder="Ej.: Lic. Ciencias del Deporte, certificación NSCA"></textarea></div>
       <div class="na-field"><label class="na-label">Sobre mí</label>
         <textarea class="na-input" id="top-bio" rows="3" placeholder="Breve descripción (2-3 líneas)"></textarea></div>
       <div id="top-error" class="tlogin-error"></div>
@@ -2403,8 +2416,7 @@ select.na-input {
 <div class="screen" id="admin-trainer-detail">
   <div class="tportal-header">
     <button class="back-btn" onclick="show('admin-support')"><svg class="ic"><use href="#i-chevron-l"/></svg>Volver</button>
-    <div class="tportal-title">Detalle entrenador</div>
-    <button class="new-athlete-btn" id="atd-edit-btn" title="Editar" style="background:linear-gradient(135deg,#6366f1,#818cf8);font-size:15px;display:none">✎</button>
+    <button class="btn-circle btn-circle-outline" id="atd-edit-btn" title="Editar" aria-label="Editar" style="display:none"><svg class="ic"><use href="#i-pencil"/></svg></button>
   </div>
   <div class="tportal-body" style="padding-bottom:40px" id="atd-body">
     Cargando...
@@ -2415,15 +2427,15 @@ select.na-input {
 <div class="screen" id="admin-edit-trainer">
   <div class="tportal-header">
     <button class="back-btn" onclick="show('admin-trainer-detail')"><svg class="ic"><use href="#i-chevron-l"/></svg>Volver</button>
-    <div class="tportal-title">Editar entrenador</div>
   </div>
   <div class="tportal-body" style="padding-bottom:40px">
+    <h1 class="h-page" style="margin-bottom:22px">Editar entrenador</h1>
     <form id="et-form" onsubmit="event.preventDefault(); submitEditTrainer();" autocomplete="off">
       <div class="na-field"><label class="na-label">Nombre completo <span class="na-req">*</span></label>
         <input class="na-input" id="et-name" type="text" required></div>
-      <div class="na-field"><label class="na-label">Usuario (para login) <span class="na-req">*</span></label>
+      <div class="na-field"><label class="na-label">Usuario <span class="na-req">*</span></label>
         <input class="na-input" id="et-username" type="text" pattern="[a-z0-9]+" required autocapitalize="none">
-        <div class="na-hint">Solo minúsculas y números. Si lo cambiás, se actualiza automáticamente en todos sus atletas.</div></div>
+        <div class="na-hint">Solo minúsculas y números. Si lo cambias, se actualiza automáticamente en todos sus atletas.</div></div>
       <div class="na-field"><label class="na-label">Email</label>
         <input class="na-input" id="et-email" type="email"></div>
       <div class="na-field"><label class="na-label">Teléfono</label>
