@@ -634,6 +634,18 @@ html, body {
   background:var(--bg);
 }
 .ex-photo.show { display:block; }
+/* Mientras baja el GIF: altura reservada + spinner, para que el toque se
+   sienta atendido de inmediato y el layout no dé un salto al aparecer. */
+.ex-photo.loading {
+  min-height:180px; position:relative;
+}
+.ex-photo.loading::after {
+  content:''; position:absolute; top:50%; left:50%;
+  width:26px; height:26px; margin:-13px 0 0 -13px;
+  border:2.5px solid var(--b); border-top-color:var(--ac);
+  border-radius:50%; animation:gifSpin .7s linear infinite;
+}
+@keyframes gifSpin { to { transform:rotate(360deg); } }
 .ex-photo img {
   width:100%; height:auto; max-height:280px;
   object-fit:contain; display:block;
@@ -3748,7 +3760,7 @@ function renderExCard(ex, ci, ei, w) {
     .replace('triceps','Tríceps').replace('biceps','Bíceps')
     .replace('abdomen','Abdomen') : '';
   const st = ex.setType || 'normal';
-  const currentSteps = ex.steps1 || [];
+  const currentSteps = orderedSteps(ex.steps1 || [], st);
   const isSpecial = st !== 'normal' && currentSteps.length > 0;
   const badgeHtml = st === 'dropset'
     ? `<span class="tag drop">Drop set</span>`
@@ -3842,14 +3854,19 @@ function render() {
 
   // Cabecera de sesión: título grande + "Ver sesión completa" (el muro de
   // ejercicios del sub queda plegado, como en el mockup).
+  // Título y lista de ejercicios se derivan de la sesión actual, no del texto
+  // guardado: así reflejan siempre lo que el entrenador tiene cargado hoy.
+  const sessionNum = (currentDay.match(/\d+/) || [''])[0];
+  const shownTitle = deriveSessionTitle(day, sessionNum);
+  const shownSub = deriveSessionSub(day) || day.sub || '';
   let html = `<div class="day-header">
-      <div class="day-title">${day.title}</div>
+      <div class="day-title">${shownTitle}</div>
       <div class="day-today">Tu entrenamiento de hoy.</div>
-      ${day.sub ? `<button class="session-full-row" onclick="toggleSessionFull()">
+      ${shownSub ? `<button class="session-full-row" onclick="toggleSessionFull()">
         <span>Ver sesión completa</span>
         <svg class="ic session-full-chev"><use href="#i-chevron-r"/></svg>
       </button>
-      <div class="session-full-text" id="session-full-text">${day.sub}</div>` : ''}
+      <div class="session-full-text" id="session-full-text">${shownSub}</div>` : ''}
     </div>`;
 
   /* Indicador de progreso por segmentos */
@@ -3951,6 +3968,7 @@ function render() {
   }
 
   document.getElementById('content').innerHTML = html;
+  preloadVisibleGifs();
 }
 
 /* ── toggles ── */
@@ -3997,17 +4015,45 @@ function togglePhoto(id, src) {
     return;
   }
   el.setAttribute('data-loaded', '1');
+  // Marca de carga: sin esto el panel quedaba vacío mientras bajaba el GIF y
+  // parecía que el botón no había respondido.
+  el.classList.add('loading');
   const img = document.createElement('img');
   img.alt = '';
+  img.decoding = 'async';
+  img.onload = () => el.classList.remove('loading');
   img.onerror = () => {
+    el.classList.remove('loading');
     img.remove();
     const msg = document.createElement('div');
-    msg.style.cssText = 'padding:14px;font-size:12px;color:var(--t2);text-align:center;';
+    msg.style.cssText = 'padding:14px;font-size:13px;color:var(--t2);text-align:center;';
     msg.textContent = 'GIF no disponible';
     el.appendChild(msg);
   };
   el.appendChild(img);
   img.src = src;
+}
+
+/* Precarga en segundo plano los GIFs del paso visible: al tocar "Ver
+   ejercicio" ya están en caché y aparecen al instante. */
+const _gifPreloaded = new Set();
+function preloadVisibleGifs() {
+  // Cada GIF ronda los 250 KB: no se precarga con ahorro de datos activado
+  // ni en conexiones muy lentas (se descargará al tocar, como antes).
+  const conn = navigator.connection;
+  if (conn && (conn.saveData || /^(slow-)?2g$/.test(conn.effectiveType || ''))) return;
+  const urls = [...document.querySelectorAll('#content .gif-btn')]
+    .map(b => ((b.getAttribute('onclick') || '').match(/togglePhoto\('[^']+',\s*'([^']+)'\)/) || [])[1])
+    .filter(u => u && !_gifPreloaded.has(u));
+  if (!urls.length) return;
+  const run = () => urls.forEach(u => {
+    _gifPreloaded.add(u);
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = u;
+  });
+  if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 1200 });
+  else setTimeout(run, 250);
 }
 
 /* ── timer ── */
@@ -4953,7 +4999,7 @@ function renderCompletionCard(c) {
       const st = ex.setType || 'normal';
       let wrHtml;
       if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
-        const stepsText = ex.steps1.map(s => `${escHtmlText(s.w || '—')}·${escHtmlText(s.reps || '—')}`).join(' → ');
+        const stepsText = orderedSteps(ex.steps1, st).map(s => `${escHtmlText(s.w || '—')}·${escHtmlText(s.reps || '—')}`).join(' → ');
         wrHtml = `<div class="rs-ex-wr rs-ex-steps">${st.toUpperCase()}: ${stepsText}</div>`;
       } else {
         wrHtml = `<div class="rs-ex-wr">${escHtmlText(ex.w1 || '—')} · ${escHtmlText(ex.reps || '—')}</div>`;
@@ -6308,6 +6354,61 @@ function updateStep(day, ci, ei, week, si, field, value) {
   editorData[day].circuits[ci].exercises[ei][key][si][field] = value;
 }
 
+/* ── Título y subtítulo derivados de la sesión ──
+   Antes eran texto fijo: si el entrenador cambiaba los ejercicios, la sesión
+   seguía anunciándose con el músculo anterior. Ahora salen de los ejercicios
+   que la sesión tiene en ese momento. */
+const MUSCLE_GROUPS = {
+  cuadriceps:'Piernas', isquio:'Piernas', isquiotibiales:'Piernas',
+  gluteo:'Piernas', pantorrilla:'Piernas',
+  pecho:'Pecho', espalda:'Espalda', hombros:'Hombros',
+  biceps:'Bíceps', triceps:'Tríceps', trapecio:'Trapecio',
+  abdomen:'Abdomen', antebrazo:'Antebrazo',
+};
+
+function deriveSessionTitle(day, sessionNum) {
+  const counts = {};
+  (day?.circuits || []).forEach(c => (c.exercises || []).forEach(ex => {
+    const g = MUSCLE_GROUPS[String(ex.muscle || '').toLowerCase()];
+    if (g) counts[g] = (counts[g] || 0) + 1;
+  }));
+  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return `Sesión ${sessionNum}`;
+  const total = ranked.reduce((s, [, n]) => s + n, 0);
+  // Un grupo claramente dominante titula solo; si no, se combinan los dos
+  // principales ("Espalda + tríceps"). Los secundarios sueltos se ignoran.
+  if (ranked.length === 1 || ranked[0][1] / total >= 0.65) return ranked[0][0];
+  return `${ranked[0][0]} + ${ranked[1][0].toLowerCase()}`;
+}
+
+function deriveSessionSub(day) {
+  const names = [];
+  (day?.circuits || []).forEach(c => (c.exercises || []).forEach(ex => {
+    const n = (ex.name || '').trim();
+    if (n && !names.includes(n)) names.push(n);
+  }));
+  return names.join(' · ');
+}
+
+/* Orden de los escalones de una serie especial.
+   Un drop set baja el peso (80 → 70 → 60) y un piramidal lo sube; si el
+   entrenador los cargó al revés, se muestran en el orden que corresponde. */
+function orderedSteps(steps, setType) {
+  const list = Array.isArray(steps) ? steps.slice() : [];
+  if (list.length < 2) return list;
+  const st = (setType || '').toLowerCase();
+  if (st !== 'dropset' && st !== 'piramidal') return list;
+  const weightOf = s => {
+    const n = parseFloat(parseWeight(s && s.w).num);
+    return Number.isFinite(n) ? n : null;
+  };
+  // Si a algún escalón le falta el peso no se reordena nada: el orden manual
+  // del entrenador es la única referencia fiable.
+  if (list.some(s => weightOf(s) === null)) return list;
+  const desc = st === 'dropset';
+  return list.sort((a, b) => desc ? weightOf(b) - weightOf(a) : weightOf(a) - weightOf(b));
+}
+
 function parseWeight(s) {
   if (!s) return { num: '', unit: 'lbs' };
   const str = String(s).trim();
@@ -6900,6 +7001,19 @@ async function saveRoutineFromEditor() {
     return;
   }
   btn.disabled = true; btn.textContent = 'Guardando…';
+  // Antes de guardar se normaliza la sesión: título y lista de ejercicios al
+  // día, y escalones de drop set / piramidal en su orden correcto. Así el
+  // dato guardado (emails, historial, asistente) coincide con lo que se ve.
+  Object.keys(editorData).forEach(k => {
+    if (!/^sesion\d+$/.test(k)) return;
+    const d = editorData[k];
+    if (!d) return;
+    d.title = deriveSessionTitle(d, k.replace('sesion', ''));
+    d.sub = deriveSessionSub(d);
+    (d.circuits || []).forEach(c => (c.exercises || []).forEach(ex => {
+      if (Array.isArray(ex.steps1)) ex.steps1 = orderedSteps(ex.steps1, ex.setType);
+    }));
+  });
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
