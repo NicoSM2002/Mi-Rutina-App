@@ -2857,7 +2857,6 @@ select.na-input {
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if (id === 'athlete-login' && typeof fetchDynamicAthletes === 'function' && !dynamicAthletesCache) fetchDynamicAthletes();
   if (id === 'trainer-portal' && typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
 }
 async function showRoutine() {
@@ -4065,10 +4064,9 @@ let currentAthlete = 'nicolas';
 let dynamicAthletesCache = null;
 async function fetchDynamicAthletes() {
   try {
-    // Si hay trainer logueado, pedir records completos (incluye profile/biometría).
-    // Sin trainer (ej. login screen del atleta), recibimos solo campos safe.
-    const payload = { action: 'list-athletes' };
-    if (currentTrainer) payload.token = TRAINER_TOKEN;
+    // list-athletes exige credencial; sin sesión de entrenador no se pide.
+    if (!currentTrainer) return [];
+    const payload = { action: 'list-athletes', token: TRAINER_TOKEN };
     const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.ok && Array.isArray(data.athletes)) {
@@ -4219,7 +4217,7 @@ const MUSC_LABELS = { pecho:'Pecho', espalda:'Espalda', biceps:'Bíceps', tricep
 let currentTrainer = null;
 try {
   const savedTrainer = localStorage.getItem('currentTrainer');
-  if (savedTrainer) currentTrainer = savedTrainer;
+  if (savedTrainer) { currentTrainer = savedTrainer; currentTrainerId = savedTrainer; }
 } catch {}
 
 /* ══ INACTIVITY / AUTO-LOGOUT ══
@@ -4410,6 +4408,7 @@ async function trainerLogin() {
     const found = (json.trainers || []).some(t => t.username === user);
     if (!found) { errEl.textContent = 'Usuario no encontrado.'; return; }
     currentTrainer = user;
+    currentTrainerId = user;
     try { localStorage.setItem('currentTrainer', user); } catch {}
     startInactivityTracking();
     document.getElementById('trainer-username').value = '';
@@ -5992,6 +5991,9 @@ function scrollChat() {
 
 /* ── LOAD ROUTINE FROM KV ── */
 async function loadRoutine() {
+  // Sin sesión de atleta no hay nada que pedir: el backend respondería 401 y
+  // ensuciaría la consola en cada carga de la app (pantalla de login incluida).
+  if (!currentAthlete || !getSelfToken()) return;
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -6980,7 +6982,9 @@ const TRAINER_NAMES = { nicolas:'Nicolás Saravia', msaravia:'María Saravia' };
 let supportPollId = null;
 let adminPollId = null;
 let adminChatTrainerId = null;
-let currentTrainerId = 'trainer1'; // default trainer ID for support
+// Hilo de soporte del entrenador logueado (antes era un 'trainer1' fijo,
+// lo que hacía que todos los entrenadores compartieran la misma conversación).
+let currentTrainerId = null;
 
 const ADMIN_PW = 'admin2026';
 
@@ -7019,7 +7023,7 @@ async function loadAdminToolsAthletes() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'list-athletes' })
+      body: JSON.stringify({ action: 'list-athletes', admin: ADMIN_PW })
     });
     const json = await res.json();
     const list = (json.athletes || []).slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
@@ -7327,7 +7331,8 @@ async function loadSupportMessages() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-support-chat', trainerId: currentTrainerId })
+      body: JSON.stringify({ action:'get-support-chat', trainerId: currentTrainerId,
+        token: TRAINER_TOKEN, trainerUsername: currentTrainer })
     });
     const data = await res.json();
     renderSupportMessages(data.messages || []);
@@ -7363,7 +7368,9 @@ async function sendSupportMsg() {
   try {
     await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'send-support-msg', trainerId: currentTrainerId, role:'trainer', text: fullText, clientId: trainerClientId })
+      body: JSON.stringify({ action:'send-support-msg', trainerId: currentTrainerId, role:'trainer',
+        text: fullText, clientId: trainerClientId,
+        token: TRAINER_TOKEN, trainerUsername: currentTrainer })
     });
   } catch(e) {}
 }
@@ -7371,16 +7378,16 @@ async function sendSupportMsg() {
 // ── Admin support ──
 async function loadAdminChats() {
   const el = document.getElementById('admin-chat-list');
-  el.innerHTML = '<div class="admin-chat-empty"><div style="font-size:36px;margin-bottom:12px">⏳</div>Cargando conversaciones...</div>';
+  el.innerHTML = '<div class="admin-chat-empty">Cargando conversaciones…</div>';
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'list-support-chats' })
+      body: JSON.stringify({ action:'list-support-chats', admin: ADMIN_PW })
     });
     const data = await res.json();
     const chats = data.chats || [];
     if (!chats.length) {
-      el.innerHTML = '<div class="admin-chat-empty"><div style="font-size:36px;margin-bottom:12px">💬</div>No hay conversaciones de soporte.</div>';
+      el.innerHTML = '<div class="admin-chat-empty">No hay conversaciones de soporte.</div>';
       return;
     }
     el.innerHTML = chats.map(c => {
@@ -7416,7 +7423,7 @@ async function loadAdminChatMessages() {
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'get-support-chat', trainerId: adminChatTrainerId })
+      body: JSON.stringify({ action:'get-support-chat', trainerId: adminChatTrainerId, admin: ADMIN_PW })
     });
     const data = await res.json();
     renderAdminChatMessages(data.messages || []);
@@ -7449,7 +7456,7 @@ async function sendAdminMsg() {
   try {
     await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'send-support-msg', trainerId: adminChatTrainerId, role:'admin', text })
+      body: JSON.stringify({ action:'send-support-msg', trainerId: adminChatTrainerId, role:'admin', text, admin: ADMIN_PW })
     });
   } catch(e) {}
 }

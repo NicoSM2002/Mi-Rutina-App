@@ -7,3 +7,17 @@ node_modules
 package.json
 package-lock.json
 *.toml
+
+# Datos privados de atletas — nunca deben servirse como asset público
+completions.json
+
+# Copias de trabajo del frontend (contienen la app entera y quedan indexables)
+index.html.bak
+old_index.html
+preview.html
+
+# Material interno que no forma parte de la app publicada
+mockups
+screenshots
+pdf de ejercicios
+gifs-faltantes.txt

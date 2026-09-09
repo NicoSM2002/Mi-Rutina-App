@@ -16,3 +16,6 @@ Thumbs.db
 .dev.vars
 .env
 .env.local
+
+# Datos privados de atletas (volcados locales, no deben versionarse)
+completions.json

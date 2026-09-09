@@ -182,6 +182,16 @@ async function authorizeTrainerForAthlete(env, body, corsHeaders) {
   return null;
 }
 
+// Authorize access to a support-chat thread. Threads are keyed by trainerId:
+// admin can reach any thread; a trainer only their own. Returns null if
+// authorized, else a Response.
+function authorizeSupportChat(env, body, corsHeaders) {
+  if (body.admin === 'admin2026') return null;
+  const threadId = body.trainerId;
+  if (body.token === 'ent2026' && body.trainerUsername && body.trainerUsername === threadId) return null;
+  return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: corsHeaders, status: 401 });
+}
+
 function slugifyUsername(name) {
   return (name || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -758,19 +768,15 @@ Devolvé SOLO un JSON así, sin texto extra:
 
     // ── LIST ATHLETES (public read) ──
     if (body.action === 'list-athletes') {
-      const athletes = await listAthletes(env, { includeArchived: !!body.includeArchived });
-      // Full record solo con token de trainer o admin. Público → solo campos mínimos
-      // necesarios para login y para que el portal muestre cards.
+      // Requiere credencial: sin ella cualquiera podía enumerar los nombres y
+      // usernames de todos los atletas (y con eso entrar como cualquiera,
+      // porque el login sólo pide username).
       const isPrivileged = body.token === 'ent2026' || body.admin === 'admin2026';
-      if (isPrivileged) {
-        return new Response(JSON.stringify({ ok: true, athletes }), { headers: cors });
+      if (!isPrivileged) {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
       }
-      const safe = athletes.map(a => ({
-        clientId: a.clientId, username: a.username, name: a.name,
-        photoUrl: a.photoUrl || null, trainerId: a.trainerId || null,
-        sessionsPerWeek: a.sessionsPerWeek || null
-      }));
-      return new Response(JSON.stringify({ ok: true, athletes: safe }), { headers: cors });
+      const athletes = await listAthletes(env, { includeArchived: !!body.includeArchived });
+      return new Response(JSON.stringify({ ok: true, athletes }), { headers: cors });
     }
 
     // ── GET ATHLETE ──
@@ -1244,11 +1250,17 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
     // ── SUPPORT CHAT ──
     if (body.action === 'get-support-chat') {
+      const authErr = authorizeSupportChat(env, body, cors);
+      if (authErr) return authErr;
       const msgs = await env.DB.get(`support-chat:${body.trainerId}`, 'json') || [];
       return new Response(JSON.stringify({ ok: true, messages: msgs }), { headers: cors });
     }
 
     if (body.action === 'send-support-msg') {
+      // Sin esto cualquiera podía escribir en el hilo de soporte (y disparar
+      // el email de notificación) sin credencial alguna.
+      const authErr = authorizeSupportChat(env, body, cors);
+      if (authErr) return authErr;
       const kvKey = `support-chat:${body.trainerId}`;
       let msgs = await env.DB.get(kvKey, 'json') || [];
       msgs.push({
@@ -1384,6 +1396,10 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     }
 
     if (body.action === 'list-support-chats') {
+      // Sólo admin: expone el último mensaje de TODOS los entrenadores.
+      if (body.admin !== 'admin2026') {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      }
       const list = await env.DB.list({ prefix: 'support-chat:' });
       const chats = [];
       for (const key of list.keys) {
