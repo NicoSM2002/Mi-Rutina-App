@@ -1427,6 +1427,46 @@ html, body {
 .btn-circle-outline { background:transparent; border:1px solid var(--b); }
 .btn-circle-outline:active { background:var(--s2); }
 .client-body { flex:1; min-width:0; }
+
+/* ── Buscador, filtros y orden de la lista de clientes ── */
+.tportal-heading { min-width:0; }
+.cli-search-wrap { position:relative; margin:2px 0 14px; }
+.cli-search-ic {
+  position:absolute; left:15px; top:50%; transform:translateY(-50%);
+  color:var(--t2); width:20px; height:20px; pointer-events:none;
+}
+.cli-search {
+  width:100%; background:var(--s2); border:1px solid transparent; border-radius:14px;
+  padding:14px 14px 14px 46px; color:var(--t1);
+  font-family:var(--font-b); font-size:16px; outline:none; -webkit-appearance:none;
+}
+.cli-search::placeholder { color:var(--t2); }
+.cli-search:focus { border-color:var(--ac); background:var(--s1); }
+.cli-search::-webkit-search-cancel-button { -webkit-appearance:none; }
+
+.cli-filters {
+  display:flex; gap:9px; overflow-x:auto; padding-bottom:2px;
+  margin-bottom:12px; scrollbar-width:none;
+}
+.cli-filters::-webkit-scrollbar { display:none; }
+.cli-chip {
+  flex:none; padding:9px 16px; border-radius:100px;
+  border:1px solid var(--b); background:transparent;
+  color:var(--t1); font-family:var(--font-b); font-size:15px; font-weight:500;
+  cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;
+}
+.cli-chip.active { background:var(--ac); border-color:var(--ac); color:#fff; }
+
+.cli-sort {
+  display:flex; align-items:center; gap:6px;
+  background:none; border:none; cursor:pointer;
+  color:var(--t2); font-family:var(--font-b); font-size:15px;
+  padding:2px 2px 12px; letter-spacing:-.2px;
+}
+.cli-sort strong { color:var(--t1); font-weight:600; }
+.cli-sort .ic { color:var(--t2); }
+.cli-empty { text-align:center; padding:40px 20px; color:var(--t2); font-size:16px; letter-spacing:-.2px; }
+.cli-exit { margin:20px 0 8px; }
 .new-athlete-btn {
   width:48px; height:48px; border-radius:100px; border:none; cursor:pointer;
   background:var(--ac);
@@ -2320,18 +2360,27 @@ select.na-input {
 <!-- ══ TRAINER PORTAL ══ -->
 <div class="screen" id="trainer-portal">
   <div class="tportal-header tportal-header-plain">
-    <button class="pill-back" onclick="logoutTrainer(); show('role-select')">
-      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg>Salir
-    </button>
+    <div class="tportal-heading">
+      <h1 class="h-page">Mis clientes</h1>
+      <div class="tportal-subtitle">Portal entrenador</div>
+    </div>
     <div style="display:flex;gap:10px">
       <button class="btn-circle btn-circle-outline" onclick="openTrainerOwnProfile()" title="Mi perfil" aria-label="Mi perfil"><svg class="ic"><use href="#i-settings"/></svg></button>
       <button class="new-athlete-btn" onclick="openNewAthleteForm()" title="Nuevo atleta" aria-label="Nuevo atleta">+</button>
     </div>
   </div>
   <div class="tportal-body">
-    <h1 class="h-page">Mis clientes</h1>
-    <div class="tportal-subtitle">Portal entrenador</div>
+    <div class="cli-search-wrap">
+      <svg class="ic cli-search-ic"><use href="#i-search"/></svg>
+      <input class="cli-search" id="cli-search" type="search" placeholder="Buscar por nombre"
+        autocomplete="off" autocapitalize="none" oninput="renderClientList()">
+    </div>
+    <div class="cli-filters" id="cli-filters"></div>
+    <button class="cli-sort" id="cli-sort" onclick="toggleClientSort()"></button>
     <div class="group" id="trainer-extra-clients"></div>
+    <button class="pill-back cli-exit" onclick="logoutTrainer(); show('role-select')">
+      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg>Salir
+    </button>
   </div>
 </div>
 
@@ -4691,9 +4740,68 @@ async function loadTrainerExtraClients() {
   const list = await fetchDynamicAthletes();
   // Un entrenador solo ve SUS atletas (athlete.trainerId === currentTrainer).
   const extras = (list || []).filter(a => a.trainerId === currentTrainer);
-  if (!extras.length) { container.innerHTML = '<div style="text-align:center;padding:44px 20px;color:var(--t2);font-size:16px">No hay atletas aún. Toca “+” para crear el primero.</div>'; return; }
+  _clientList = extras;
+  renderClientList();
+}
+
+/* ── Lista de clientes: búsqueda, filtro por objetivo y orden ──
+   Con más de veinte clientes, una lista plana obligaba a buscar a ojo. */
+let _clientList = [];
+let _clientFilter = 'todos';
+let _clientSort = 'nombre';   // 'nombre' | 'reciente'
+
+function setClientFilter(goal) { _clientFilter = goal; renderClientList(); }
+function toggleClientSort() {
+  _clientSort = _clientSort === 'nombre' ? 'reciente' : 'nombre';
+  renderClientList();
+}
+
+function renderClientList() {
+  const container = document.getElementById('trainer-extra-clients');
+  if (!container) return;
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  container.innerHTML = extras.map((a, i) => {
+  const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+
+  // Chips de objetivo, construidos con los objetivos que existen de verdad
+  const goals = [...new Set(_clientList.map(a => a.profile?.goal).filter(Boolean))]
+    .sort((a, b) => prettyGoal(a).localeCompare(prettyGoal(b)));
+  const chips = document.getElementById('cli-filters');
+  if (chips) {
+    chips.innerHTML = [['todos', 'Todos'], ...goals.map(g => [g, prettyGoal(g)])]
+      .map(([val, label]) => `<button class="cli-chip${_clientFilter === val ? ' active' : ''}"
+        onclick="setClientFilter('${esc(val)}')">${esc(label)}</button>`).join('');
+  }
+
+  const q = norm(document.getElementById('cli-search')?.value).trim();
+  // Coincidencia por inicio de palabra, no por subcadena suelta: buscando
+  // "caro" no debe salir "monicarosales" (contiene "caro" en medio).
+  const matches = a => {
+    const name = norm(a.name);
+    const user = norm(a.username);
+    return name.split(/\s+/).some(w => w.startsWith(q)) || user.startsWith(q);
+  };
+  let list = _clientList.filter(a => {
+    if (_clientFilter !== 'todos' && (a.profile?.goal || '') !== _clientFilter) return false;
+    if (!q) return true;
+    return matches(a);
+  });
+  list = list.slice().sort((a, b) => _clientSort === 'nombre'
+    ? String(a.name || a.username || '').localeCompare(String(b.name || b.username || ''), 'es')
+    : (b.createdAt || 0) - (a.createdAt || 0));
+
+  const sortBtn = document.getElementById('cli-sort');
+  if (sortBtn) sortBtn.innerHTML = `Ordenar: <strong>${_clientSort === 'nombre' ? 'Nombre' : 'Más recientes'}</strong>
+    <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg>`;
+
+  if (!_clientList.length) {
+    container.innerHTML = '<div class="cli-empty">No hay atletas aún. Toca “+” para crear el primero.</div>';
+    return;
+  }
+  if (!list.length) {
+    container.innerHTML = `<div class="cli-empty">Ningún cliente coincide${q ? ` con “${esc(document.getElementById('cli-search').value)}”` : ''}.</div>`;
+    return;
+  }
+  container.innerHTML = list.map((a, i) => {
     const displayName = a.name || a.username || '?';
     const initials = displayName.split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
     const plan = a.profile?.goal ? ('Plan: ' + prettyGoal(a.profile.goal)) : ('Sesiones: ' + (a.sessionsPerWeek || '—') + '/semana');
