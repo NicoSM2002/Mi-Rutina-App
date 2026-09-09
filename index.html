@@ -996,6 +996,28 @@ html, body {
 }
 .meal-card-title { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
 .meal-card-sub { font-size:14px; color:var(--t2); margin-top:2px; letter-spacing:-.2px; }
+
+/* ── Acordeón de comidas: sólo una abierta, el resto en fila compacta ── */
+.meals-count { font-size:14px; color:var(--t2); padding-bottom:14px; margin-top:-8px; letter-spacing:-.2px; }
+.meal-row {
+  width:100%; background:var(--s1); border:none; border-radius:var(--r-group);
+  padding:15px 16px; display:flex; align-items:center; gap:14px;
+  cursor:pointer; text-align:left; font-family:var(--font-b);
+  transition:background .15s;
+}
+.meal-row:not(:disabled):active { background:#F1F1EC; }
+.meal-row:disabled { cursor:default; }
+.meal-row-body { flex:1; min-width:0; }
+.meal-row-chev { color:#B8B8B3; width:20px; height:20px; stroke-width:2; flex:none; }
+.meal-row.sent .meal-card-sub { color:var(--ok); }
+/* La cabecera de la comida abierta también pliega */
+.meal-card > .meal-card-header {
+  width:100%; background:none; border:none; cursor:pointer; font-family:var(--font-b);
+}
+.meal-field-label {
+  font-size:15px; color:var(--t1); font-weight:500;
+  padding:0 18px 8px; letter-spacing:-.2px;
+}
 .meal-textarea {
   display:block; width:calc(100% - 36px); margin:0 18px;
   background:var(--bg); border:1px solid var(--b);
@@ -1044,11 +1066,12 @@ html, body {
 .meal-slot-send::first-letter { text-transform:uppercase; }
 .meal-slot-send:disabled { opacity:.5; cursor:default; }
 .meal-sent-badge {
-  width:26px; height:26px; border-radius:50%;
-  background:rgba(52,211,153,.2); color:#34d399;
+  width:28px; height:28px; border-radius:50%;
+  background:var(--ok); color:#fff;
   display:flex; align-items:center; justify-content:center;
   font-size:14px; flex-shrink:0;
 }
+.meal-sent-badge .ic { stroke-width:3; }
 .meal-card.sent .meal-card-sub { color:#34d399; }
 .meal-card.sent .meal-textarea { opacity:.6; pointer-events:none; }
 .meals-send-wrap {
@@ -2166,6 +2189,8 @@ select.na-input {
   <symbol id="i-send-up" viewBox="0 0 24 24"><path d="M12 19.5V5M6 11l6-6 6 6"/></symbol>
   <symbol id="i-chat-plain" viewBox="0 0 24 24"><path d="M20 12.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2.5v-4.3A7.5 7.5 0 0 1 3 12.5 7.5 7.5 0 0 1 10.5 5h2A7.5 7.5 0 0 1 20 12.5Z"/></symbol>
   <symbol id="i-chats" viewBox="0 0 24 24"><path d="M17.5 10.5a6 6 0 0 1-6 6H8l-3.5 2.2v-3.6a6 6 0 0 1-1-3.3 6 6 0 0 1 6-6h2a6 6 0 0 1 6 4.7z"/><path d="M14.6 5.6A5.4 5.4 0 0 1 21 11a5.3 5.3 0 0 1-.9 3l.4 3.2-2.9-1.6"/></symbol>
+  <symbol id="i-banana" viewBox="0 0 24 24"><path d="M5 5.5c-.4 4.2 1 7.6 4.2 10.2 3 2.4 6.5 3.2 10.4 2.3-1.1-.6-1.8-1.5-2.1-2.7-1.6.5-3.2.2-4.7-.8-2.4-1.6-3.6-4.1-3.6-7.4 0-.9-.7-1.6-2.1-1.6z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4a8.5 8.5 0 1 0 10.3 10.3z"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
 
   <!-- Grupos musculares (picker de ejercicios) -->
@@ -2856,6 +2881,7 @@ select.na-input {
       <h1 class="meals-title">Mis comidas</h1>
     </div>
     <div class="meals-today-label" id="meals-today-label"></div>
+    <div class="meals-count" id="meals-count"></div>
   </div>
   <div class="meals-content" id="meals-content"></div>
 </div>
@@ -5509,8 +5535,8 @@ const MEAL_SLOTS = [
   { key:'desayuno',    label:'Desayuno',      icon:'i-sun',     sub:'¿Qué comiste al despertar?' },
   { key:'mediasNueves',label:'Medias nueves', icon:'i-apple',   sub:'Snack de la mañana' },
   { key:'almuerzo',    label:'Almuerzo',      icon:'i-comidas', sub:'Tu comida principal del día' },
-  { key:'onces',       label:'Onces',         icon:'i-apple',   sub:'Snack de la tarde' },
-  { key:'comida',      label:'Cena',          icon:'i-clock',   sub:'Última comida del día' },
+  { key:'onces',       label:'Onces',         icon:'i-banana',  sub:'Snack de la tarde' },
+  { key:'comida',      label:'Cena',          icon:'i-moon',    sub:'Última comida del día' },
 ];
 
 const mealsData = {};
@@ -5596,38 +5622,75 @@ async function syncMealsSentFromServer() {
   } catch(e) { /* silent */ }
 }
 
+/* Comida abierta en el acordeón. Sólo una a la vez: tener las cinco
+   desplegadas obligaba a un scroll largo para llegar a la de la tarde. */
+let openMealSlot = null;
+
+function toggleMealSlot(key) {
+  saveMealInputs();
+  openMealSlot = (openMealSlot === key) ? null : key;
+  renderMeals();
+  if (openMealSlot) {
+    const card = document.getElementById(`card-${openMealSlot}`);
+    if (card) card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+}
+
 function renderMeals() {
   const container = document.getElementById('meals-content');
   const sent = getSentSlots();
+  const nSent = MEAL_SLOTS.filter(s => sent[s.key]).length;
+
+  // Si no hay ninguna abierta, se abre la primera pendiente
+  if (openMealSlot === null) {
+    const pend = MEAL_SLOTS.find(s => !sent[s.key]);
+    openMealSlot = pend ? pend.key : null;
+  }
+
+  const counter = document.getElementById('meals-count');
+  if (counter) counter.textContent = nSent === 0
+    ? 'Sin comidas registradas'
+    : `${nSent} de ${MEAL_SLOTS.length} comidas registradas`;
+
   container.innerHTML = MEAL_SLOTS.map(s => {
     const hasPhoto = photosData[s.key];
     const isSent = !!sent[s.key];
-    if (isSent) {
-      const savedAnalysis = JSON.parse(localStorage.getItem(`mealsDay_${currentAthlete}_${getTodayKey()}`) || '{}')[s.key]?.analysis || null;
+    const isOpen = openMealSlot === s.key && !isSent;
+
+    // Fila compacta: enviada, o pendiente pero plegada
+    if (!isOpen) {
+      const savedAnalysis = isSent
+        ? JSON.parse(localStorage.getItem(`mealsDay_${currentAthlete}_${getTodayKey()}`) || '{}')[s.key]?.analysis || null
+        : null;
+      const draft = (mealsData[s.key] || '').trim();
+      const estado = isSent ? 'Registrada' : (draft ? 'Borrador sin guardar' : 'Sin registrar');
       return `
-      <div class="meal-card sent" id="card-${s.key}">
-        <div class="meal-card-header">
-          <div class="meal-icon"><svg class="ic"><use href="#${s.icon}"/></svg></div>
-          <div style="flex:1">
-            <div class="meal-card-title">${s.label}</div>
-            <div class="meal-card-sub">Enviado</div>
-          </div>
-          ${savedAnalysis ? `<button class="meal-analysis-btn" onclick="showStoredAnalysis('${s.key}')">Ver análisis</button>` : ''}
-          <div class="meal-sent-badge"><svg class="ic ic-sm"><use href="#i-check"/></svg></div>
+      <button class="meal-row${isSent ? ' sent' : ''}" id="card-${s.key}"
+        onclick="${isSent ? `showStoredAnalysis('${s.key}')` : `toggleMealSlot('${s.key}')`}"
+        ${isSent && !savedAnalysis ? 'disabled' : ''}>
+        <div class="meal-icon"><svg class="ic"><use href="#${s.icon}"/></svg></div>
+        <div class="meal-row-body">
+          <div class="meal-card-title">${s.label}</div>
+          <div class="meal-card-sub">${estado}</div>
         </div>
-      </div>`;
+        ${isSent
+          ? `<span class="meal-sent-badge"><svg class="ic ic-sm"><use href="#i-check"/></svg></span>`
+          : `<svg class="ic meal-row-chev"><use href="#i-chevron-r"/></svg>`}
+      </button>`;
     }
+
     return `
     <div class="meal-card" id="card-${s.key}">
-      <div class="meal-card-header">
+      <button class="meal-card-header" onclick="toggleMealSlot('${s.key}')">
         <div class="meal-icon"><svg class="ic"><use href="#${s.icon}"/></svg></div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:0;text-align:left">
           <div class="meal-card-title">${s.label}</div>
-          <div class="meal-card-sub">${s.sub}</div>
         </div>
-      </div>
+        <svg class="ic meal-row-chev"><use href="#i-chevron-up"/></svg>
+      </button>
+      <div class="meal-field-label">${s.sub}</div>
       <textarea class="meal-textarea" id="meal-${s.key}"
-        placeholder="Ej.: ${s.label === 'Desayuno' ? '2 huevos, arepa y café' : s.label === 'Almuerzo' ? 'Arroz, pollo y ensalada' : 'Describe lo que comiste…'}"
+        placeholder="Ej.: ${s.label === 'Desayuno' ? '2 huevos, arepa y café' : s.label === 'Almuerzo' ? 'arroz, pollo y ensalada' : 'describe lo que comiste'}"
         oninput="saveMealInputs()">${mealsData[s.key]}</textarea>
       <div class="meal-photo-row">
         <input type="file" accept="image/*" id="file-${s.key}"
