@@ -57,6 +57,7 @@ body.kbd-open #app-shell {
   --tag-drop-bg:   #FDE3D2;  --tag-drop-tx:   #C2591C;
   --tag-tri-bg:    #FCEFD4;  --tag-tri-tx:    #9A6B12;
   --gr:  #34A853;
+  --ok:  #2FA84F;   /* verde de "completado" (pasos de la sesión) */
   --am:  #E0A020;
 
   /* ── Layout ── */
@@ -80,6 +81,20 @@ html, body {
    SISTEMA DE DISEÑO — primitivas
    Marfil #F7F7F4 · blanco · #1C1C1E · naranja #F47735
 ══════════════════════════════ */
+
+/* ── Scroll dentro de columnas flex ──
+   Un hijo con flex:1 y overflow:auto necesita min-height:0 o Safari (iOS) lo
+   deja crecer con el contenido y NO deja arrastrar: el área simplemente no
+   scrollea, aunque en escritorio funcione. Se aplica a todos los contenedores
+   scrollables de la app.
+   overscroll-behavior evita además que el gesto arrastre la página de fondo. */
+.r-content, .meals-content, .resumen-content, .tclient-content, .tportal-body,
+.expicker-list, .chat-messages, .admin-chat-list, .admin-trainers-list,
+.admin-tools-list, .nutrition-body, .profile-body, .payments-body {
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* Iconos lineales (SF Symbols-like) */
 .ic { width:22px; height:22px; display:inline-block; flex:none;
@@ -169,12 +184,14 @@ html, body {
 /* Indicador de progreso por segmentos */
 .prog-steps { display:flex; gap:8px; align-items:center; }
 .prog-steps .ps {
-  flex:1; height:7px; border-radius:100px; background:#E2E2DD;
+  flex:1; height:9px; border-radius:100px; background:#E2E2DD;
   display:flex; align-items:center; justify-content:center;
+  transition:background .25s ease;
 }
-.prog-steps .ps.done { background:#A9A9A4; color:#fff; }
+/* Completado en verde: el gris con el check apenas se distinguía */
+.prog-steps .ps.done { background:var(--ok); color:#fff; }
 .prog-steps .ps.now  { background:var(--ac); }
-.prog-steps .ps .ic  { width:11px; height:11px; stroke-width:3; }
+.prog-steps .ps .ic  { width:13px; height:13px; stroke-width:3.4; }
 
 /* Tags de músculo */
 .tag {
@@ -1707,7 +1724,9 @@ select.na-input {
 .expicker-search-wrap { position:relative; }
 .expicker-search-ic { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:var(--t2); width:22px; height:22px; pointer-events:none; }
 .expicker-section-label { font-size:13px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:1px; margin:4px 0 14px; }
-.expicker-list { flex:1; overflow-y:auto; padding:4px var(--pad) calc(24px + var(--sab)); display:flex; flex-direction:column; gap:0; -webkit-overflow-scrolling:touch; }
+/* display:block a propósito: como contenedor flex, Safari calcula mal la
+   altura del grid de categorías y el listado deja de scrollearse. */
+.expicker-list { flex:1 1 auto; overflow-y:auto; padding:4px var(--pad) calc(24px + var(--sab)); display:block; -webkit-overflow-scrolling:touch; }
 .expicker-item { background:var(--s1); border:none; border-radius:0; padding:14px 16px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:background .15s; }
 .expicker-item:active { background:#F1F1EC; }
 .expicker-item-body { flex:1; min-width:0; }
@@ -2903,6 +2922,19 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 'trainer-portal' && typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
+  // Al llegar a una pantalla de acceso se despierta el backend: el worker se
+  // duerme si no hay tráfico y arrancar en frío costaba ~3 s justo al pulsar
+  // "Entrar". Haciéndolo ahora, mientras se escribe el usuario, ya está listo.
+  if (id === 'athlete-login' || id === 'trainer-login' || id === 'role-select') warmUpBackend();
+}
+
+/* Despierta el worker con una petición mínima (OPTIONS: responde las cabeceras
+   CORS sin tocar la base). Una sola vez por sesión y sin bloquear nada. */
+let _warmed = false;
+function warmUpBackend() {
+  if (_warmed) return;
+  _warmed = true;
+  try { fetch(WORKER_URL, { method:'OPTIONS' }).catch(() => {}); } catch {}
 }
 async function showRoutine() {
   show('routine');
@@ -4061,14 +4093,22 @@ function preloadVisibleGifs() {
     .map(b => ((b.getAttribute('onclick') || '').match(/togglePhoto\('[^']+',\s*'([^']+)'\)/) || [])[1])
     .filter(u => u && !_gifPreloaded.has(u));
   if (!urls.length) return;
-  const run = () => urls.forEach(u => {
-    _gifPreloaded.add(u);
-    const im = new Image();
-    im.decoding = 'async';
-    im.src = u;
-  });
-  if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 1200 });
-  else setTimeout(run, 250);
+  // De uno en uno y con prioridad baja, para no competir por el ancho de banda
+  // con las peticiones de la app.
+  const run = async () => {
+    for (const u of urls) {
+      _gifPreloaded.add(u);
+      await new Promise(done => {
+        const im = new Image();
+        im.decoding = 'async';
+        if ('fetchPriority' in im) im.fetchPriority = 'low';
+        im.onload = im.onerror = done;
+        im.src = u;
+      });
+    }
+  };
+  if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 2500 });
+  else setTimeout(run, 800);
 }
 
 /* ── timer ── */
