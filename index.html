@@ -1692,6 +1692,120 @@ select.na-input {
 
 /* ── ROUTINE EDITOR ── */
 .re-day-bar { display:flex; gap:10px; overflow-x:auto; padding:0 0 18px; scrollbar-width:none; }
+
+/* ── Editor por bloques: índice de la sesión ── */
+.blk-head { margin-bottom:14px; }
+.blk-head-title { font-family:var(--font-d); font-size:21px; font-weight:800; color:var(--t1); letter-spacing:-.6px; }
+.blk-head-sub { font-size:15px; color:var(--t2); margin-top:2px; letter-spacing:-.2px; }
+.blk-list { display:flex; flex-direction:column; gap:10px; }
+.blk-row {
+  width:100%; background:var(--s1); border:none; border-radius:16px;
+  padding:15px 16px; display:flex; align-items:center; gap:14px;
+  cursor:pointer; text-align:left; font-family:var(--font-b);
+  transition:background .15s;
+}
+.blk-row:active { background:#F1F1EC; }
+.blk-ic {
+  width:44px; height:44px; border-radius:100px; flex:none;
+  background:var(--s2); color:var(--t1);
+  display:flex; align-items:center; justify-content:center;
+}
+.blk-ic-num { font-family:var(--font-d); font-size:15px; font-weight:600; color:var(--t3); }
+.blk-row-empty .blk-ic { color:var(--t2); }
+.blk-row-empty .blk-meta { font-style:normal; }
+.blk-body { flex:1; min-width:0; display:block; }
+.blk-name { display:block; font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+/* Envuelve en vez de recortar: el resumen del bloque ("3 ejercicios · 4
+   series · 60 s descanso") es justo la información útil de la fila. */
+.blk-meta {
+  display:block; font-size:14px; color:var(--t2); margin-top:3px;
+  letter-spacing:-.2px; line-height:1.35;
+}
+.blk-chev { color:#B8B8B3; width:20px; height:20px; stroke-width:2; flex:none; }
+.blk-add { margin:14px 0 0 !important; width:100% !important; }
+/* Dentro de la pantalla de un bloque los "agregar" van a ancho completo */
+#tclient-content .re-warmup-card .re-add-btn,
+#tclient-content .re-circuit-card .re-add-btn { width:100%; margin:10px 0 0; }
+
+/* Pie con la acción principal */
+.blk-footer { margin-top:22px; }
+.blk-footer-note { text-align:center; font-size:14px; color:var(--t2); margin-bottom:10px; letter-spacing:-.2px; }
+
+/* ── Editor por bloques: pantalla de un bloque ── */
+.blk-back {
+  display:flex; align-items:center; gap:5px;
+  background:none; border:none; cursor:pointer;
+  color:var(--ac); font-family:var(--font-b); font-size:16px; font-weight:600;
+  padding:2px 0 8px; letter-spacing:-.3px;
+}
+.blk-sub { font-size:15px; color:var(--t2); margin:2px 0 18px; letter-spacing:-.2px; }
+.blk-cardio { padding:18px 16px; display:flex; flex-direction:column; gap:14px; }
+.blk-check {
+  display:flex; align-items:center; gap:11px;
+  font-size:16px; color:var(--t1); cursor:pointer; letter-spacing:-.2px;
+}
+.blk-check input { width:21px; height:21px; accent-color:var(--ac); flex:none; }
+
+/* ── Pantalla de un circuito ── */
+.cir-settings { display:flex; align-items:center; padding:14px 16px; margin-bottom:14px; }
+.cir-set-field { flex:1; display:flex; align-items:center; gap:10px; min-width:0; }
+.cir-set-label { font-size:15px; color:var(--t2); flex:none; letter-spacing:-.2px; }
+.cir-set-field .re-rest-select { flex:1; min-width:0; }
+.cir-set-sep { width:1px; align-self:stretch; background:var(--b2); margin:0 14px; }
+
+.cir-ex {
+  width:100%; background:var(--s1); border:none; border-radius:16px;
+  margin-bottom:10px; text-align:left; font-family:var(--font-b);
+}
+.cir-ex-closed {
+  display:flex; align-items:center; gap:12px; padding:15px 16px;
+  cursor:pointer; transition:background .15s;
+}
+.cir-ex-closed:active { background:#F1F1EC; }
+.cir-ex-body { flex:1; min-width:0; display:block; }
+.cir-ex-name { display:block; font-family:var(--font-d); font-size:16px; font-weight:700; color:var(--t1); letter-spacing:-.3px; line-height:1.3; }
+.cir-ex-meta { display:block; font-size:14px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; }
+.cir-ex-open { padding:14px 16px 16px; }
+
+.cir-ex-head { display:flex; align-items:flex-start; gap:6px; margin-bottom:12px; }
+.cir-ex-name-btn {
+  flex:1; min-width:0; display:flex; align-items:center; gap:8px;
+  background:none; border:none; border-bottom:1px solid var(--b2);
+  padding:2px 0 10px; cursor:pointer; text-align:left; font-family:var(--font-b);
+}
+.cir-ex-swap { color:#B8B8B3; flex:none; stroke-width:2; }
+.cir-ex-head .re-del-btn { margin-top:0; }
+
+/* Tipo de serie: pastillas legibles, sin mayúsculas ni colores sueltos */
+.cir-set-type { display:flex; gap:8px; margin-bottom:14px; }
+.cir-type-btn {
+  flex:1; padding:10px 4px; border-radius:11px;
+  background:var(--bg); border:1px solid var(--b);
+  color:var(--t2); font-family:var(--font-b); font-size:14px; font-weight:500;
+  cursor:pointer; text-transform:none; letter-spacing:-.2px;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.cir-type-btn.active { background:var(--ac-soft); border-color:var(--ac); color:var(--ac); font-weight:600; }
+
+/* Nota del entrenador, plegada por defecto */
+.cir-note { margin-top:14px; border-top:1px solid var(--b2); padding-top:12px; }
+.cir-note-sum {
+  list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+  font-size:15px; color:var(--t1); letter-spacing:-.2px;
+}
+.cir-note-sum::-webkit-details-marker { display:none; }
+.cir-note-sum span { flex:1; }
+.cir-note-chev { color:#B8B8B3; stroke-width:2; transition:transform .2s; }
+.cir-note[open] .cir-note-chev { transform:rotate(90deg); }
+.cir-note .re-trainer-note { margin-top:10px; }
+
+.cir-remove {
+  width:100%; margin-top:14px; padding:14px;
+  background:none; border:none; cursor:pointer;
+  color:var(--t2); font-family:var(--font-b); font-size:15px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.cir-remove:active { color:#C2412B; }
 .re-day-bar::-webkit-scrollbar { display:none; }
 .re-circuit-card { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px; margin-bottom:12px; overflow:hidden; }
 .re-circuit-hdr { padding:10px 14px; font-family:var(--font-d); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; }
@@ -5322,7 +5436,7 @@ function activateTrainerNav(tab) {
 
 function renderTrainerTab() {
   const el = document.getElementById('tclient-content');
-  if (activeTrainerTab === 'editar') { renderRoutineEditor(); return; }
+  if (activeTrainerTab === 'editar') { editorBlock = null; renderRoutineEditor(); return; }
   if (activeTrainerTab === 'pagos') { renderTrainerPayment(); return; }
   if (activeTrainerTab === 'resumen') { renderTrainerResumen(); return; }
   if (activeTrainerTab === 'rutinas') {
@@ -6400,7 +6514,7 @@ async function loadRoutine() {
 /* ── ROUTINE EDITOR ── */
 function renderRoutineEditor() {
   const el = document.getElementById('tclient-content');
-  if (!editorData) { el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando rutina…</div>'; return; }
+  if (!editorData) { el.innerHTML = '<div class="tdata-empty">Cargando rutina…</div>'; return; }
   const days = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k))
     .sort((a,b) => parseInt(a.slice(6)) - parseInt(b.slice(6)));
   if (!days.length) {
@@ -6408,12 +6522,39 @@ function renderRoutineEditor() {
     return renderRoutineEditor();
   }
   if (!days.includes(editorDay)) editorDay = days[0];
+  // El editor tiene dos vistas: el índice de bloques de la sesión y la
+  // edición de un bloque concreto. Antes todo estaba desplegado a la vez.
+  if (editorBlock) renderBlockEditor(el, days);
+  else renderSessionBlocks(el, days);
+}
+
+/* Bloque abierto: null = índice de la sesión.
+   {kind:'warmup'} | {kind:'circuit', ci} | {kind:'cardio'} */
+let editorBlock = null;
+
+function openEditorBlock(kind, ci) {
+  editorBlock = (kind === 'circuit') ? { kind, ci } : { kind };
+  renderRoutineEditor();
+  const c = document.getElementById('tclient-content');
+  if (c) c.scrollTop = 0;
+}
+function closeEditorBlock() {
+  editorBlock = null;
+  renderRoutineEditor();
+  const c = document.getElementById('tclient-content');
+  if (c) c.scrollTop = 0;
+}
+
+/* ── Vista 1: índice de bloques de la sesión ── */
+function renderSessionBlocks(el, days) {
   const day = editorData[editorDay];
-  const w = 1;
+  const nEx = (day.circuits || []).reduce((n, c) => n + (c.exercises || []).length, 0);
+  const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
+  const wuN = parseInt(day.warmupSeries) || 2;
+  const warmupRemoved = day.warmup === null;
 
   let html = '<h1 class="tsec-title">Editar rutina</h1>';
 
-  // Day selector
   html += `<div class="re-day-bar">`;
   days.forEach(d => {
     const num = d.slice(6);
@@ -6425,6 +6566,108 @@ function renderRoutineEditor() {
   }
   html += `</div>`;
 
+  const nCirc = (day.circuits || []).length;
+  html += `<div class="blk-head">
+      <div class="blk-head-title">Sesión ${editorDay.slice(6)}</div>
+      <div class="blk-head-sub">${nEx} ejercicio${nEx===1?'':'s'} · ${nCirc} circuito${nCirc===1?'':'s'}</div>
+    </div>`;
+
+  html += `<div class="blk-list">`;
+
+  // Calentamiento
+  html += warmupRemoved
+    ? `<button class="blk-row blk-row-empty" onclick="restoreWarmup('${editorDay}'); openEditorBlock('warmup')">
+         <span class="blk-ic"><svg class="ic ic-sm"><use href="#i-plus"/></svg></span>
+         <span class="blk-body"><span class="blk-name">Calentamiento</span>
+           <span class="blk-meta">Sin configurar</span></span>
+         <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+       </button>`
+    : `<button class="blk-row" onclick="openEditorBlock('warmup')">
+         <span class="blk-ic"><svg class="ic ic-sm"><use href="#i-repeat"/></svg></span>
+         <span class="blk-body"><span class="blk-name">Calentamiento</span>
+           <span class="blk-meta">${nWu} ejercicio${nWu===1?'':'s'} · ${wuN} vuelta${wuN===1?'':'s'}</span></span>
+         <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+       </button>`;
+
+  // Circuitos
+  (day.circuits || []).forEach((c, ci) => {
+    const n = (c.exercises || []).length;
+    const series = parseInt(c.series) || 4;
+    const rest = parseInt(c.rest) || 60;
+    html += `<button class="blk-row" onclick="openEditorBlock('circuit',${ci})">
+        <span class="blk-ic blk-ic-num">${String(ci+1).padStart(2,'0')}</span>
+        <span class="blk-body"><span class="blk-name">Circuito ${ci+1}</span>
+          <span class="blk-meta">${n} ejercicio${n===1?'':'s'} · ${series} serie${series===1?'':'s'} · ${rest} s descanso</span></span>
+        <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+      </button>`;
+  });
+
+  // Cardio
+  const hasCardio = day.cardio !== '' && day.cardio != null;
+  html += `<button class="blk-row${hasCardio ? '' : ' blk-row-empty'}" onclick="openEditorBlock('cardio')">
+      <span class="blk-ic">${hasCardio
+        ? '<svg class="ic ic-sm"><use href="#i-rutina"/></svg>'
+        : '<svg class="ic ic-sm"><use href="#i-plus"/></svg>'}</span>
+      <span class="blk-body"><span class="blk-name">Cardio final</span>
+        <span class="blk-meta">${hasCardio ? reEscAttr(day.cardio) : 'Sin configurar'}</span></span>
+      <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+    </button>`;
+
+  html += `</div>`;
+
+  html += `<button class="re-add-btn blk-add" onclick="addCircuit('${editorDay}')">
+      <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar circuito
+    </button>`;
+
+  html += `<div class="blk-footer">
+      <div class="blk-footer-note">Los cambios llegan al atleta al guardar.</div>
+      <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>
+    </div>`;
+  el.innerHTML = html;
+}
+
+/* ── Vista 2: edición de un bloque ── */
+function renderBlockEditor(el, days) {
+  const day = editorData[editorDay];
+  const b = editorBlock;
+  // Si se borró el circuito que se estaba editando, se vuelve al índice
+  if (b.kind === 'circuit' && !(day.circuits || [])[b.ci]) { return closeEditorBlock(); }
+
+  const titulo = b.kind === 'warmup' ? 'Calentamiento'
+    : b.kind === 'cardio' ? 'Cardio final'
+    : `Circuito ${b.ci + 1}`;
+
+  let html = `<button class="blk-back" onclick="closeEditorBlock()">
+      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg> Sesión ${editorDay.slice(6)}
+    </button>
+    <h1 class="tsec-title">${titulo}</h1>
+    <div class="blk-sub">${document.getElementById('tclient-name')?.textContent || ''}</div>`;
+
+  if (b.kind === 'warmup') {
+    html += renderWarmupBlockHtml(day);
+  } else if (b.kind === 'cardio') {
+    html += `<div class="group blk-cardio">
+      <label class="blk-check">
+        <input type="checkbox" ${day.cardio ? 'checked' : ''} onchange="toggleCardio('${editorDay}',this.checked)">
+        Incluir cardio al final de la sesión
+      </label>
+      ${day.cardio !== '' && day.cardio != null
+        ? `<input type="text" class="na-input" placeholder="Ej.: caminadora 20 min nivel 6" value="${reEscAttr(day.cardio)}" oninput="updateEditorCardio('${editorDay}',this.value)">`
+        : ''}
+    </div>`;
+  } else {
+    html += renderCircuitBlockHtml(day, b.ci);
+  }
+
+  html += `<div class="blk-footer">
+      <button class="re-save-btn" onclick="closeEditorBlock()">Listo · Volver a la sesión</button>
+    </div>`;
+  el.innerHTML = html;
+}
+
+/* Cuerpo del calentamiento (mismos campos que antes) */
+function renderWarmupBlockHtml(day) {
+  let html = '';
   // Migrate legacy warmupHombro → warmup (one single list going forward).
   // Si warmup es null (warmup removido explícitamente), no re-poblar.
   if (Array.isArray(day.warmupHombro) && day.warmupHombro.length && day.warmup !== null) {
@@ -6486,137 +6729,173 @@ function renderRoutineEditor() {
   html += `<button class="re-add-btn re-wu-add" onclick="addWarmupPicker()"><svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar calentamiento</button>`;
   html += `</div>`;
   } // cierre del else (warmup no removido)
+  return html;
+}
 
-  // Circuits
-  html += `<div class="re-circuits-grid">`;
-  day.circuits.forEach((circuit, ci) => {
-    const cls = circuit.cls || ('c' + (((ci) % 3) + 1));
-    const restSec = parseInt(circuit.rest) || 60;
-    const restVal = [60,90,120].includes(restSec) ? restSec : 60;
-    const seriesVal = parseInt(circuit.series) || 4;
-    html += `<div class="re-circuit-card ${cls}">
-      <div class="re-circuit-hdr-row">
-        <span class="re-circuit-title">Circuito ${ci+1}</span>
-        <select class="re-rest-select" onchange="setCircuitSeries('${editorDay}',${ci},this.value)" title="Series">
-          ${[1,2,3,4,5].map(n => `<option value="${n}"${seriesVal===n?' selected':''}>${n} serie${n===1?'':'s'}</option>`).join('')}
+/* Cuerpo de un circuito (mismos campos que antes) */
+function renderCircuitBlockHtml(day, ci) {
+  const circuit = day.circuits[ci];
+  const restSec = parseInt(circuit.rest) || 60;
+  const restVal = [60, 90, 120].includes(restSec) ? restSec : 60;
+  const seriesVal = parseInt(circuit.series) || 4;
+
+  // Ajustes del circuito
+  let html = `<div class="group cir-settings">
+      <div class="cir-set-field">
+        <span class="cir-set-label">Series</span>
+        <select class="re-rest-select" onchange="setCircuitSeries('${editorDay}',${ci},this.value)">
+          ${[1,2,3,4,5].map(n => `<option value="${n}"${seriesVal===n?' selected':''}>${n}</option>`).join('')}
         </select>
-        <select class="re-rest-select" onchange="setCircuitRest('${editorDay}',${ci},this.value)" title="Descanso">
-          <option value="60"${restVal===60?' selected':''}>60s</option>
-          <option value="90"${restVal===90?' selected':''}>90s</option>
-          <option value="120"${restVal===120?' selected':''}>120s</option>
+      </div>
+      <div class="cir-set-sep"></div>
+      <div class="cir-set-field">
+        <span class="cir-set-label">Descanso</span>
+        <select class="re-rest-select" onchange="setCircuitRest('${editorDay}',${ci},this.value)">
+          ${[60,90,120].map(n => `<option value="${n}"${restVal===n?' selected':''}>${n} s</option>`).join('')}
         </select>
-        <button class="re-del-btn" onclick="removeCircuit('${editorDay}',${ci})" title="Quitar circuito">×</button>
+      </div>
+    </div>`;
+
+  const SET_LABEL = { normal:'Normal', dropset:'Drop set', piramidal:'Piramidal' };
+
+  (circuit.exercises || []).forEach((ex, ei) => {
+    const st = ex.setType || 'normal';
+    // En el editor los escalones se muestran en el orden en que están: si se
+    // reordenaran al vuelo, el campo saltaría de sitio mientras se escribe el
+    // peso. El orden canónico (drop set descendente) se aplica al guardar.
+    const steps = ex.steps1 || [];
+    const isOpen = editorExercise === ei;
+    const pw = parseWeight(ex.w1 || '');
+    const pr = parseReps(ex.reps || '');
+
+    // Plegado: nombre y resumen, como en el índice de bloques
+    if (!isOpen) {
+      const resumen = st === 'normal'
+        ? [ex.w1, ex.reps, SET_LABEL[st]].filter(Boolean).join(' · ')
+        : `${steps.length} escalón${steps.length===1?'':'es'} · ${SET_LABEL[st]}`;
+      html += `<button class="cir-ex cir-ex-closed" onclick="openEditorExercise(${ei})">
+          <span class="cir-ex-body">
+            <span class="cir-ex-name">${reEscAttr(ex.name || 'Sin ejercicio')}</span>
+            <span class="cir-ex-meta">${reEscAttr(resumen || 'Sin configurar')}</span>
+          </span>
+          <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+        </button>`;
+      return;
+    }
+
+    const campoPeso = `
+      <div class="re-wr-col">
+        <div class="re-input-label">Peso</div>
+        <div class="re-combo">
+          <input type="number" inputmode="decimal" value="${pw.num}" placeholder="0" oninput="updateEditorWeightPair('${editorDay}',${ci},${ei},'w1',this.value,this.nextElementSibling.value)">
+          <select class="re-unit-select" onchange="updateEditorWeightPair('${editorDay}',${ci},${ei},'w1',this.previousElementSibling.value,this.value)">
+            <option value="lbs"${pw.unit==='lbs'?' selected':''}>lbs</option>
+            <option value="kg"${pw.unit==='kg'?' selected':''}>kg</option>
+          </select>
+        </div>
       </div>`;
-    circuit.exercises.forEach((ex, ei) => {
-      const st = ex.setType || 'normal';
-      const steps = ex.steps1 || [];
-      const exName  = ex.name;
-      const exW     = ex.w1 || '';
-      const exReps  = ex.reps || '';
-      const wField  = 'w1';
-      const rField  = 'reps';
+    const campoReps = `
+      <div class="re-wr-col">
+        <div class="re-input-label">Repeticiones</div>
+        <div class="re-combo">
+          <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateEditorRepsPair('${editorDay}',${ci},${ei},'reps',this.value,this.nextElementSibling.value)">
+          <select class="re-unit-select" onchange="updateEditorRepsPair('${editorDay}',${ci},${ei},'reps',this.previousElementSibling.value,this.value)">
+            <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
+            <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
+            <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
+          </select>
+        </div>
+      </div>`;
 
-      const renderSteps = () => {
-        let s = `<div class="re-steps">`;
-        steps.forEach((step, si) => {
-          const pw = parseWeight(step.w);
-          const pr = parseReps(step.reps);
-          s += `<div class="re-step-row">
+    let cuerpo;
+    if (st === 'normal') {
+      cuerpo = `<div class="re-wr-row">${campoPeso}${campoReps}</div>`;
+    } else {
+      cuerpo = `<div class="re-steps">` + steps.map((step, si) => {
+        const spw = parseWeight(step.w);
+        const spr = parseReps(step.reps);
+        return `<div class="re-step-row">
             <span class="re-step-num">${si+1}</span>
             <div class="re-wr-col">
               <div class="re-combo">
-                <input type="number" inputmode="decimal" value="${pw.num}" placeholder="0" oninput="updateStepWeightPair('${editorDay}',${ci},${ei},1,${si},this.value,this.nextElementSibling.value)">
+                <input type="number" inputmode="decimal" value="${spw.num}" placeholder="0" oninput="updateStepWeightPair('${editorDay}',${ci},${ei},1,${si},this.value,this.nextElementSibling.value)">
                 <select class="re-unit-select" onchange="updateStepWeightPair('${editorDay}',${ci},${ei},1,${si},this.previousElementSibling.value,this.value)">
-                  <option value="lbs"${pw.unit==='lbs'?' selected':''}>lbs</option>
-                  <option value="kg"${pw.unit==='kg'?' selected':''}>kg</option>
+                  <option value="lbs"${spw.unit==='lbs'?' selected':''}>lbs</option>
+                  <option value="kg"${spw.unit==='kg'?' selected':''}>kg</option>
                 </select>
               </div>
-              <div class="re-input-label">Peso</div>
             </div>
             <div class="re-wr-col">
               <div class="re-combo">
-                <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateStepRepsPair('${editorDay}',${ci},${ei},1,${si},this.value,this.nextElementSibling.value)">
+                <input type="number" inputmode="numeric" value="${spr.num}" placeholder="0" oninput="updateStepRepsPair('${editorDay}',${ci},${ei},1,${si},this.value,this.nextElementSibling.value)">
                 <select class="re-unit-select" onchange="updateStepRepsPair('${editorDay}',${ci},${ei},1,${si},this.previousElementSibling.value,this.value)">
-                  <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
-                  <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
-                  <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
+                  <option value="rep"${spr.type==='rep'?' selected':''}>reps</option>
+                  <option value="alt"${spr.type==='alt'?' selected':''}>alt.</option>
+                  <option value="seg"${spr.type==='seg'?' selected':''}>seg.</option>
                 </select>
               </div>
-              <div class="re-input-label">Reps</div>
             </div>
-            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},1,${si})">×</button>
+            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},1,${si})" aria-label="Quitar escalón">
+              <svg class="ic ic-sm"><use href="#i-close"/></svg>
+            </button>
           </div>`;
-        });
-        s += `</div><button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},1)">+ Agregar escalón</button>`;
-        return s;
-      };
+      }).join('') +
+      `</div><button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},1)">
+         <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar escalón
+       </button>`;
+    }
 
-      html += `<div class="re-exercise">
-        <div class="re-ex-top">
-          <button class="re-del-btn" onclick="removeExercise('${editorDay}',${ci},${ei})" title="Quitar ejercicio">×</button>
+    const nota = (ex.trainerNote || '').trim();
+    html += `<div class="cir-ex cir-ex-open">
+        <div class="cir-ex-head">
+          <button class="cir-ex-name-btn" onclick="openExercisePicker(${ci},${ei},1)">
+            <span class="cir-ex-name">${reEscAttr(ex.name || 'Elegir ejercicio…')}</span>
+            <svg class="ic ic-sm cir-ex-swap"><use href="#i-chevron-r"/></svg>
+          </button>
+          <button class="re-del-btn" onclick="removeExercise('${editorDay}',${ci},${ei})" title="Quitar ejercicio" aria-label="Quitar ejercicio">
+            <svg class="ic ic-sm"><use href="#i-close"/></svg>
+          </button>
+          <button class="re-del-btn" onclick="openEditorExercise(-1)" title="Plegar" aria-label="Plegar">
+            <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
+          </button>
         </div>
-        <div class="re-set-type">
-          <button class="re-set-type-btn${st==='normal'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'normal')">Normal</button>
-          <button class="re-set-type-btn ds${st==='dropset'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'dropset')">Drop set</button>
-          <button class="re-set-type-btn pir${st==='piramidal'?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'piramidal')">Piramidal</button>
+        <div class="cir-set-type">
+          ${['normal','dropset','piramidal'].map(t => `
+            <button class="cir-type-btn${st===t?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'${t}')">${SET_LABEL[t]}</button>`).join('')}
         </div>
-        <div class="re-name-row">
-          <button class="re-name-btn" onclick="openExercisePicker(${ci},${ei},1)">${exName}</button>
-          <button class="re-change-btn" onclick="openExercisePicker(${ci},${ei},1)">Cambiar</button>
-        </div>
-        ${st === 'normal'
-          ? (() => {
-              const pw = parseWeight(exW);
-              const pr = parseReps(exReps);
-              return `<div class="re-wr-row">
-                <div class="re-wr-col">
-                  <div class="re-combo">
-                    <input type="number" inputmode="decimal" value="${pw.num}" placeholder="0" oninput="updateEditorWeightPair('${editorDay}',${ci},${ei},'${wField}',this.value,this.nextElementSibling.value)">
-                    <select class="re-unit-select" onchange="updateEditorWeightPair('${editorDay}',${ci},${ei},'${wField}',this.previousElementSibling.value,this.value)">
-                      <option value="lbs"${pw.unit==='lbs'?' selected':''}>lbs</option>
-                      <option value="kg"${pw.unit==='kg'?' selected':''}>kg</option>
-                    </select>
-                  </div>
-                  <div class="re-input-label">Peso</div>
-                </div>
-                <div class="re-wr-col">
-                  <div class="re-combo">
-                    <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateEditorRepsPair('${editorDay}',${ci},${ei},'${rField}',this.value,this.nextElementSibling.value)">
-                    <select class="re-unit-select" onchange="updateEditorRepsPair('${editorDay}',${ci},${ei},'${rField}',this.previousElementSibling.value,this.value)">
-                      <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
-                      <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
-                      <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
-                    </select>
-                  </div>
-                  <div class="re-input-label">Reps</div>
-                </div>
-              </div>`;
-            })()
-          : renderSteps()
-        }
-        <textarea class="re-nota re-trainer-note" rows="2" placeholder="Nota del entrenador para este ejercicio (ej: súbele 10 reps, ir más lento en la bajada)…" oninput="updateEditorTrainerNote('${editorDay}',${ci},${ei},this.value)">${reEscAttr(ex.trainerNote||'')}</textarea>
+        ${cuerpo}
+        <details class="cir-note"${nota ? ' open' : ''}>
+          <summary class="cir-note-sum">
+            <svg class="ic ic-sm"><use href="#i-doc"/></svg>
+            <span>Nota del entrenador</span>
+            <svg class="ic ic-sm cir-note-chev"><use href="#i-chevron-r"/></svg>
+          </summary>
+          <textarea class="re-nota re-trainer-note" rows="2"
+            placeholder="Ej.: bajar más lento, subir 5 lbs la próxima semana…"
+            oninput="updateEditorTrainerNote('${editorDay}',${ci},${ei},this.value)">${reEscAttr(nota)}</textarea>
+        </details>
       </div>`;
-    });
-    html += `<button class="re-add-btn" onclick="openExercisePickerMulti(${ci})"><svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar ejercicios</button>`;
-    html += `</div>`;
   });
-  html += `<button class="re-add-btn" style="border-style:solid;border-color:var(--acl);color:var(--acl)" onclick="addCircuit('${editorDay}')">+ Agregar circuito</button>`;
-  html += `</div>`; // re-circuits-grid
 
-  html += `<div class="section-label" style="margin-top:20px;margin-bottom:10px">Cardio final</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t2);cursor:pointer">
-        <input type="checkbox" ${day.cardio?'checked':''} onchange="toggleCardio('${editorDay}',this.checked)" style="width:18px;height:18px;accent-color:var(--ac)">
-        ¿Incluye cardio?
-      </label>
-    </div>
-    ${day.cardio !== '' && day.cardio != null ? `<input type="text" class="re-nota" style="padding:12px;font-size:14px" placeholder="Ej: Caminadora 20 min nivel 6" value="${reEscAttr(day.cardio)}" oninput="updateEditorCardio('${editorDay}',this.value)">` : ''}
-    <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>`;
-  el.innerHTML = html;
+  html += `<button class="re-add-btn" onclick="openExercisePickerMulti(${ci})">
+      <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar ejercicios
+    </button>`;
+  html += `<button class="cir-remove" onclick="removeCircuit('${editorDay}',${ci})">
+      <svg class="ic ic-sm"><use href="#i-trash"/></svg> Quitar este circuito
+    </button>`;
+  return html;
+}
+
+/* Ejercicio abierto dentro del circuito (-1 = todos plegados) */
+let editorExercise = 0;
+function openEditorExercise(ei) {
+  editorExercise = (editorExercise === ei) ? -1 : ei;
+  renderRoutineEditor();
 }
 
 function setEditorDay(day) {
   editorDay = day;
+  editorBlock = null;   // cada sesión se abre por su índice de bloques
   renderRoutineEditor();
 }
 
@@ -6859,12 +7138,13 @@ function addCircuit(day) {
   const circuits = editorData[day].circuits || (editorData[day].circuits = []);
   const n = circuits.length + 1;
   circuits.push({ label:`Circuito ${n}`, cls:'c'+(((n-1)%3)+1), rest:'60s descanso', exercises:[] });
-  renderRoutineEditor();
+  openEditorBlock('circuit', circuits.length - 1);   // se abre para configurarlo
 }
 
 function removeCircuit(day, ci) {
   if (!confirm('¿Quitar este circuito?')) return;
   editorData[day].circuits.splice(ci, 1);
+  if (editorBlock && editorBlock.kind === 'circuit') return closeEditorBlock();
   renderRoutineEditor();
 }
 
