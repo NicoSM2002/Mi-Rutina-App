@@ -225,7 +225,11 @@ html, body {
   flex:1; overflow-y:auto;
   padding:calc(var(--sat) + 16px) var(--pad) calc(120px + var(--sab));
 }
-.today-head { margin-bottom:20px; }
+/* El saludo a la izquierda y cerrar sesión a la derecha: ahora que Hoy es la
+   pantalla de inicio, el logout vive aquí y el perfil queda para las métricas. */
+.today-head { margin-bottom:20px; display:flex; align-items:flex-start; gap:12px; }
+.today-head-text { flex:1; min-width:0; }
+.today-logout { flex:none; margin-top:2px; }
 .today-date { font-size:15px; color:var(--t2); letter-spacing:-.2px; margin-bottom:4px; }
 .today-lead { font-size:17px; color:var(--t2); margin-top:4px; letter-spacing:-.3px; }
 
@@ -1536,7 +1540,8 @@ html, body {
 .tportal-body { padding:4px var(--pad) 0; overflow-y:auto; flex:1; padding-bottom:calc(30px + var(--sab)); }
 /* Header sin borde para la portada de clientes (mockup 12) */
 .tportal-header-plain { border-bottom:none; padding-bottom:6px; }
-.tportal-subtitle { font-size:16px; color:var(--t2); margin:2px 0 20px; letter-spacing:-.3px; }
+.tportal-subtitle { font-size:16px; color:var(--t2); margin:2px 0 18px; letter-spacing:-.3px; }
+.tportal-body > .h-page { margin-top:2px; }
 /* Botón "Salir" en pastilla contorneada */
 .pill-back {
   display:inline-flex; align-items:center; gap:5px;
@@ -1587,7 +1592,6 @@ html, body {
 .cli-sort strong { color:var(--t1); font-weight:600; }
 .cli-sort .ic { color:var(--t2); }
 .cli-empty { text-align:center; padding:40px 20px; color:var(--t2); font-size:16px; letter-spacing:-.2px; }
-.cli-exit { margin:20px 0 8px; }
 .new-athlete-btn {
   width:48px; height:48px; border-radius:100px; border:none; cursor:pointer;
   background:var(--ac);
@@ -2652,16 +2656,18 @@ select.na-input {
 <!-- ══ TRAINER PORTAL ══ -->
 <div class="screen" id="trainer-portal">
   <div class="tportal-header tportal-header-plain">
-    <div class="tportal-heading">
-      <h1 class="h-page">Mis clientes</h1>
-      <div class="tportal-subtitle">Portal entrenador</div>
-    </div>
+    <!-- "Salir" arriba: al final de la lista quedaba enterrado tras 20+ clientes -->
+    <button class="pill-back" onclick="logoutTrainer(); show('role-select')">
+      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg>Salir
+    </button>
     <div style="display:flex;gap:10px">
       <button class="btn-circle btn-circle-outline" onclick="openTrainerOwnProfile()" title="Mi perfil" aria-label="Mi perfil"><svg class="ic"><use href="#i-settings"/></svg></button>
       <button class="new-athlete-btn" onclick="openNewAthleteForm()" title="Nuevo atleta" aria-label="Nuevo atleta">+</button>
     </div>
   </div>
   <div class="tportal-body">
+    <h1 class="h-page">Mis clientes</h1>
+    <div class="tportal-subtitle">Portal entrenador</div>
     <div class="cli-search-wrap">
       <svg class="ic cli-search-ic"><use href="#i-search"/></svg>
       <input class="cli-search" id="cli-search" type="search" placeholder="Buscar por nombre"
@@ -2670,9 +2676,6 @@ select.na-input {
     <div class="cli-filters" id="cli-filters"></div>
     <button class="cli-sort" id="cli-sort" onclick="toggleClientSort()"></button>
     <div class="group" id="trainer-extra-clients"></div>
-    <button class="pill-back cli-exit" onclick="logoutTrainer(); show('role-select')">
-      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg>Salir
-    </button>
   </div>
 </div>
 
@@ -2966,9 +2969,6 @@ select.na-input {
   <div class="profile-hero">
     <div class="pg-topbar">
       <h1 class="h-page">Mi perfil</h1>
-      <button class="btn-circle" onclick="logoutAthlete()" title="Cerrar sesión" aria-label="Cerrar sesión">
-        <svg class="ic"><use href="#i-logout"/></svg>
-      </button>
     </div>
   </div>
   <div class="profile-body">
@@ -8072,9 +8072,14 @@ function renderToday() {
 
   el.innerHTML = `
     <div class="today-head">
-      <div class="today-date">${fecha}</div>
-      <h1 class="h-page">${nombre ? `Hola, ${nombre}` : 'Hola'}</h1>
-      <div class="today-lead">Tu día, a tu ritmo.</div>
+      <div class="today-head-text">
+        <div class="today-date">${fecha}</div>
+        <h1 class="h-page">${nombre ? `Hola, ${nombre}` : 'Hola'}</h1>
+        <div class="today-lead">Tu día, a tu ritmo.</div>
+      </div>
+      <button class="btn-circle today-logout" onclick="logoutAthlete()" title="Cerrar sesión" aria-label="Cerrar sesión">
+        <svg class="ic"><use href="#i-logout"/></svg>
+      </button>
     </div>
     ${entrenamiento}${comidas}${semana}${entrenador}`;
 
