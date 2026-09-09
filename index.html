@@ -3079,11 +3079,11 @@ select.na-input {
     <!-- Los tabs viven en la barra inferior del entrenador (mockups 13-14);
          estos quedan por compatibilidad con setTrainerTab() pero ocultos. -->
     <div class="tclient-tabs" hidden>
-      <button class="tclient-tab active" id="tab-rutinas" onclick="setTrainerTab('rutinas')">Rutinas</button>
+      <button class="tclient-tab" id="tab-rutinas" onclick="setTrainerTab('rutinas')">Rutinas</button>
       <button class="tclient-tab" id="tab-comidas" onclick="setTrainerTab('comidas')">Comidas</button>
       <button class="tclient-tab" id="tab-resumen" onclick="setTrainerTab('resumen')">Resumen</button>
       <button class="tclient-tab" id="tab-pagos" onclick="setTrainerTab('pagos')">Pagos</button>
-      <button class="tclient-tab" id="tab-editar" onclick="setTrainerTab('editar')">Editar</button>
+      <button class="tclient-tab active" id="tab-editar" onclick="setTrainerTab('editar')">Editar</button>
     </div>
   </div>
   <div class="tclient-content" id="tclient-content">
@@ -4868,7 +4868,7 @@ async function loadAthleteTrainerCard(trainerId) {
 }
 let trainerClientId = null;
 let trainerData = { completions:[], meals:[] };
-let activeTrainerTab = 'rutinas';
+let activeTrainerTab = 'editar';
 let editorData = null;
 let editorDay = 'sesion1';
 let editorPickerTarget = null;
@@ -5563,12 +5563,13 @@ async function openTrainerClient(clientId, clientName) {
   document.getElementById('tclient-name').textContent = clientName;
   document.getElementById('tclient-content').innerHTML =
     '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando datos…</div>';
-  activeTrainerTab = 'rutinas';
-  document.getElementById('tab-rutinas').classList.add('active');
+  // Se entra a editar la rutina; el historial se consulta de vez en cuando
+  activeTrainerTab = 'editar';
+  document.getElementById('tab-editar').classList.add('active');
+  document.getElementById('tab-rutinas').classList.remove('active');
   document.getElementById('tab-comidas').classList.remove('active');
   document.getElementById('tab-resumen').classList.remove('active');
-  document.getElementById('tab-editar').classList.remove('active');
-  activateTrainerNav('rutinas');
+  activateTrainerNav('editar');
   editorData = null;
   editorDay = 'sesion1';
   show('trainer-client');
@@ -5694,7 +5695,7 @@ function renderCompletionCard(c) {
 }
 
 function setTrainerTab(tab) {
-  if (!FEATURE_PAGOS && tab === 'pagos') tab = 'rutinas';
+  if (!FEATURE_PAGOS && tab === 'pagos') tab = 'editar';
   activeTrainerTab = tab;
   document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
   document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
@@ -8216,7 +8217,7 @@ show = function(id) {
   } else if (id === 'trainer-client') {
     nav.style.display = 'none';
     tnav.style.display = 'flex';
-    activateTrainerNav(activeTrainerTab || 'rutinas');
+    activateTrainerNav(activeTrainerTab || 'editar');
   } else {
     nav.style.display = 'none';
     tnav.style.display = 'none';
