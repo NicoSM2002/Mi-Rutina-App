@@ -333,6 +333,12 @@ html, body {
   overflow:hidden;
 }
 .pg-trainer-meta { min-width:0; }
+/* La foto entra con un fundido corto una vez descargada y decodificada */
+.avatar-img {
+  width:100%; height:100%; object-fit:cover; display:block;
+  opacity:0; transition:opacity .22s ease;
+}
+.avatar-img.ready { opacity:1; }
 .pg-trainer-name { font-family:var(--font-d); font-size:18px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
 .pg-trainer-role { font-size:15px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; }
 .pg-trainer-exp  { font-size:14px; color:var(--t3); margin-top:2px; }
@@ -1537,12 +1543,13 @@ select.na-input {
 .tsec-sub   { font-size:16px; color:var(--t2); margin:2px 0 20px; letter-spacing:-.3px; }
 .tclient-content::-webkit-scrollbar { display:none; }
 .tdata-empty {
-  text-align:center; color:var(--t2); font-size:14px;
-  padding:60px 20px;
+  text-align:center; color:var(--t2); font-size:16px;
+  padding:44px 20px; letter-spacing:-.2px;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
 }
-.tdata-empty-icon { font-size:40px; margin-bottom:12px; }
+.tdata-empty-icon { color:#B4B4AF; flex:none; }
 .trecord-card {
-  background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px;
+  background:var(--s1); border:none; border-radius:var(--r-group);
   padding:16px; margin-bottom:12px;
 }
 .trecord-header {
@@ -4275,22 +4282,49 @@ function showGenericProfile(athlete) {
   show('profile-generic');
 }
 
+/* La lista de entrenadores cambia muy poco: se cachea para no repetir la
+   petición cada vez que se abre el perfil. */
+let _trainersCache = null;
+async function fetchTrainersCached() {
+  if (_trainersCache) return _trainersCache;
+  const res = await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action: 'list-trainers' })
+  });
+  const json = await res.json();
+  _trainersCache = json.trainers || [];
+  return _trainersCache;
+}
+
+/* Coloca una foto en un avatar sin que se vea "pintar" de arriba abajo: se
+   descarga y decodifica aparte y sólo entra, con un fundido, cuando ya está
+   completa. Mientras tanto se ven las iniciales. */
+async function setAvatarPhoto(el, url, initials) {
+  el.textContent = initials || '';
+  if (!url) return;
+  try {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    if (img.decode) await img.decode();
+    else await new Promise((ok, no) => { img.onload = ok; img.onerror = no; });
+    img.className = 'avatar-img';
+    el.textContent = '';
+    el.appendChild(img);
+    requestAnimationFrame(() => img.classList.add('ready'));
+  } catch { /* se quedan las iniciales */ }
+}
+
 async function loadAthleteTrainerCard(trainerId) {
   const wrap = document.getElementById('pg-trainer-wrap');
   if (!trainerId) { wrap.style.display = 'none'; return; }
   try {
-    const res = await fetch(WORKER_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'list-trainers' })
-    });
-    const json = await res.json();
-    const t = (json.trainers || []).find(x => x.username === trainerId);
+    const trainers = await fetchTrainersCached();
+    const t = trainers.find(x => x.username === trainerId);
     if (!t) { wrap.style.display = 'none'; return; }
     const initials = (t.name || '?').split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
     const avatar = document.getElementById('pg-trainer-avatar');
-    avatar.innerHTML = t.photoUrl
-      ? `<img src="${t.photoUrl}" style="width:100%;height:100%;object-fit:cover">`
-      : initials;
+    setAvatarPhoto(avatar, t.photoUrl, initials);
     document.getElementById('pg-trainer-name').textContent = t.name || '';
     const specEl = document.getElementById('pg-trainer-specialty');
     // El mockup siempre muestra un rol legible bajo el nombre
@@ -5077,6 +5111,7 @@ function renderCompletionCard(c) {
 }
 
 function setTrainerTab(tab) {
+  if (!FEATURE_PAGOS && tab === 'pagos') tab = 'rutinas';
   activeTrainerTab = tab;
   document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
   document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
@@ -5756,6 +5791,7 @@ async function confirmComplete() {
 let paymentData = {};
 
 async function loadAthletePayment(athlete) {
+  if (!FEATURE_PAGOS) return;   // con Pagos oculto es una petición de más al entrar
   const cardId = `payment-card-${athlete === 'nicolas' ? 'nicolas' : 'msaravia'}`;
   const card = document.getElementById(cardId);
   if (!card) return;
@@ -5910,6 +5946,11 @@ function platformPayAction() {
 
 /* ── chat ── */
 const WORKER_URL = 'https://mirutina.nicolas-f07.workers.dev';
+
+/* ── Interruptores de funcionalidad ──
+   Pagos queda oculto (atleta y entrenador) mientras no se use. El código y los
+   datos siguen intactos: basta con poner esto en true para reactivarlo. */
+const FEATURE_PAGOS = false;
 let chatHistory = [];
 let athleteMeals = [];
 
@@ -7075,6 +7116,11 @@ async function saveRoutineFromEditor() {
 
 /* auto-resize textarea */
 document.addEventListener('DOMContentLoaded', () => {
+  // Pagos oculto: se retiran sus pestañas de ambas barras de navegación
+  if (!FEATURE_PAGOS) {
+    document.getElementById('bnav-payments')?.remove();
+    document.getElementById('tbnav-pagos')?.remove();
+  }
   const inp = document.getElementById('chat-input');
   inp.addEventListener('input', () => {
     inp.style.height = 'auto';
@@ -7105,6 +7151,7 @@ function activateNav(tab) {
 }
 
 function showPayments() {
+  if (!FEATURE_PAGOS) { showProfile(); activateNav('profile'); return; }
   show('payments');
   const card = document.getElementById('payment-card-nav');
   if (card) card.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2)">Cargando...</div>';
