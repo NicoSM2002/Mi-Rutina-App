@@ -396,6 +396,39 @@ html, body {
 }
 .pg-metrics-note { font-size:14px; color:var(--t2); margin-top:14px; letter-spacing:-.2px; }
 
+/* ── Perfil: métricas destacadas ── */
+.met-main { padding:4px 18px; }
+.met-row { padding:16px 0; }
+.met-label { font-family:var(--font-d); font-size:16px; font-weight:700; color:var(--t1); letter-spacing:-.3px; }
+.met-value { font-family:var(--font-d); font-size:34px; font-weight:800; color:var(--t1); letter-spacing:-1.2px; margin-top:4px; line-height:1.05; }
+.met-unit { font-size:20px; font-weight:700; letter-spacing:-.5px; }
+.met-note { font-size:14px; color:var(--t2); margin-top:6px; letter-spacing:-.2px; }
+
+.met-more { margin-top:12px; padding:0 18px; }
+.met-more-sum {
+  list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px; padding:16px 0;
+}
+.met-more-sum::-webkit-details-marker { display:none; }
+.met-more-body { flex:1; min-width:0; }
+.met-more-title { display:block; font-family:var(--font-d); font-size:16px; font-weight:700; color:var(--t1); letter-spacing:-.3px; }
+.met-more-sub { display:block; font-size:14px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; }
+.met-more-chev { transition:transform .2s; }
+.met-more[open] .met-more-chev { transform:rotate(90deg); }
+.met-more-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+  padding-bottom:18px; border-top:1px solid var(--b2); padding-top:16px;
+}
+.met-mini { text-align:center; }
+.met-mini-v { font-family:var(--font-d); font-size:21px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
+.met-mini-l { font-size:12px; color:var(--t2); margin-top:5px; text-transform:uppercase; letter-spacing:.5px; }
+
+.met-link {
+  display:flex; align-items:center; gap:9px;
+  background:none; border:none; cursor:pointer; padding:12px 2px 0;
+  color:var(--t2); font-family:var(--font-b); font-size:15px; letter-spacing:-.2px;
+}
+.met-link:active { color:var(--t1); }
+
 /* Card horizontal del entrenador */
 .pg-trainer-card { padding:15px; }
 .pg-trainer-row { display:flex; align-items:center; gap:18px; }
@@ -1780,6 +1813,11 @@ select.na-input {
 }
 .blk-chev { color:#B8B8B3; width:20px; height:20px; stroke-width:2; flex:none; }
 .blk-add { margin:14px 0 0 !important; width:100% !important; }
+.blk-list-extra { margin-top:12px; }
+/* Selector de tipo de serie: Normal es el caso habitual, no merece tres
+   botones ocupando una línea entera en cada ejercicio. */
+.cir-type-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.cir-type-row .re-rest-select { flex:1; min-width:0; }
 /* Dentro de la pantalla de un bloque los "agregar" van a ancho completo */
 #tclient-content .re-warmup-card .re-add-btn,
 #tclient-content .re-circuit-card .re-add-btn { width:100%; margin:10px 0 0; }
@@ -2181,6 +2219,38 @@ select.na-input {
 .resumen-week-nav {
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   padding-bottom:16px;
+}
+
+/* ── Progreso: pestañas Entrenamiento / Alimentación ── */
+.prog-tabs {
+  display:flex; gap:4px; background:var(--s2);
+  border-radius:14px; padding:4px; margin-bottom:16px;
+}
+.prog-tab {
+  flex:1; padding:11px 8px; border-radius:11px; border:none; background:none;
+  font-family:var(--font-d); font-size:15px; font-weight:600; color:var(--t2);
+  cursor:pointer; letter-spacing:-.2px; transition:background .15s, color .15s;
+}
+.prog-tab.active { background:var(--ac); color:#fff; }
+
+/* Constancia semanal */
+.prog-streak { padding:20px 18px; }
+.prog-streak-title { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+.prog-streak-n { font-family:var(--font-d); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-.9px; margin-top:10px; }
+.prog-streak-sub { font-size:15px; color:var(--t2); letter-spacing:-.2px; }
+.prog-days { display:flex; justify-content:space-between; gap:4px; margin:18px 0 14px; }
+.prog-day { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; }
+.prog-day-l { font-size:13px; color:var(--t2); font-weight:500; }
+.prog-day-o {
+  width:32px; height:32px; border-radius:100px;
+  border:1.6px solid var(--b); color:transparent;
+  display:flex; align-items:center; justify-content:center;
+}
+.prog-day-o.done { background:var(--ac); border-color:var(--ac); color:#fff; }
+.prog-day-o .ic { stroke-width:3.2; }
+.prog-streak-note {
+  font-size:14px; color:var(--t2); letter-spacing:-.2px;
+  border-top:1px solid var(--b2); padding-top:12px;
 }
 .resumen-nav-btn {
   background:var(--s2); border:none; color:var(--t1);
@@ -2897,17 +2967,39 @@ select.na-input {
   </div>
   <div class="profile-body">
     <div>
-      <h2 class="h-sec sec-title">Métricas actuales</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="sv" id="pg-weight">—</div><div class="sl">Peso kg</div></div>
-        <div class="stat-card"><div class="sv" id="pg-bf">—</div><div class="sl">Grasa %</div></div>
-        <div class="stat-card"><div class="sv" id="pg-muscle">—</div><div class="sl">Músculo kg</div></div>
+      <h2 class="h-sec sec-title">Mis métricas</h2>
+      <!-- Peso e IMC destacados; el resto se despliega bajo demanda -->
+      <div class="group met-main">
+        <div class="met-row">
+          <div class="met-label">Peso</div>
+          <div class="met-value"><span id="pg-weight">—</span> <span class="met-unit">kg</span></div>
+          <div class="met-note" id="pg-weight-date">Sin fecha de medición.</div>
+        </div>
+        <div class="group-sep"></div>
+        <div class="met-row">
+          <div class="met-label">IMC</div>
+          <div class="met-value"><span id="pg-bmi">—</span></div>
+          <div class="met-note">Relaciona tu peso con tu altura.</div>
+        </div>
       </div>
-      <div class="stats-grid two" style="margin-top:12px">
-        <div class="stat-card"><div class="sv" id="pg-bmi">—</div><div class="sl">IMC</div></div>
-        <div class="stat-card"><div class="sv" id="pg-bmr">—</div><div class="sl">BMR kcal</div></div>
-      </div>
-      <div class="pg-metrics-note" id="pg-metrics-note">Aún no hay mediciones registradas.</div>
+      <details class="group met-more" id="pg-more">
+        <summary class="met-more-sum">
+          <span class="met-more-body">
+            <span class="met-more-title">Otras métricas</span>
+            <span class="met-more-sub">Grasa, músculo y metabolismo basal.</span>
+          </span>
+          <svg class="ic blk-chev met-more-chev"><use href="#i-chevron-r"/></svg>
+        </summary>
+        <div class="met-more-grid">
+          <div class="met-mini"><div class="met-mini-v" id="pg-bf">—</div><div class="met-mini-l">Grasa %</div></div>
+          <div class="met-mini"><div class="met-mini-v" id="pg-muscle">—</div><div class="met-mini-l">Músculo kg</div></div>
+          <div class="met-mini"><div class="met-mini-v" id="pg-bmr">—</div><div class="met-mini-l">BMR kcal</div></div>
+        </div>
+      </details>
+      <div class="pg-metrics-note" id="pg-metrics-note">Sin datos registrados.</div>
+      <button class="met-link" id="pg-evolution" onclick="showResumen();activateNav('resumen')">
+        <svg class="ic ic-sm"><use href="#i-resumen"/></svg> Ver evolución en Progreso
+      </button>
     </div>
     <div id="pg-trainer-wrap" style="display:none">
       <h2 class="h-sec sec-title">Tu entrenador</h2>
@@ -3083,7 +3175,11 @@ select.na-input {
 <!-- ══ RESUMEN SEMANAL ══ -->
 <div class="screen" id="resumen">
   <div class="resumen-header">
-    <h1 class="resumen-title">Resumen semanal</h1>
+    <h1 class="resumen-title">Tu progreso</h1>
+    <div class="prog-tabs" id="prog-tabs">
+      <button class="prog-tab active" id="prog-tab-entreno" onclick="setProgressTab('entreno')">Entrenamiento</button>
+      <button class="prog-tab" id="prog-tab-comida" onclick="setProgressTab('comida')">Alimentación</button>
+    </div>
     <div class="resumen-week-nav" id="resumen-week-nav"></div>
   </div>
   <div class="resumen-content" id="resumen-content"></div>
@@ -4575,7 +4671,10 @@ function showGenericProfile(athlete) {
   const goal = p.goal || athlete.goal || '';
   goalEl.textContent = goal || '—';
   goalEl.style.display = goal ? 'inline-flex' : 'none';
-  const fmt = (v, suf='') => (v === null || v === undefined || v === '') ? '—' : (v + suf);
+  // Los decimales se muestran con coma (21,5) como corresponde en español
+  const fmt = (v, suf='') => (v === null || v === undefined || v === '')
+    ? '—'
+    : (String(v).replace('.', ',') + suf);
   document.getElementById('pg-weight').textContent = fmt(p.weight);
   document.getElementById('pg-bf').textContent     = fmt(p.bodyFat, '%');
   document.getElementById('pg-muscle').textContent = fmt(p.muscleMass);
@@ -4589,6 +4688,26 @@ function showGenericProfile(athlete) {
     .some(v => v !== null && v !== undefined && v !== '');
   const noteEl = document.getElementById('pg-metrics-note');
   if (noteEl) noteEl.style.display = hasAny ? 'none' : 'block';
+
+  // Fecha de la última medición, si el historial la tiene
+  const hist = Array.isArray(athlete.measurements) ? athlete.measurements : [];
+  const last = hist.length ? hist[hist.length - 1] : null;
+  const dateEl = document.getElementById('pg-weight-date');
+  if (dateEl) {
+    if (last?.date) {
+      const [y, m, d] = last.date.split('-').map(Number);
+      dateEl.textContent = 'Medido el ' + new Date(y, m - 1, d)
+        .toLocaleDateString('es-CO', { day:'numeric', month:'long' });
+    } else {
+      dateEl.textContent = 'Sin fecha de medición.';
+    }
+  }
+  // El enlace a la evolución sólo aparece cuando hay algo que ver
+  const evoEl = document.getElementById('pg-evolution');
+  if (evoEl) evoEl.style.display = hist.length >= 2 ? 'flex' : 'none';
+  // "Otras métricas" arranca desplegado si tiene datos
+  const moreEl = document.getElementById('pg-more');
+  if (moreEl) moreEl.open = [p.bodyFat, p.muscleMass, bmr].some(v => v !== null && v !== undefined && v !== '');
   loadAthleteTrainerCard(athlete.trainerId);
   show('profile-generic');
 }
@@ -5605,7 +5724,19 @@ async function renderTrainerResumen(weekOf) {
   }
 }
 
+/* Pestaña activa en Progreso: entrenamiento o alimentación.
+   Antes todo iba junto y la pantalla mezclaba macros con sesiones. */
+let progressTab = 'entreno';
+function setProgressTab(t) {
+  progressTab = t;
+  document.getElementById('prog-tab-entreno')?.classList.toggle('active', t === 'entreno');
+  document.getElementById('prog-tab-comida')?.classList.toggle('active', t === 'comida');
+  if (_lastResumenData) renderResumenContent(_lastResumenData, 'resumen-week-nav', 'resumen-content', false);
+}
+let _lastResumenData = null;
+
 function renderResumenContent(data, navId, contentId, isTrainer) {
+  if (!isTrainer) _lastResumenData = data;
   const navEl = document.getElementById(navId);
   const contentEl = document.getElementById(contentId);
 
@@ -5624,9 +5755,34 @@ function renderResumenContent(data, navId, contentId, isTrainer) {
 
   let html = '';
 
+  // Constancia semanal: qué días entrenó, a partir de la fecha de cada sesión
+  const dias = ['L','M','X','J','V','S','D'];
+  const hechos = new Set((data.completions || []).map(c => {
+    const [y, m, d] = String(c.day || '').split('-').map(Number);
+    if (!y) return -1;
+    return (new Date(y, m - 1, d).getDay() + 6) % 7;   // lunes = 0
+  }));
+  const nSes = (data.completions || []).length;
+
+  if (!isTrainer && progressTab === 'entreno') {
+    html += `<div class="group prog-streak">
+        <div class="prog-streak-title">Constancia semanal</div>
+        <div class="prog-streak-n">${nSes} sesión${nSes===1?'':'es'}</div>
+        <div class="prog-streak-sub">completada${nSes===1?'':'s'} esta semana</div>
+        <div class="prog-days">
+          ${dias.map((d, i) => `<div class="prog-day">
+            <span class="prog-day-l">${d}</span>
+            <span class="prog-day-o${hechos.has(i) ? ' done' : ''}">${hechos.has(i)
+              ? '<svg class="ic ic-sm"><use href="#i-check"/></svg>' : ''}</span>
+          </div>`).join('')}
+        </div>
+        <div class="prog-streak-note">Cada sesión cuenta.</div>
+      </div>`;
+  }
+
   // Totals card
   const t = data.totals || {};
-  html += `
+  if (isTrainer || progressTab === 'comida') html += `
     <div class="resumen-totals-card">
       <div class="resumen-totals-title">Totales de la semana</div>
       <div class="resumen-totals-grid">
@@ -5653,16 +5809,19 @@ function renderResumenContent(data, navId, contentId, isTrainer) {
 
   // Sessions section
   const completions = data.completions || [];
-  html += '<div class="resumen-section"><div class="resumen-section-title">Sesiones completadas</div>';
-  if (!completions.length) {
-    html += `<div class="resumen-empty group">
-      <svg class="ic ic-lg resumen-empty-ic"><use href="#i-rutina"/></svg>
-      <div>Aún no completaste sesiones esta semana.</div>
-    </div>`;
-  } else {
-    html += completions.map(c => renderCompletionCard(c)).join('');
+  // Sesiones: sólo en la pestaña de entrenamiento (y siempre para el entrenador)
+  if (isTrainer || progressTab === 'entreno') {
+    html += '<div class="resumen-section"><div class="resumen-section-title">Sesiones completadas</div>';
+    if (!completions.length) {
+      html += `<div class="resumen-empty group">
+        <svg class="ic ic-lg resumen-empty-ic"><use href="#i-rutina"/></svg>
+        <div>Aún no completaste sesiones esta semana.</div>
+      </div>`;
+    } else {
+      html += completions.map(c => renderCompletionCard(c)).join('');
+    }
+    html += '</div>';
   }
-  html += '</div>';
 
   // Meals by day
   const meals = data.meals || [];
@@ -5687,9 +5846,12 @@ function renderResumenContent(data, navId, contentId, isTrainer) {
     });
   });
 
-  html += '<div class="resumen-section"><div class="resumen-section-title">Comidas registradas</div>';
+  // Comidas: sólo en la pestaña de alimentación (y siempre para el entrenador)
+  const verComidas = isTrainer || progressTab === 'comida';
+  if (verComidas) html += '<div class="resumen-section"><div class="resumen-section-title">Comidas registradas</div>';
   const days = Object.values(grouped);
-  if (!days.length) {
+  if (!verComidas) { /* la pestaña de entrenamiento no muestra comidas */ }
+  else if (!days.length) {
     html += `<div class="resumen-empty group">
       <svg class="ic ic-lg resumen-empty-ic"><use href="#i-comidas"/></svg>
       <div>Aún no registraste comidas esta semana.</div>
@@ -5703,7 +5865,7 @@ function renderResumenContent(data, navId, contentId, isTrainer) {
           <div class="resumen-slot-label">${s.label}</div>
           ${day.slots[s.key].text ? `<div class="resumen-slot-text">${day.slots[s.key].text}</div>` : ''}
           ${day.slots[s.key].photo ? `<img class="resumen-slot-photo" src="${day.slots[s.key].photo}">` : ''}
-          ${day.analyses[s.key] ? `<button class="tmeal-analysis-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'▲ Ocultar':'🤖 Análisis'">🤖 Análisis</button><div class="tmeal-analysis">${day.analyses[s.key]}</div>` : ''}
+          ${day.analyses[s.key] ? `<button class="tmeal-analysis-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'Ocultar análisis':'Ver análisis'">Ver análisis</button><div class="tmeal-analysis">${day.analyses[s.key]}</div>` : ''}
         </div>
       `).join('');
       return `
@@ -5721,7 +5883,7 @@ function renderResumenContent(data, navId, contentId, isTrainer) {
       `;
     }).join('');
   }
-  html += '</div>';
+  if (verComidas) html += '</div>';
 
   contentEl.innerHTML = html;
 }
@@ -6666,18 +6828,19 @@ function renderSessionBlocks(el, days) {
       </button>`;
   });
 
-  // Cardio
+  html += `</div>`;   // cierra la lista de bloques de entrenamiento
+
+  // Cardio: es un añadido al final de la sesión, no un bloque como los demás
   const hasCardio = day.cardio !== '' && day.cardio != null;
-  html += `<button class="blk-row${hasCardio ? '' : ' blk-row-empty'}" onclick="openEditorBlock('cardio')">
+  html += `<div class="blk-list blk-list-extra">
+    <button class="blk-row${hasCardio ? '' : ' blk-row-empty'}" onclick="openEditorBlock('cardio')">
       <span class="blk-ic">${hasCardio
         ? '<svg class="ic ic-sm"><use href="#i-rutina"/></svg>'
         : '<svg class="ic ic-sm"><use href="#i-plus"/></svg>'}</span>
       <span class="blk-body"><span class="blk-name">Cardio final</span>
         <span class="blk-meta">${hasCardio ? reEscAttr(day.cardio) : 'Sin configurar'}</span></span>
       <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-    </button>`;
-
-  html += `</div>`;
+    </button></div>`;
 
   html += `<button class="re-add-btn blk-add" onclick="addCircuit('${editorDay}')">
       <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar circuito
@@ -6704,8 +6867,7 @@ function renderBlockEditor(el, days) {
   let html = `<button class="blk-back" onclick="closeEditorBlock()">
       <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg> Sesión ${editorDay.slice(6)}
     </button>
-    <h1 class="tsec-title">${titulo}</h1>
-    <div class="blk-sub">${document.getElementById('tclient-name')?.textContent || ''}</div>`;
+    <h1 class="tsec-title">${titulo}</h1>`;
 
   if (b.kind === 'warmup') {
     html += renderWarmupBlockHtml(day);
@@ -6923,9 +7085,12 @@ function renderCircuitBlockHtml(day, ci) {
             <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
           </button>
         </div>
-        <div class="cir-set-type">
-          ${['normal','dropset','piramidal'].map(t => `
-            <button class="cir-type-btn${st===t?' active':''}" onclick="setSetType('${editorDay}',${ci},${ei},'${t}')">${SET_LABEL[t]}</button>`).join('')}
+        <div class="cir-type-row">
+          <span class="cir-set-label">Tipo</span>
+          <select class="re-rest-select" onchange="setSetType('${editorDay}',${ci},${ei},this.value)">
+            ${['normal','dropset','piramidal'].map(t =>
+              `<option value="${t}"${st===t?' selected':''}>${SET_LABEL[t]}</option>`).join('')}
+          </select>
         </div>
         ${cuerpo}
         <details class="cir-note"${nota ? ' open' : ''}>
