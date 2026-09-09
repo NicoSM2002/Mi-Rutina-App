@@ -4801,9 +4801,10 @@ function showGenericProfile(athlete) {
   // El enlace a la evolución sólo aparece cuando hay algo que ver
   const evoEl = document.getElementById('pg-evolution');
   if (evoEl) evoEl.style.display = hist.length >= 2 ? 'flex' : 'none';
-  // "Otras métricas" arranca desplegado si tiene datos
+  // "Otras métricas" arranca siempre cerrado, aunque haya datos: el perfil
+  // se abre para ver peso e IMC, el resto se despliega si se quiere.
   const moreEl = document.getElementById('pg-more');
-  if (moreEl) moreEl.open = [p.bodyFat, p.muscleMass, bmr].some(v => v !== null && v !== undefined && v !== '');
+  if (moreEl) moreEl.open = false;
   loadAthleteTrainerCard(athlete.trainerId);
   show('profile-generic');
 }
