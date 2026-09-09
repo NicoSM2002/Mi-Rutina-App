@@ -336,13 +336,16 @@ html, body {
 }
 #profile::-webkit-scrollbar { display:none; }
 
+/* La cabecera queda fija arriba; el nombre y el objetivo bajan con el
+   contenido para que no se solapen al scrollear. */
 .profile-hero {
   background:var(--bg);
-  padding:calc(var(--sat) + 14px) var(--pad) 10px;
+  padding:calc(var(--sat) + 14px) var(--pad) 6px;
   text-align:left;
   position:relative;
   border-bottom:none;
   flex-shrink:0;
+  z-index:2;
 }
 .pg-topbar {
   display:flex; align-items:center; justify-content:space-between;
@@ -362,16 +365,21 @@ html, body {
   position:relative; z-index:1;
 }
 .profile-name em { font-style:normal; color:var(--ac); }
-.profile-goal {
-  margin-top:10px;
-  position:relative; z-index:1;
-}
+.profile-goal { margin-top:10px; }
+.profile-ident { margin-bottom:-4px; }
 
+/* El perfil no scrolleaba: la pantalla no era una columna flex y el cuerpo no
+   tenía overflow, así que lo que no cabía quedaba cortado sin poder bajar. */
+#profile-generic {
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
 .profile-body {
   padding:12px var(--pad);
-  padding-bottom:calc(90px + var(--sab));
+  padding-bottom:calc(120px + var(--sab));
   display:flex; flex-direction:column; gap:20px;
-  flex:1;
+  flex:1; overflow-y:auto;
 }
 /* Encabezado de sección del nuevo sistema */
 .sec-title { margin-bottom:14px; }
@@ -2962,10 +2970,12 @@ select.na-input {
         <svg class="ic"><use href="#i-logout"/></svg>
       </button>
     </div>
-    <div class="profile-name" id="pg-name">—</div>
-    <div class="pill-session profile-goal" id="pg-goal">—</div>
   </div>
   <div class="profile-body">
+    <div class="profile-ident">
+      <div class="profile-name" id="pg-name">—</div>
+      <div class="pill-session profile-goal" id="pg-goal">—</div>
+    </div>
     <div>
       <h2 class="h-sec sec-title">Mis métricas</h2>
       <!-- Peso e IMC destacados; el resto se despliega bajo demanda -->
@@ -5939,6 +5949,7 @@ function loadTodayFromStorage() {
 function showMeals() {
   loadTodayFromStorage();
   show('meals');
+  openMealSlot = null;   // se entra siempre con todas plegadas
   document.getElementById('meals-today-label').textContent = getTodayLabel();
   renderMeals();
   syncMealsSentFromServer();
@@ -5998,12 +6009,9 @@ function renderMeals() {
   const container = document.getElementById('meals-content');
   const sent = getSentSlots();
   const nSent = MEAL_SLOTS.filter(s => sent[s.key]).length;
-
-  // Si no hay ninguna abierta, se abre la primera pendiente
-  if (openMealSlot === null) {
-    const pend = MEAL_SLOTS.find(s => !sent[s.key]);
-    openMealSlot = pend ? pend.key : null;
-  }
+  // Todas las comidas arrancan plegadas y se abren al tocarlas. Antes se abría
+  // sola la primera pendiente, lo que además impedía cerrarla: al plegarla, el
+  // propio render la volvía a abrir.
 
   const counter = document.getElementById('meals-count');
   if (counter) counter.textContent = nSent === 0
