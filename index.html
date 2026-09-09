@@ -1360,6 +1360,14 @@ html, body {
   display:flex; align-items:center; justify-content:center; gap:10px;
 }
 .tlogin-btn:active { background:#DE6A2D; }
+.tlogin-btn.is-busy, .tlogin-btn:disabled { background:#F0A377; cursor:default; }
+/* Spinner de espera dentro de un botón */
+.btn-spinner {
+  width:17px; height:17px; flex:none;
+  border:2.2px solid rgba(255,255,255,.45); border-top-color:#fff;
+  border-radius:50%; animation:btnSpin .65s linear infinite;
+}
+@keyframes btnSpin { to { transform:rotate(360deg); } }
 .tlogin-error {
   margin-top:12px; font-size:13px; color:#f87171; text-align:center;
   min-height:20px;
@@ -4152,7 +4160,12 @@ let athleteSelfToken = null;  // emitted by backend at login, used for own write
 async function athleteLogin() {
   const user   = document.getElementById('athlete-username').value.trim().toLowerCase();
   const errEl  = document.getElementById('athlete-error');
+  const btn    = document.querySelector('#athlete-login .tlogin-btn');
   errEl.textContent = '';
+  if (!user) { errEl.textContent = 'Escribe tu usuario.'; return; }
+  // El worker puede tardar unos segundos en despertar: sin este estado el
+  // botón parecía no responder y daba sensación de que la app se colgó.
+  setLoginBusy(btn, true, 'Entrando…');
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -4161,6 +4174,7 @@ async function athleteLogin() {
     const json = await res.json();
     if (!json.ok || !json.athlete) {
       errEl.textContent = json.error || 'Usuario no encontrado.';
+      setLoginBusy(btn, false);
       return;
     }
     const dyn = json.athlete;
@@ -4175,8 +4189,28 @@ async function athleteLogin() {
     showGenericProfile(dyn);
     loadAthletePayment(currentAthlete);
     if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
+    setLoginBusy(btn, false);
   } catch (e) {
-    errEl.textContent = 'Error de red';
+    errEl.textContent = 'Error de red. Revisa tu conexión e inténtalo de nuevo.';
+    setLoginBusy(btn, false);
+  }
+}
+
+/* Estado de espera de los botones de acceso: bloquea el botón, lo marca como
+   ocupado para lectores de pantalla y muestra un spinner con el texto. */
+function setLoginBusy(btn, busy, label) {
+  if (!btn) return;
+  if (busy) {
+    if (!btn.dataset.idleHtml) btn.dataset.idleHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.classList.add('is-busy');
+    btn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span>${label || 'Un momento…'}`;
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    btn.classList.remove('is-busy');
+    if (btn.dataset.idleHtml) btn.innerHTML = btn.dataset.idleHtml;
   }
 }
 
@@ -4468,7 +4502,10 @@ async function tryRestoreAthleteSession() {
 async function trainerLogin() {
   const user = document.getElementById('trainer-username').value.trim().toLowerCase();
   const errEl = document.getElementById('trainer-error');
+  const btn = document.querySelector('#trainer-login .tlogin-btn');
   errEl.textContent = '';
+  if (!user) { errEl.textContent = 'Escribe tu usuario.'; return; }
+  setLoginBusy(btn, true, 'Entrando…');
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -4476,7 +4513,7 @@ async function trainerLogin() {
     });
     const json = await res.json();
     const found = (json.trainers || []).some(t => t.username === user);
-    if (!found) { errEl.textContent = 'Usuario no encontrado.'; return; }
+    if (!found) { errEl.textContent = 'Usuario no encontrado.'; setLoginBusy(btn, false); return; }
     currentTrainer = user;
     currentTrainerId = user;
     try { localStorage.setItem('currentTrainer', user); } catch {}
@@ -4484,8 +4521,11 @@ async function trainerLogin() {
     document.getElementById('trainer-username').value = '';
     show('trainer-portal');
     loadTrainerExtraClients();
+    setLoginBusy(btn, false);
   } catch (e) {
-    errEl.textContent = 'Error de red'; }
+    errEl.textContent = 'Error de red. Revisa tu conexión e inténtalo de nuevo.';
+    setLoginBusy(btn, false);
+  }
 }
 
 /* ── TRAINER OWN PROFILE ── */

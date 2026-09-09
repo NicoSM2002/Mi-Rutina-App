@@ -61,14 +61,10 @@ async function bootstrapAthletesIfNeeded(env) {
 
 async function listAthletes(env, { includeArchived = false } = {}) {
   const ids = await bootstrapAthletesIfNeeded(env);
-  const records = [];
-  for (const id of ids) {
-    const a = await env.DB.get(`athlete:${id}`, 'json');
-    if (!a) continue;
-    if (!includeArchived && a.archived) continue;
-    records.push(a);
-  }
-  return records;
+  // Las lecturas van en paralelo: en serie eran ~23 viajes encadenados a KV y
+  // cada login los pagaba enteros. Se conserva el orden del índice.
+  const records = await Promise.all(ids.map(id => env.DB.get(`athlete:${id}`, 'json')));
+  return records.filter(a => a && (includeArchived || !a.archived));
 }
 
 async function getAthlete(env, clientId) {
@@ -345,8 +341,14 @@ export default {
       if (!username) {
         return new Response(JSON.stringify({ ok: false, error: 'Falta username' }), { headers: cors });
       }
-      const all = await listAthletes(env);
-      const match = all.find(a => (a.username || a.clientId) === username);
+      // Atajo: en la mayoría de casos el username coincide con el clientId, así
+      // que se intenta una única lectura antes de recorrer el índice completo.
+      let match = await getAthlete(env, username);
+      if (match && (match.archived || (match.username || match.clientId) !== username)) match = null;
+      if (!match) {
+        const all = await listAthletes(env);
+        match = all.find(a => (a.username || a.clientId) === username);
+      }
       if (!match) {
         return new Response(JSON.stringify({ ok: false, error: 'Usuario no encontrado' }), { headers: cors });
       }
