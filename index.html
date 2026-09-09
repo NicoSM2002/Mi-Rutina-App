@@ -185,13 +185,11 @@ html, body {
 .prog-steps { display:flex; gap:8px; align-items:center; }
 .prog-steps .ps {
   flex:1; height:9px; border-radius:100px; background:#E2E2DD;
-  display:flex; align-items:center; justify-content:center;
   transition:background .25s ease;
 }
-/* Completado en verde: el gris con el check apenas se distinguía */
-.prog-steps .ps.done { background:var(--ok); color:#fff; }
+/* Completado: verde macizo, sin check (a 9px no se leía) */
+.prog-steps .ps.done { background:var(--ok); }
 .prog-steps .ps.now  { background:var(--ac); }
-.prog-steps .ps .ic  { width:13px; height:13px; stroke-width:3.4; }
 
 /* Tags de músculo */
 .tag {
@@ -4296,7 +4294,7 @@ function render() {
   html += `<div class="prog-steps">`;
   for (let i = 0; i < totalSteps; i++) {
     const cls = i < routineStep ? 'done' : i === routineStep ? 'now' : '';
-    html += `<div class="ps ${cls}">${i < routineStep ? '<svg class="ic"><use href="#i-check"/></svg>' : ''}</div>`;
+    html += `<div class="ps ${cls}"></div>`;
   }
   html += `</div>`;
 
@@ -8720,8 +8718,10 @@ if ('serviceWorker' in navigator) {
   <button class="tbnav-item" id="tbnav-back" onclick="show('trainer-portal')">
     <svg class="ic tbnav-icon"><use href="#i-chevron-l"/></svg>Clientes
   </button>
-  <button class="tbnav-item" id="tbnav-rutinas" onclick="setTrainerTab('rutinas')">
-    <svg class="ic tbnav-icon"><use href="#i-rutina"/></svg>Rutinas
+  <!-- Editar va primero (es a lo que más se entra) y Rutinas, que es el
+       historial de sesiones, queda al final. -->
+  <button class="tbnav-item" id="tbnav-editar" onclick="setTrainerTab('editar')">
+    <svg class="ic tbnav-icon"><use href="#i-pencil"/></svg>Editar
   </button>
   <button class="tbnav-item" id="tbnav-comidas" onclick="setTrainerTab('comidas')">
     <svg class="ic tbnav-icon"><use href="#i-comidas"/></svg>Comidas
@@ -8732,8 +8732,8 @@ if ('serviceWorker' in navigator) {
   <button class="tbnav-item" id="tbnav-pagos" onclick="setTrainerTab('pagos')">
     <svg class="ic tbnav-icon"><use href="#i-pagos"/></svg>Pagos
   </button>
-  <button class="tbnav-item" id="tbnav-editar" onclick="setTrainerTab('editar')">
-    <svg class="ic tbnav-icon"><use href="#i-pencil"/></svg>Editar
+  <button class="tbnav-item" id="tbnav-rutinas" onclick="setTrainerTab('rutinas')">
+    <svg class="ic tbnav-icon"><use href="#i-rutina"/></svg>Rutinas
   </button>
 </div>
 
