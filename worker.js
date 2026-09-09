@@ -944,13 +944,42 @@ Devolvé SOLO un JSON así, sin texto extra:
         }
         newUsername = candidate;
       }
+      const mergedProfile = { ...(existing.profile || {}), ...(patch.profile || {}) };
+
+      // Historial de mediciones: hasta ahora sólo se guardaba el último valor,
+      // sin fecha, así que no había forma de mostrar evolución. Cada vez que
+      // cambia alguna medida se añade una entrada fechada.
+      const METRICS = ['weight', 'bodyFat', 'muscleMass', 'bmi', 'bmr'];
+      const prev = existing.profile || {};
+      const changed = METRICS.some(k =>
+        patch.profile && patch.profile[k] !== undefined &&
+        patch.profile[k] !== null && patch.profile[k] !== '' &&
+        String(patch.profile[k]) !== String(prev[k] ?? '')
+      );
+      let history = Array.isArray(existing.measurements) ? existing.measurements.slice() : [];
+      if (changed) {
+        const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+        const date = `${nowCO.getFullYear()}-${String(nowCO.getMonth()+1).padStart(2,'0')}-${String(nowCO.getDate()).padStart(2,'0')}`;
+        const entry = { date, ts: Date.now() };
+        METRICS.forEach(k => {
+          const v = mergedProfile[k];
+          if (v !== null && v !== undefined && v !== '') entry[k] = v;
+        });
+        // Una entrada por día: si ya hay una de hoy, se reemplaza.
+        history = history.filter(m => m.date !== date);
+        history.push(entry);
+        history.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        if (history.length > 120) history = history.slice(-120);
+      }
+
       const updated = {
         ...existing,
         ...patch,
         clientId: existing.clientId,        // immutable (key del KV)
         username: newUsername,              // editable con validación
         trainerId: existing.trainerId,      // immutable desde update (solo hard-delete + create)
-        profile: { ...(existing.profile || {}), ...(patch.profile || {}) }
+        profile: mergedProfile,
+        measurements: history
       };
       await env.DB.put(`athlete:${id}`, JSON.stringify(updated));
       return new Response(JSON.stringify({ ok: true, athlete: updated }), { headers: cors });

@@ -217,6 +217,63 @@ html, body {
 }
 .act-quiet:active .act-ring { background:var(--s2); }
 
+/* ══════════════════════════════
+   HOY — pantalla de inicio del atleta
+══════════════════════════════ */
+#today { background:var(--bg); display:flex; flex-direction:column; overflow:hidden; }
+.today-body {
+  flex:1; overflow-y:auto;
+  padding:calc(var(--sat) + 16px) var(--pad) calc(120px + var(--sab));
+}
+.today-head { margin-bottom:20px; }
+.today-date { font-size:15px; color:var(--t2); letter-spacing:-.2px; margin-bottom:4px; }
+.today-lead { font-size:17px; color:var(--t2); margin-top:4px; letter-spacing:-.3px; }
+
+.today-card { background:var(--s1); border-radius:var(--r-group); padding:20px 18px; }
+.today-eyebrow {
+  font-size:12px; font-weight:700; color:var(--t2);
+  text-transform:uppercase; letter-spacing:1.1px; margin-bottom:12px;
+}
+.today-pill { margin-bottom:12px; }
+.today-title { font-family:var(--font-d); font-size:26px; font-weight:800; color:var(--t1); letter-spacing:-.9px; line-height:1.1; }
+.today-sub { font-size:16px; color:var(--t2); margin-top:6px; letter-spacing:-.2px; }
+.today-detail {
+  display:flex; align-items:center; gap:10px;
+  font-size:15px; color:var(--t2); margin-top:14px; letter-spacing:-.2px;
+}
+.today-detail .ic { color:var(--t1); }
+.today-cta { margin-top:18px; }
+.today-done-row { display:flex; align-items:center; gap:14px; }
+.today-done-ic {
+  width:46px; height:46px; border-radius:100px; flex:none;
+  border:2.5px solid var(--ok); color:var(--ok);
+  display:flex; align-items:center; justify-content:center;
+}
+.today-done-ic .ic { width:24px; height:24px; stroke-width:3; }
+
+.today-sec {
+  font-family:var(--font-d); font-size:19px; font-weight:700; color:var(--t1);
+  letter-spacing:-.5px; margin:26px 0 12px;
+}
+.today-row {
+  width:100%; background:var(--s1); border:none; border-radius:var(--r-group);
+  padding:15px 16px; display:flex; align-items:center; gap:14px;
+  cursor:pointer; text-align:left; font-family:var(--font-b);
+  transition:background .15s;
+}
+.today-row:active { background:#F1F1EC; }
+.today-row-ic {
+  width:48px; height:48px; border-radius:100px; flex:none; overflow:hidden;
+  background:var(--s2); color:var(--t1);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-d); font-weight:700; font-size:16px;
+}
+.today-coach-ic { color:var(--t2); }
+.today-row-body { flex:1; min-width:0; display:block; }
+.today-row-title { display:block; font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+.today-row-sub { display:block; font-size:14px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; line-height:1.35; }
+.today-row-link { font-size:14px; color:var(--t2); flex:none; letter-spacing:-.2px; }
+
 /* ── SCREENS ── */
 .screen { position:fixed; inset:0; opacity:0; pointer-events:none; transition:opacity .4s ease; }
 .screen.active { opacity:1; pointer-events:all; }
@@ -2321,6 +2378,7 @@ select.na-input {
   <symbol id="i-chat-plain" viewBox="0 0 24 24"><path d="M20 12.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2.5v-4.3A7.5 7.5 0 0 1 3 12.5 7.5 7.5 0 0 1 10.5 5h2A7.5 7.5 0 0 1 20 12.5Z"/></symbol>
   <symbol id="i-chats" viewBox="0 0 24 24"><path d="M17.5 10.5a6 6 0 0 1-6 6H8l-3.5 2.2v-3.6a6 6 0 0 1-1-3.3 6 6 0 0 1 6-6h2a6 6 0 0 1 6 4.7z"/><path d="M14.6 5.6A5.4 5.4 0 0 1 21 11a5.3 5.3 0 0 1-.9 3l.4 3.2-2.9-1.6"/></symbol>
   <symbol id="i-banana" viewBox="0 0 24 24"><path d="M5 5.5c-.4 4.2 1 7.6 4.2 10.2 3 2.4 6.5 3.2 10.4 2.3-1.1-.6-1.8-1.5-2.1-2.7-1.6.5-3.2.2-4.7-.8-2.4-1.6-3.6-4.1-3.6-7.4 0-.9-.7-1.6-2.1-1.6z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/><path d="M9.5 20.5v-6h5v6"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4a8.5 8.5 0 1 0 10.3 10.3z"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
 
@@ -2821,6 +2879,11 @@ select.na-input {
 </div>
 
 <!-- ══ PROFILE GENERIC (atletas creados dinámicamente) ══ -->
+<!-- ══ HOY (inicio del atleta) ══ -->
+<div class="screen" id="today">
+  <div class="today-body" id="today-body"></div>
+</div>
+
 <div class="screen" id="profile-generic">
   <div class="profile-hero">
     <div class="pg-topbar">
@@ -4440,7 +4503,8 @@ async function athleteLogin() {
     currentAthleteRecord = dyn;
     data = {};
     loadRoutine();
-    showGenericProfile(dyn);
+    showGenericProfile(dyn);   // precarga los datos del perfil
+    showToday(); activateNav('today');   // ...pero se entra por Hoy
     loadAthletePayment(currentAthlete);
     if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
     setLoginBusy(btn, false);
@@ -7719,13 +7783,153 @@ document.addEventListener('gestureend', e => e.preventDefault());
 document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
 /* ── bottom nav ── */
-const ATHLETE_SCREENS = ['profile','profile-msaravia','profile-generic','routine','meals','resumen','payments'];
-const NAV_MAP = { profile:'profile', 'profile-msaravia':'profile', 'profile-generic':'profile', routine:'routine', meals:'meals', resumen:'resumen', payments:'payments' };
+const ATHLETE_SCREENS = ['today','profile','profile-msaravia','profile-generic','routine','meals','resumen','payments'];
+const NAV_MAP = { today:'today', profile:'profile', 'profile-msaravia':'profile', 'profile-generic':'profile', routine:'routine', meals:'meals', resumen:'resumen', payments:'payments' };
 
 function activateNav(tab) {
   document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('bnav-' + tab);
   if (el) el.classList.add('active');
+}
+
+/* ── Pantalla Hoy ──
+   Punto de entrada del atleta: qué toca entrenar, si falta registrar comidas,
+   cómo va la semana y quién es su entrenador. Antes la app abría en el perfil,
+   que no lleva a ninguna acción. */
+async function showToday() {
+  show('today');
+  renderToday();               // pinta ya con lo que hay en memoria
+  await loadRoutine();         // y refresca cuando lleguen los datos
+  renderToday();
+}
+
+function renderToday() {
+  const el = document.getElementById('today-body');
+  if (!el) return;
+  const nombre = (currentAthleteRecord?.name || '').split(/\s+/)[0] || '';
+  const fecha = new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })
+    .replace(/^\w/, c => c.toUpperCase());
+
+  // ── Entrenamiento de hoy ──
+  const state = typeof getSessionState === 'function' ? getSessionState(currentAthlete) : null;
+  const key = state?.sessionKey || currentDay;
+  const day = (data && data[key]) || null;
+  // Mismo criterio que la pantalla de rutina para saber si ya entrenó hoy
+  const yaCompletada = localStorage.getItem('lastCompleted_' + currentAthlete) === new Date().toDateString();
+  const tieneContenido = day && (Array.isArray(day.warmup) || (day.circuits || []).length || day.cardio);
+
+  let entrenamiento;
+  if (yaCompletada) {
+    entrenamiento = `<div class="today-card today-done">
+        <div class="today-eyebrow">Tu entrenamiento</div>
+        <div class="today-done-row">
+          <span class="today-done-ic"><svg class="ic"><use href="#i-check"/></svg></span>
+          <div>
+            <div class="today-title">Sesión completada</div>
+            <div class="today-sub">Descansa bien. Nos vemos mañana.</div>
+          </div>
+        </div>
+      </div>`;
+  } else if (tieneContenido) {
+    const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
+    const wuN = parseInt(day.warmupSeries) || 2;
+    const nCirc = (day.circuits || []).length;
+    const detalle = nWu
+      ? `${wuN} vuelta${wuN===1?'':'s'} · ${nWu} ejercicio${nWu===1?'':'s'}`
+      : `${nCirc} circuito${nCirc===1?'':'s'}`;
+    entrenamiento = `<div class="today-card">
+        <div class="today-eyebrow">Tu entrenamiento</div>
+        ${state ? `<div class="pill-session today-pill">Sesión ${state.sessionNum} <span class="ps-of">de ${state.total}</span></div>` : ''}
+        <div class="today-title">${deriveSessionTitle(day, (key.match(/\d+/)||[''])[0])}</div>
+        <div class="today-sub">${nWu ? 'Empieza con el calentamiento.' : 'Tu entrenamiento de hoy.'}</div>
+        <div class="today-detail">
+          <svg class="ic ic-sm"><use href="#i-repeat"/></svg> ${detalle}
+        </div>
+        <button class="btn-primary today-cta" onclick="showRoutine();activateNav('routine')">
+          Comenzar entrenamiento <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
+        </button>
+      </div>`;
+  } else {
+    entrenamiento = `<div class="today-card">
+        <div class="today-eyebrow">Tu entrenamiento</div>
+        <div class="today-title">Sin rutina cargada</div>
+        <div class="today-sub">Tu entrenador aún no cargó esta sesión.</div>
+      </div>`;
+  }
+
+  // ── Alimentación ──
+  const sent = typeof getSentSlots === 'function' ? getSentSlots() : {};
+  const nSent = MEAL_SLOTS.filter(s => sent[s.key]).length;
+  const pendiente = MEAL_SLOTS.find(s => !sent[s.key]);
+  const comidas = `<h2 class="today-sec">Alimentación</h2>
+    <button class="today-row" onclick="showMeals();activateNav('meals')">
+      <span class="today-row-ic"><svg class="ic"><use href="#i-comidas"/></svg></span>
+      <span class="today-row-body">
+        <span class="today-row-title">${pendiente ? `Registra tu ${pendiente.label.toLowerCase()}` : 'Comidas al día'}</span>
+        <span class="today-row-sub">${nSent === 0
+          ? 'Aún no hay comidas registradas hoy.'
+          : `${nSent} de ${MEAL_SLOTS.length} registradas hoy.`}</span>
+      </span>
+      <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+    </button>`;
+
+  // ── Semana ──
+  const semana = `<h2 class="today-sec">Tu semana</h2>
+    <button class="today-row" onclick="showResumen();activateNav('resumen')">
+      <span class="today-row-ic"><svg class="ic"><use href="#i-resumen"/></svg></span>
+      <span class="today-row-body">
+        <span class="today-row-title" id="today-week-n">—</span>
+        <span class="today-row-sub" id="today-week-range"></span>
+      </span>
+      <span class="today-row-link">Ver progreso</span>
+      <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+    </button>`;
+
+  // ── Entrenador ──
+  const t = (_trainersCache || []).find(x => x.username === currentAthleteRecord?.trainerId);
+  const entrenador = t ? `<h2 class="today-sec">Tu entrenador</h2>
+    <button class="today-row" onclick="showProfile();activateNav('profile')">
+      <span class="today-row-ic today-coach-ic" id="today-coach-av"></span>
+      <span class="today-row-body">
+        <span class="today-row-title">${t.name || ''}</span>
+        <span class="today-row-sub">${t.specialty || 'Entrenador personal'}</span>
+      </span>
+      <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
+    </button>` : '';
+
+  el.innerHTML = `
+    <div class="today-head">
+      <div class="today-date">${fecha}</div>
+      <h1 class="h-page">${nombre ? `Hola, ${nombre}` : 'Hola'}</h1>
+      <div class="today-lead">Tu día, a tu ritmo.</div>
+    </div>
+    ${entrenamiento}${comidas}${semana}${entrenador}`;
+
+  // Foto del entrenador y datos de la semana llegan aparte
+  if (t) {
+    const av = document.getElementById('today-coach-av');
+    const iniciales = (t.name || '?').split(/\s+/).map(x => x[0]).join('').slice(0,2).toUpperCase();
+    if (av) setAvatarPhoto(av, t.photoUrl, iniciales);
+  } else if (currentAthleteRecord?.trainerId) {
+    fetchTrainersCached().then(() => renderToday());
+  }
+  loadTodayWeek();
+}
+
+async function loadTodayWeek() {
+  const nEl = document.getElementById('today-week-n');
+  const rEl = document.getElementById('today-week-range');
+  if (!nEl) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-weekly-summary', client: currentAthlete, selfToken: getSelfToken() })
+    });
+    const d = await res.json();
+    const n = (d.completions || []).length;
+    nEl.textContent = `${n} sesión${n === 1 ? '' : 'es'} completada${n === 1 ? '' : 's'}`;
+    if (rEl) rEl.textContent = d.weekLabel || '';
+  } catch { nEl.textContent = 'Sin datos esta semana'; }
 }
 
 function showPayments() {
@@ -8313,8 +8517,8 @@ if ('serviceWorker' in navigator) {
 
 <!-- ══ BOTTOM NAV ══ -->
 <div class="bottom-nav" id="bottom-nav">
-  <button class="bnav-item" id="bnav-profile" onclick="showProfile();activateNav('profile')">
-    <svg class="ic bnav-icon"><use href="#i-perfil"/></svg>Perfil
+  <button class="bnav-item" id="bnav-today" onclick="showToday();activateNav('today')">
+    <svg class="ic bnav-icon"><use href="#i-home"/></svg>Hoy
   </button>
   <button class="bnav-item" id="bnav-routine" onclick="showRoutine();activateNav('routine')">
     <svg class="ic bnav-icon"><use href="#i-rutina"/></svg>Rutina
@@ -8323,7 +8527,10 @@ if ('serviceWorker' in navigator) {
     <svg class="ic bnav-icon"><use href="#i-comidas"/></svg>Comidas
   </button>
   <button class="bnav-item" id="bnav-resumen" onclick="showResumen();activateNav('resumen')">
-    <svg class="ic bnav-icon"><use href="#i-resumen"/></svg>Resumen
+    <svg class="ic bnav-icon"><use href="#i-resumen"/></svg>Progreso
+  </button>
+  <button class="bnav-item" id="bnav-profile" onclick="showProfile();activateNav('profile')">
+    <svg class="ic bnav-icon"><use href="#i-perfil"/></svg>Perfil
   </button>
   <button class="bnav-item" id="bnav-payments" onclick="showPayments();activateNav('payments')">
     <svg class="ic bnav-icon"><use href="#i-pagos"/></svg>Pagos
