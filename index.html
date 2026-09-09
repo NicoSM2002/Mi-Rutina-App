@@ -2001,13 +2001,11 @@ select.na-input {
 .re-add-btn { width:calc(100% - 24px); padding:10px; background:none; border:1px dashed var(--b); border-radius:10px; color:var(--t2); font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer; margin:8px 12px 12px; display:block; }
 .re-add-btn:active { border-color:var(--ac); color:var(--acl); }
 .re-warmup-card { background:var(--s1); border:none; border-radius:var(--r-group); padding:16px 14px; margin-bottom:14px; }
-.re-wu-title { font-family:var(--font-d); font-size:21px; font-weight:800; text-transform:none; letter-spacing:-.7px; color:var(--t1); margin-bottom:0; flex:1; }
-/* El título y sus controles se apilan: así "Calentamiento" nunca se trunca. */
+/* Controles del calentamiento: "Vueltas" a la izquierda, quitar a la derecha */
 .re-sec-head {
   display:flex; align-items:center; gap:10px; margin-bottom:14px;
   flex-wrap:wrap; min-width:0;
 }
-.re-sec-head .re-wu-title { min-width:100%; }
 .re-sec-head .re-rest-select { flex:0 1 auto; min-width:0; max-width:170px; }
 .re-sec-head .re-del-btn { flex:none; margin-left:auto; }
 .re-ex-block { background:var(--bg); border:1px solid var(--b2); border-radius:14px; padding:14px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
@@ -7001,11 +6999,14 @@ function renderWarmupBlockHtml(day) {
   } else {
   html += `<div class="re-warmup-card">`;
   const wuSeries = parseInt(day.warmupSeries) || 2;
+  // El título ya está en la cabecera de la pantalla: aquí solo los controles.
   html += `<div class="re-sec-head">
-    <div class="re-wu-title">Calentamiento</div>
-    <select class="re-rest-select" onchange="setWarmupSeries('${editorDay}',this.value)" title="Series">
-      ${[1,2,3,4,5].map(n => `<option value="${n}"${wuSeries===n?' selected':''}>${n} vuelta${n===1?'':'s'}</option>`).join('')}
-    </select>
+    <div class="cir-set-field">
+      <span class="cir-set-label">Vueltas</span>
+      <select class="re-rest-select" onchange="setWarmupSeries('${editorDay}',this.value)" aria-label="Vueltas del calentamiento">
+        ${[1,2,3,4,5].map(n => `<option value="${n}"${wuSeries===n?' selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
     <button class="re-del-btn" onclick="removeWarmup('${editorDay}')" title="Quitar calentamiento" aria-label="Quitar calentamiento"><svg class="ic ic-sm"><use href="#i-close"/></svg></button>
   </div>`;
   (day.warmup || []).forEach((it, wi) => {
