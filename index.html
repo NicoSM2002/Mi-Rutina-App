@@ -1797,6 +1797,23 @@ select.na-input {
 .expicker-name { font-family:var(--font-b); font-size:16px; font-weight:500; color:var(--t1); letter-spacing:-.3px; line-height:1.3; }
 .expicker-muscle { font-size:14px; color:var(--t2); margin-top:3px; text-transform:capitalize; }
 .expicker-item-chev { color:#B8B8B3; width:20px; height:20px; stroke-width:2; flex:none; }
+
+/* ── Selección múltiple ── */
+.expicker-check {
+  width:30px; height:30px; border-radius:100px; flex:none;
+  border:1.8px solid #CFCFC9; background:transparent; color:transparent;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.expicker-check .ic { stroke-width:3.2; }
+.expicker-item.chosen .expicker-check { background:var(--ac); border-color:var(--ac); color:#fff; }
+.expicker-tray {
+  flex:none; background:var(--s1); border-top:1px solid var(--b);
+  padding:14px var(--pad) calc(var(--sab) + 14px);
+}
+.expicker-tray-count {
+  font-size:15px; color:var(--t2); margin-bottom:10px; letter-spacing:-.2px;
+}
 .expicker-cat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
 .expicker-cat-card { background:var(--s1); border:none; border-radius:16px; padding:18px 6px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:132px; transition:background .15s; overflow:hidden; }
 .expicker-cat-card:active { background:#F1F1EC; }
@@ -2923,7 +2940,7 @@ select.na-input {
 <div class="expicker-overlay" id="expicker-overlay">
   <div class="expicker-header">
     <div class="expicker-top">
-      <h1 class="expicker-title">Elegir ejercicio</h1>
+      <h1 class="expicker-title" id="expicker-title">Elegir ejercicio</h1>
       <button class="expicker-close" onclick="closeExercisePicker()" aria-label="Cerrar">
         <svg class="ic"><use href="#i-close"/></svg>
       </button>
@@ -2935,6 +2952,7 @@ select.na-input {
     </div>
   </div>
   <div class="expicker-list" id="expicker-list"></div>
+  <div class="expicker-tray" id="expicker-tray" style="display:none"></div>
 </div>
 
 <!-- ══ COMPLETE OVERLAY ══ -->
@@ -6579,7 +6597,7 @@ function renderRoutineEditor() {
         <textarea class="re-nota re-trainer-note" rows="2" placeholder="Nota del entrenador para este ejercicio (ej: súbele 10 reps, ir más lento en la bajada)…" oninput="updateEditorTrainerNote('${editorDay}',${ci},${ei},this.value)">${reEscAttr(ex.trainerNote||'')}</textarea>
       </div>`;
     });
-    html += `<button class="re-add-btn" onclick="addExercise('${editorDay}',${ci})">+ Agregar ejercicio</button>`;
+    html += `<button class="re-add-btn" onclick="openExercisePickerMulti(${ci})"><svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar ejercicios</button>`;
     html += `</div>`;
   });
   html += `<button class="re-add-btn" style="border-style:solid;border-color:var(--acl);color:var(--acl)" onclick="addCircuit('${editorDay}')">+ Agregar circuito</button>`;
@@ -7131,16 +7149,77 @@ function muscleIcon(m) {
   return `<svg class="ic"><use href="#${MUSC_EMOJI[m] || 'm-biceps'}"/></svg>`;
 }
 
+/* ── Selección múltiple ──
+   Añadir varios ejercicios obligaba a abrir el selector una vez por cada uno.
+   En modo múltiple se marcan todos y se agregan de una. */
+let _pickerMulti = false;
+let _pickerChosen = [];   // ejercicios elegidos, en orden de selección
+
+function openExercisePickerMulti(ci) {
+  editorPickerTarget = { day: editorDay, ci, ei: -1, week: 1 };
+  _pickerMulti = true;
+  _pickerChosen = [];
+  _pickerSelectedMuscle = null;
+  document.getElementById('expicker-search').value = '';
+  renderPickerList('');
+  updatePickerTray();
+  document.getElementById('expicker-overlay').classList.add('show');
+}
+
+function togglePickerChoice(idx) {
+  const ex = _pickerCatalog[idx];
+  if (!ex) return;
+  const at = _pickerChosen.findIndex(e => e.name === ex.name);
+  if (at >= 0) _pickerChosen.splice(at, 1);
+  else _pickerChosen.push(ex);
+  renderPickerList(document.getElementById('expicker-search').value);
+  updatePickerTray();
+}
+
+function updatePickerTray() {
+  const tray = document.getElementById('expicker-tray');
+  const title = document.getElementById('expicker-title');
+  if (title) title.textContent = _pickerMulti ? 'Agregar ejercicios' : 'Elegir ejercicio';
+  if (!tray) return;
+  const n = _pickerChosen.length;
+  tray.style.display = _pickerMulti ? '' : 'none';
+  if (!_pickerMulti) return;
+  tray.innerHTML = `
+    <div class="expicker-tray-count">${n === 0 ? 'Ningún ejercicio seleccionado'
+      : `${n} ejercicio${n === 1 ? '' : 's'} seleccionado${n === 1 ? '' : 's'}`}</div>
+    <button class="btn-primary" onclick="confirmPickerSelection()" ${n === 0 ? 'disabled' : ''}>
+      ${n === 0 ? 'Agregar al circuito' : `Agregar ${n} al circuito`}
+    </button>`;
+}
+
+function confirmPickerSelection() {
+  if (!_pickerChosen.length) return;
+  const { day, ci } = editorPickerTarget;
+  _pickerChosen.forEach(ex => {
+    editorData[day].circuits[ci].exercises.push({
+      name: ex.name, muscle: ex.muscle, img: ex.img, tip: ex.tip || '',
+      w1: '', reps: '', setType: 'normal'
+    });
+  });
+  closeExercisePicker();
+  renderRoutineEditor();
+}
+
 function openExercisePicker(ci, ei, week) {
+  _pickerMulti = false;
+  _pickerChosen = [];
   editorPickerTarget = { day:editorDay, ci, ei, week };
   _pickerSelectedMuscle = null;
   document.getElementById('expicker-search').value = '';
   renderPickerList('');
+  updatePickerTray();
   document.getElementById('expicker-overlay').classList.add('show');
 }
 
 function closeExercisePicker() {
   document.getElementById('expicker-overlay').classList.remove('show');
+  _pickerMulti = false;
+  _pickerChosen = [];
 }
 
 function selectMuscleCategory(muscle) {
@@ -7167,13 +7246,16 @@ function renderPickerList(query) {
     }
     list.innerHTML = '<div class="group">' + _pickerCatalog.map((ex, idx) => `
       ${idx ? '<div class="group-sep"></div>' : ''}
-      <div class="expicker-item" onclick="selectExerciseByIdx(${idx})">
+      <div class="expicker-item${_pickerMulti && _pickerChosen.some(c=>c.name===ex.name) ? ' chosen' : ''}"
+           onclick="${_pickerMulti ? `togglePickerChoice(${idx})` : `selectExerciseByIdx(${idx})`}">
         <img class="expicker-gif" src="${ex.img}" alt="${ex.name}">
         <div class="expicker-item-body">
           <div class="expicker-name">${ex.name}</div>
           <div class="expicker-muscle">${MUSC_LABELS[ex.muscle]||ex.muscle}</div>
         </div>
-        <svg class="ic expicker-item-chev"><use href="#i-chevron-r"/></svg>
+        ${_pickerMulti
+          ? `<span class="expicker-check"><svg class="ic ic-sm"><use href="#i-check"/></svg></span>`
+          : `<svg class="ic expicker-item-chev"><use href="#i-chevron-r"/></svg>`}
       </div>`).join('') + '</div>';
     return;
   }
@@ -7209,13 +7291,16 @@ function renderPickerList(query) {
     <div class="group">
     ${_pickerCatalog.map((ex, idx) => `
       ${idx ? '<div class="group-sep"></div>' : ''}
-      <div class="expicker-item" onclick="selectExerciseByIdx(${idx})">
+      <div class="expicker-item${_pickerMulti && _pickerChosen.some(c=>c.name===ex.name) ? ' chosen' : ''}"
+           onclick="${_pickerMulti ? `togglePickerChoice(${idx})` : `selectExerciseByIdx(${idx})`}">
         <img class="expicker-gif" src="${ex.img}" alt="${ex.name}">
         <div class="expicker-item-body">
           <div class="expicker-name">${ex.name}</div>
           <div class="expicker-muscle">${label}</div>
         </div>
-        <svg class="ic expicker-item-chev"><use href="#i-chevron-r"/></svg>
+        ${_pickerMulti
+          ? `<span class="expicker-check"><svg class="ic ic-sm"><use href="#i-check"/></svg></span>`
+          : `<svg class="ic expicker-item-chev"><use href="#i-chevron-r"/></svg>`}
       </div>`).join('')}
     </div>
   `;
@@ -7244,6 +7329,8 @@ function selectExerciseByIdx(idx) {
 }
 
 function openWarmupPicker(wi) {
+  _pickerMulti = false;
+  _pickerChosen = [];
   editorPickerTarget = { day: editorDay, kind: 'warmup', wi };
   _pickerSelectedMuscle = null;
   document.getElementById('expicker-search').value = '';
