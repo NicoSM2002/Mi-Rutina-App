@@ -791,7 +791,7 @@ button.ex-presc:active { background:#FBDCC9; }
 /* Mientras baja el GIF: altura reservada + spinner, para que el toque se
    sienta atendido de inmediato y el layout no dé un salto al aparecer. */
 .ex-photo.loading {
-  min-height:180px; position:relative;
+  aspect-ratio:1/1; position:relative;
 }
 .ex-photo.loading::after {
   content:''; position:absolute; top:50%; left:50%;
@@ -801,9 +801,7 @@ button.ex-presc:active { background:#FBDCC9; }
 }
 @keyframes gifSpin { to { transform:rotate(360deg); } }
 .ex-photo img {
-  width:100%; height:auto; max-height:280px;
-  object-fit:contain; display:block;
-  background:var(--bg);
+  width:100%; height:auto; display:block;
 }
 
 /* ── TIMER ── */
@@ -2112,7 +2110,7 @@ select.na-input {
 .step-dot.active { background:var(--ac); border-color:var(--ac); width:18px; border-radius:3px; }
 .step-next-btn { width:100%; padding:16px; border:none; border-radius:16px; cursor:pointer; background:linear-gradient(135deg,#FF6B2C,#FF8F5E); color:#fff; font-family:var(--font-d); font-size:15px; font-weight:700; letter-spacing:.2px; box-shadow:0 6px 24px rgba(255,107,44,.3); }
 
-.wu-photo { margin:4px 0 2px; }
+.wu-photo { margin:4px 0 2px; border-radius:12px; overflow:hidden; }
 
 .rest-card {
   margin:34px 0; background:var(--s1); border:none;
