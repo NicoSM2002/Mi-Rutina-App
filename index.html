@@ -608,7 +608,12 @@ html, body {
 .sec-head-title { font-family:var(--font-d); font-size:25px; font-weight:800; color:var(--t1); letter-spacing:-1px; }
 .sec-head-step  { font-size:15px; color:var(--t2); flex:none; letter-spacing:-.2px; }
 .sec-head-sub   { font-size:16px; color:var(--t2); margin-top:4px; margin-bottom:18px; letter-spacing:-.2px; }
-.sec-head .circuit-rest { align-self:center; }
+.sec-head .circuit-rest {
+  align-self:center;
+  background:var(--s1); border:1px solid var(--b); color:var(--t1);
+  font-size:14px; font-weight:500; padding:9px 15px;
+}
+.sec-head .circuit-rest:active { background:var(--s2); }
 
 /* Nota de vueltas del calentamiento */
 .wu-loop-note {
@@ -673,21 +678,59 @@ html, body {
 .c2 .ex-cards { border:1px solid rgba(45,212,160,.12); border-top:none; }
 .c3 .ex-cards { border:1px solid rgba(255,181,71,.12); border-top:none; }
 
-.ex-card {
-  background:var(--s1); padding:16px 16px 0;
-  border-bottom:none; border-radius:var(--r-group);
-  margin-bottom:14px;
+.ex-row {
+  background:var(--s1); border-radius:var(--r-group);
+  padding:11px; margin-bottom:9px;
 }
-.ex-card:last-child { border-bottom:none; border-radius:var(--r-group); margin-bottom:0; }
+.ex-row:last-child { margin-bottom:0; }
+.ex-row-head { display:flex; gap:13px; align-items:flex-start; }
 
-.ex-top {
-  display:flex; justify-content:space-between; align-items:flex-start;
-  margin-bottom:16px; gap:14px;
+/* Miniatura: el GIF corre solo, así no hay que abrir nada para saber cuál
+   es el ejercicio. El icono queda de fondo por si el GIF no carga. */
+.ex-thumb {
+  width:60px; height:60px; border-radius:15px; flex:none;
+  background:var(--s2); color:var(--t3);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
 }
-.ex-left { flex:1; min-width:0; }
-.ex-name { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); line-height:1.25; letter-spacing:-.4px; }
+.ex-thumb .ex-thumb-ic { width:28px; height:28px; }
+.ex-thumb-gif {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; display:block;
+  opacity:0; transition:opacity .3s ease;
+}
+.ex-thumb-gif.ready { opacity:1; }
+.ex-thumb-num {
+  position:absolute; left:0; bottom:0; z-index:2;
+  min-width:20px; height:18px; padding:0 5px;
+  border-radius:0 8px 0 15px;
+  background:rgba(28,28,30,.55); color:#fff;
+  font-size:10.5px; font-weight:700; letter-spacing:.3px;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.ex-info { flex:1; min-width:0; padding-top:2px; }
+.ex-name {
+  font-family:var(--font-d); font-size:16.5px; font-weight:700;
+  color:var(--t1); line-height:1.25; letter-spacing:-.4px;
+  display:flex; align-items:flex-start; gap:8px;
+}
+.ex-name-txt { flex:1; min-width:0; }
+/* La ⓘ hace lo que antes hacían los dos botones de ancho completo */
+.ex-info-btn {
+  width:26px; height:26px; border-radius:100px; flex:none;
+  background:var(--bg); border:1px solid var(--b); color:var(--t2);
+  display:flex; align-items:center; justify-content:center;
+  margin-top:-1px; cursor:pointer;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.ex-info-btn .ic { width:15px; height:15px; stroke-width:1.8; }
+.ex-info-btn.open { background:var(--ac-soft); border-color:var(--ac); color:var(--ac); }
+.ex-info-btn:active { background:var(--s2); }
+
 .ex-tags { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
 .ex-tags:empty { display:none; }
+.ex-foot .ex-tags { margin-top:0; }
 /* Los tags de músculo comparten el lila del mockup; el tipo de serie usa naranja */
 .muscle-badge, .tag.muscle {
   display:inline-flex; padding:5px 10px; border-radius:7px;
@@ -697,14 +740,28 @@ html, body {
 }
 .tag.muscle.mb-triceps, .tag.muscle.mb-cuadriceps { background:var(--tag-tri-bg); color:var(--tag-tri-tx); }
 
-.ex-right { text-align:right; flex-shrink:0; }
-.ex-weight {
+/* Peso y reps en una línea. Apilados en una columna a la derecha le robaban
+   ancho al nombre, que se partía en tres líneas. Las series NO van aquí: son
+   del circuito completo (c.series) y siguen una sola vez en el subtítulo. */
+.ex-foot {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:6px 10px; margin-top:9px;
+}
+.ex-presc {
+  font-family:var(--font-d); font-size:17.5px; font-weight:700;
+  color:var(--t1); letter-spacing:-.4px; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.ex-presc em { font-style:normal; font-size:14.5px; font-weight:500; color:var(--t2); }
+/* Si las reps van en segundos, la propia prescripción arranca el cronómetro */
+button.ex-presc {
+  background:var(--ac-soft); border:1px solid var(--ac); color:var(--ac);
+  border-radius:100px; padding:6px 13px; cursor:pointer;
   font-family:var(--font-d);
-  font-size:21px; font-weight:700; color:var(--t1);
-  letter-spacing:-.6px; line-height:1;
-  }
-.ex-weight.inc { color:var(--gr); }
-.ex-reps { font-size:14px; color:var(--t2); margin-top:5px; font-weight:400; }
+}
+button.ex-presc em { color:var(--ac); }
+button.ex-presc .ic { width:15px; height:15px; }
+button.ex-presc:active { background:#FBDCC9; }
 
 .new-chip, .inc-chip {
   display:inline-block; background:rgba(52,211,153,.15); color:var(--gr);
@@ -712,43 +769,18 @@ html, body {
   padding:1px 5px; margin-left:4px; vertical-align:middle;
 }
 
-/* Action buttons */
-.ex-actions {
-  display:flex; gap:10px; padding:0 0 18px;
-  border-top:1px solid var(--b2); padding-top:16px;
-  border-bottom:none;
+/* Panel de la ⓘ: el GIF en grande y el texto de técnica, dentro de la fila */
+.ex-panel { display:none; margin-top:10px; }
+.ex-panel.show { display:block; }
+.ex-panel .ex-photo {
+  display:block; margin:0 0 10px;
+  border-radius:12px; overflow:hidden;
 }
-.ex-act-btn {
-  flex:1; min-width:0;
-  display:flex; align-items:center; justify-content:center; gap:7px;
-  background:var(--bg); border:1px solid var(--b);
-  border-radius:12px; padding:13px 8px;
-  font-family:var(--font-b); font-size:14px; font-weight:500;
-  color:var(--t1); white-space:nowrap;
-  cursor:pointer; transition:background .15s, border-color .15s, color .15s;
+.ex-panel-tip {
+  font-size:13px; color:var(--t2); line-height:1.7; font-weight:500;
+  padding:13px 15px; background:var(--bg);
+  border-left:3px solid var(--ac); border-radius:0 12px 12px 0;
 }
-.ex-act-btn .ic { flex:none; }
-/* El cronómetro es una acción aparte: ocupa su propia fila para que
-   "Técnica" y "Ver ejercicio" no queden apretados ni partidos en dos líneas. */
-.ex-actions-timer { padding-bottom:0; }
-.ex-actions-secondary { border-top:none; padding-top:10px; }
-.ex-act-timer { color:var(--ac); border-color:var(--ac); background:var(--ac-soft); }
-.ex-act-timer:active { background:#FBDCC9; }
-.ex-act-btn.tip-btn  { color:var(--t1); }
-.ex-act-btn.tip-btn.open  { background:var(--ac-soft); border-color:var(--ac); color:var(--ac); }
-.ex-act-btn.gif-btn  { color:var(--t1); }
-.ex-act-btn.gif-btn.open  { background:var(--ac-soft); border-color:var(--ac); color:var(--ac); }
-.ex-act-btn:active { background:var(--s2); }
-
-/* Expandable tip */
-.tip-text {
-  display:none; font-size:13px; color:var(--t2); line-height:1.7; font-weight:500;
-  padding:14px; background:var(--bg);
-  border-bottom:1px solid var(--b2);
-  border-left:3px solid var(--ac);
-  margin:0 -14px;
-}
-.tip-text.show { display:block; }
 
 /* GIF photo */
 .ex-photo {
@@ -1988,10 +2020,10 @@ select.na-input {
 .ex-set-badge { display:inline-block; font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle; letter-spacing:.4px; }
 .ex-set-badge.ds { background:rgba(251,191,36,.15); color:var(--am); }
 .ex-set-badge.pir { background:rgba(192,132,252,.15); color:var(--pu); }
-.ex-steps-view { margin:0 0 16px; display:flex; flex-wrap:wrap; gap:10px; }
-.ex-step-pill { display:flex; flex-direction:column; align-items:center; background:var(--bg); border:1px solid var(--b); border-radius:12px; padding:14px 12px; min-width:88px; flex:1; }
-.ex-step-pill .sp-w { font-family:var(--font-d); font-size:18px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
-.ex-step-pill .sp-r { font-size:13px; color:var(--t2); margin-top:3px; }
+.ex-steps-view { margin:9px 0 0; display:flex; flex-wrap:wrap; gap:8px; }
+.ex-step-pill { display:flex; flex-direction:column; align-items:center; background:var(--bg); border:1px solid var(--b); border-radius:11px; padding:8px 6px; min-width:0; flex:1; }
+.ex-step-pill .sp-w { font-family:var(--font-d); font-size:16px; font-weight:700; color:var(--t1); letter-spacing:-.3px; }
+.ex-step-pill .sp-r { font-size:12px; color:var(--t2); margin-top:2px; }
 
 /* ── EXERCISE PICKER ── */
 .expicker-overlay { position:fixed; inset:0; z-index:350; background:var(--bg); display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .2s; overflow:hidden; }
@@ -2050,11 +2082,11 @@ select.na-input {
 
 /* Nota del entrenador por ejercicio */
 .ex-trainer-note {
-  margin:0 0 16px; padding:14px 16px;
+  margin:10px 0 0; padding:12px 14px;
   background:var(--bg);
   border:none;
   border-radius:12px;
-  font-size:15px; color:var(--t2); line-height:1.5; font-weight:400;
+  font-size:14px; color:var(--t2); line-height:1.5; font-weight:400;
   display:flex; gap:10px; align-items:center;
   letter-spacing:-.2px;
 }
@@ -2445,6 +2477,7 @@ select.na-input {
   <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 20H6.5A1.5 1.5 0 0 1 5 18.5v-13A1.5 1.5 0 0 1 6.5 4H14M17 8.5l3.5 3.5-3.5 3.5M20 12h-9"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2M18.4 5.6l-1.4 1.4M7 17l-1.4 1.4M18.4 18.4 17 17M7 7 5.6 5.6"/></symbol>
   <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12 7.5c-1-1.2-2.4-1.8-3.8-1.5C6 6.5 4.7 8.8 5 11.6c.3 3 2.3 6.9 4.3 7.4 1 .3 1.8-.3 2.7-.3s1.7.6 2.7.3c2-.5 4-4.4 4.3-7.4.3-2.8-1-5.1-3.2-5.6-1.4-.3-2.8.3-3.8 1.5Z"/><path d="M12 7.5c.2-1.6 1.3-3 2.9-3.4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h7.5L19 9v11.5H6z"/><path d="M13.5 3.5V9H19M9 13h6M9 16.5h4"/></symbol>
   <symbol id="i-bench" viewBox="0 0 24 24"><path d="M3 10h14M4.5 10v5M15.5 10v5M18 7.5v5"/><circle cx="19.5" cy="6" r="1.6"/></symbol>
   <symbol id="i-user-lift" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M6 8.5h12M4 6.5v4M20 6.5v4M12 7v6M8.5 13h7l-1 7M9.5 20l.5-4"/></symbol>
@@ -4170,8 +4203,9 @@ function renderExCard(ex, ci, ei, w) {
   const currentReps = ex.reps;
   const currentImg  = ex.img;
   const wv = ex.w1;
-  const tid = `tip_${ci}_${ei}`;
-  const pid = `photo_${ci}_${ei}`;
+  const uid = `${ci}_${ei}`;
+  const pid = `photo_${uid}`;
+  const imgArg = currentImg ? currentImg.replace(/'/g, "\'") : '';
   const mCls = ex.muscle ? (MUSC[ex.muscle] || '') : '';
   const muscleName = ex.muscle ? ex.muscle
     .replace('isquio','Isquio').replace('cuadriceps','Cuádriceps')
@@ -4193,10 +4227,11 @@ function renderExCard(ex, ci, ei, w) {
         const repsLabel = pr.num ? (pr.type === 'seg' ? `${pr.num}s` : pr.num) : '—';
         return `<div class="ex-step-pill"><span class="sp-w">${s.w||'—'}</span><span class="sp-r">${repsLabel}</span></div>`;
       }).join('')}</div>` : '';
+  // La nota del entrenador no se esconde detrás de la ⓘ: es él hablándote.
   const trainerNoteHtml = ex.trainerNote
     ? `<div class="ex-trainer-note"><span>${ex.trainerNote}</span></div>`
     : '';
-  // Si la unidad de reps es "seg", armar botón de timer con ese número.
+  // Si la unidad de reps es "seg", armar timer con ese número.
   // Para sets normales: usar ex.reps. Para dropset/piramidal: el primer paso en segundos.
   let timerSeconds = 0;
   if (!isSpecial) {
@@ -4206,46 +4241,59 @@ function renderExCard(ex, ci, ei, w) {
     const firstSeg = currentSteps.map(s => parseReps(s.reps || '')).find(pr => pr.type === 'seg' && pr.num);
     if (firstSeg) timerSeconds = parseInt(firstSeg.num, 10) || 0;
   }
-  const timerBtnHtml = timerSeconds > 0
-    ? `<button class="ex-act-btn ex-act-timer" onclick="startTimer(${timerSeconds})">
-        <svg class="ic ic-sm"><use href="#i-clock"/></svg> <span class="act-label">Iniciar ${timerSeconds}s</span>
-      </button>`
-    : '';
-  // Display de reps en la esquina derecha: "45s" si es segundos.
   let repsDisplay = currentReps || '';
   if (!isSpecial) {
     const pr = parseReps(currentReps || '');
     if (pr.type === 'seg' && pr.num) repsDisplay = `${pr.num}s`;
   }
   const numIdx = String(ei + 1).padStart(2, '0');
-  return `<div class="ex-card group">
-    <div class="ex-top">
-      <div class="num-circle">${numIdx}</div>
-      <div class="ex-left">
-        <div class="ex-name">${currentName}</div>
-        <div class="ex-tags">
-          ${ex.muscle?`<span class="tag muscle ${mCls}">${muscleName}</span>`:''}
-          ${badgeHtml}
-        </div>
+
+  /* Prescripción: reps y peso en una línea. Cuando las reps van en segundos
+     la propia prescripción es el botón del cronómetro. */
+  const prescInner = `${repsDisplay ? `<em>${repsDisplay}${wv ? ' ·' : ''}</em>` : ''}${wv ? ` ${wv}` : ''}`;
+  const prescHtml = (!isSpecial && (repsDisplay || wv))
+    ? (timerSeconds > 0
+        ? `<button class="ex-presc" onclick="startTimer(${timerSeconds})">
+             <svg class="ic"><use href="#i-clock"/></svg>${prescInner}
+           </button>`
+        : `<span class="ex-presc">${prescInner}</span>`)
+    : '';
+
+  const tagsHtml = (ex.muscle || badgeHtml)
+    ? `<div class="ex-tags">${ex.muscle?`<span class="tag muscle ${mCls}">${muscleName}</span>`:''}${badgeHtml}</div>`
+    : '';
+
+  /* La ⓘ reemplaza a "Técnica" y "Ver ejercicio": solo aparece si hay algo
+     que mostrar. */
+  const hasInfo = !!(currentTip || currentImg);
+  const infoBtnHtml = hasInfo
+    ? `<button class="ex-info-btn" id="exi_${uid}" aria-expanded="false" aria-label="Ver técnica"
+         onclick="toggleExInfo('${uid}'${currentImg ? `,'${imgArg}'` : ''})">
+         <svg class="ic"><use href="#i-info"/></svg>
+       </button>`
+    : '';
+  const panelHtml = hasInfo
+    ? `<div class="ex-panel" id="exp_${uid}">
+         ${currentImg ? `<div class="ex-photo" id="${pid}"></div>` : ''}
+         ${currentTip ? `<div class="ex-panel-tip">${currentTip}</div>` : ''}
+       </div>`
+    : '';
+
+  return `<div class="ex-row">
+    <div class="ex-row-head">
+      <div class="ex-thumb">
+        <svg class="ic ex-thumb-ic"><use href="#i-rutina"/></svg>
+        ${currentImg ? `<img class="ex-thumb-gif" data-gif="${currentImg}" alt="" decoding="async">` : ''}
+        <span class="ex-thumb-num">${numIdx}</span>
       </div>
-      ${!isSpecial?`<div class="ex-right">
-        <div class="ex-weight">${wv}</div>
-        <div class="ex-reps">${repsDisplay}</div>
-      </div>`:''}
+      <div class="ex-info">
+        <div class="ex-name"><span class="ex-name-txt">${currentName}</span>${infoBtnHtml}</div>
+        <div class="ex-foot">${tagsHtml}${prescHtml}</div>
+        ${stepsHtml}
+      </div>
     </div>
-    ${stepsHtml}
     ${trainerNoteHtml}
-    ${timerBtnHtml ? `<div class="ex-actions ex-actions-timer">${timerBtnHtml}</div>` : ''}
-    <div class="ex-actions${timerBtnHtml ? ' ex-actions-secondary' : ''}">
-      <button class="ex-act-btn tip-btn" onclick="toggleTip('${tid}')">
-        <svg class="ic ic-sm"><use href="#i-doc"/></svg> <span class="act-label">Técnica</span>
-      </button>
-      ${currentImg?`<button class="ex-act-btn gif-btn" onclick="togglePhoto('${pid}','${currentImg}')">
-        <svg class="ic ic-sm"><use href="#i-play"/></svg> <span class="act-label">Ver ejercicio</span>
-      </button>`:''}
-    </div>
-    <div class="tip-text" id="${tid}">${currentTip}</div>
-    ${currentImg?`<div class="ex-photo" id="${pid}"></div>`:''}
+    ${panelHtml}
   </div>`;
 }
 
@@ -4390,6 +4438,7 @@ function render() {
 
   document.getElementById('content').innerHTML = html;
   preloadVisibleGifs();
+  hydrateThumbGifs();
 }
 
 /* ── toggles ── */
@@ -4399,19 +4448,6 @@ function toggleSessionFull() {
   const row = txt.previousElementSibling;
   txt.classList.toggle('show');
   if (row) row.classList.toggle('open', txt.classList.contains('show'));
-}
-
-function toggleTip(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('show');
-  // el.previousElementSibling is .ex-actions
-  const btn = el.previousElementSibling.querySelector('.tip-btn');
-  if (btn) {
-    const open = el.classList.contains('show');
-    const label = btn.querySelector('.act-label');
-    if (label) label.textContent = open ? 'Ocultar' : 'Técnica';
-    btn.classList.toggle('open', open);
-  }
 }
 
 function togglePhoto(id, src) {
@@ -4430,14 +4466,20 @@ function togglePhoto(id, src) {
     btn.classList.toggle('open', open);
   }
   if (!open) return;
+  loadGifInto(el, src);
+}
+
+/* Carga diferida del GIF dentro de un contenedor .ex-photo. La marca de carga
+   evita que el panel quede vacío mientras baja y parezca que no respondió.
+   La comparten el calentamiento y el panel de la ⓘ de los circuitos. */
+function loadGifInto(el, src) {
+  if (!el) return;
   if (el.hasAttribute('data-loaded')) {
     const gif = el.querySelector('img');
-    if (gif) { const s = gif.src; gif.src = ''; gif.src = s; }
+    if (gif) { const s = gif.src; gif.src = ''; gif.src = s; }  // reinicia el bucle
     return;
   }
   el.setAttribute('data-loaded', '1');
-  // Marca de carga: sin esto el panel quedaba vacío mientras bajaba el GIF y
-  // parecía que el botón no había respondido.
   el.classList.add('loading');
   const img = document.createElement('img');
   img.alt = '';
@@ -4455,8 +4497,54 @@ function togglePhoto(id, src) {
   img.src = src;
 }
 
-/* Precarga en segundo plano los GIFs del paso visible: al tocar "Ver
-   ejercicio" ya están en caché y aparecen al instante. */
+/* La ⓘ de cada ejercicio: despliega el GIF en grande y el texto de técnica
+   dentro de la misma fila. Es lo que antes hacían los dos botones grises. */
+function toggleExInfo(uid, src) {
+  const panel = document.getElementById('exp_' + uid);
+  if (!panel) return;
+  const open = !panel.classList.contains('show');
+  panel.classList.toggle('show', open);
+  const btn = document.getElementById('exi_' + uid);
+  if (btn) {
+    btn.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Ocultar técnica' : 'Ver técnica');
+  }
+  if (!open) return;
+  if (src) loadGifInto(document.getElementById('photo_' + uid), src);
+  // Si el panel queda fuera de pantalla parece que el toque no hizo nada
+  setTimeout(() => panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
+}
+
+/* Los GIFs de las miniaturas se cargan de a uno: cuatro a la vez (≈250 KB
+   cada uno) compiten por el ancho de banda y el circuito tarda en aparecer.
+   Si el usuario cambia de paso, la tanda en curso se aborta. */
+let _thumbRun = 0;
+function hydrateThumbGifs() {
+  const run = ++_thumbRun;
+  const conn = navigator.connection;
+  if (conn && (conn.saveData || /^(slow-)?2g$/.test(conn.effectiveType || ''))) return;
+  const imgs = [...document.querySelectorAll('#content .ex-thumb-gif[data-gif]')];
+  if (!imgs.length) return;
+  const cargar = async () => {
+    for (const im of imgs) {
+      if (run !== _thumbRun || !im.isConnected) return;
+      const src = im.getAttribute('data-gif');
+      im.removeAttribute('data-gif');
+      await new Promise(done => {
+        im.onload  = () => { im.classList.add('ready'); done(); };
+        im.onerror = done;   // se queda el icono de fondo
+        if ('fetchPriority' in im) im.fetchPriority = 'low';
+        im.src = src;
+      });
+    }
+  };
+  if (window.requestIdleCallback) requestIdleCallback(cargar, { timeout: 1200 });
+  else setTimeout(cargar, 300);
+}
+
+/* Precarga en segundo plano los GIFs del calentamiento (los únicos que siguen
+   detrás de un botón): al tocar "Ver ejercicio" ya están en caché. */
 const _gifPreloaded = new Set();
 function preloadVisibleGifs() {
   // Cada GIF ronda los 250 KB: no se precarga con ahorro de datos activado
