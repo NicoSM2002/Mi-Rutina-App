@@ -270,7 +270,6 @@ html, body {
   display:flex; align-items:center; justify-content:center;
   font-family:var(--font-d); font-weight:700; font-size:16px;
 }
-.today-coach-ic { color:var(--t2); }
 .today-row-body { flex:1; min-width:0; display:block; }
 .today-row-title { display:block; font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
 .today-row-sub { display:block; font-size:14px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; line-height:1.35; }
@@ -8145,18 +8144,6 @@ function renderToday() {
       <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
     </button>`;
 
-  // ── Entrenador ──
-  const t = (_trainersCache || []).find(x => x.username === currentAthleteRecord?.trainerId);
-  const entrenador = t ? `<h2 class="today-sec">Tu entrenador</h2>
-    <button class="today-row" onclick="showProfile();activateNav('profile')">
-      <span class="today-row-ic today-coach-ic" id="today-coach-av"></span>
-      <span class="today-row-body">
-        <span class="today-row-title">${t.name || ''}</span>
-        <span class="today-row-sub">${t.specialty || 'Entrenador personal'}</span>
-      </span>
-      <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-    </button>` : '';
-
   el.innerHTML = `
     <div class="today-head">
       <div class="today-head-text">
@@ -8168,16 +8155,9 @@ function renderToday() {
         <svg class="ic"><use href="#i-logout"/></svg>
       </button>
     </div>
-    ${entrenamiento}${comidas}${semana}${entrenador}`;
+    ${entrenamiento}${comidas}${semana}`;
 
-  // Foto del entrenador y datos de la semana llegan aparte
-  if (t) {
-    const av = document.getElementById('today-coach-av');
-    const iniciales = (t.name || '?').split(/\s+/).map(x => x[0]).join('').slice(0,2).toUpperCase();
-    if (av) setAvatarPhoto(av, t.photoUrl, iniciales);
-  } else if (currentAthleteRecord?.trainerId) {
-    fetchTrainersCached().then(() => renderToday());
-  }
+  // Los datos de la semana llegan aparte
   loadTodayWeek();
 }
 
@@ -8192,7 +8172,8 @@ async function loadTodayWeek() {
     });
     const d = await res.json();
     const n = (d.completions || []).length;
-    nEl.textContent = `${n} sesión${n === 1 ? '' : 'es'} completada${n === 1 ? '' : 's'}`;
+    // El plural de "sesión" pierde la tilde: sesiones, no sesiónes
+    nEl.textContent = `${n} ${n === 1 ? 'sesión' : 'sesiones'} completada${n === 1 ? '' : 's'}`;
     if (rEl) rEl.textContent = d.weekLabel || '';
   } catch { nEl.textContent = 'Sin datos esta semana'; }
 }
