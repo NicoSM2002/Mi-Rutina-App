@@ -282,9 +282,60 @@ header {
 }
 
 /* ── Marco de teléfono ──────────────────────────────────────── */
-.phone { background: #0C0C0E; border-radius: 38px; padding: 8px; box-shadow: var(--shadow-phone); width: 100%; max-width: 336px; }
-.phone img { border-radius: 31px; }
-.phone-lg { max-width: 372px; }
+/* Marco de iPhone: banda metálica, bisel, isla dinámica y barra de estado.
+   Antes era un rectángulo negro y las capturas no se leían como un teléfono. */
+.phone {
+  position: relative; width: 100%; max-width: 336px;
+  border-radius: 15%/7.4%;
+  padding: 0.8%;
+  background: linear-gradient(148deg, #A49CA9 0%, #3A373D 13%, #CFC7D3 27%, #46434A 42%,
+                              #B2AAB7 58%, #35323A 73%, #C4BCC8 88%, #3E3B42 100%);
+  box-shadow: var(--shadow-phone);
+}
+.phone-body {
+  position: relative; border-radius: 14.2%/7%;
+  padding: 2.1%; background: #08080A;
+}
+/* El reflejo va sobre la pantalla, no sobre el marco */
+.phone-body::after {
+  content: ''; position: absolute; inset: 2.1%; border-radius: 12.4%/6.2%;
+  pointer-events: none; z-index: 3;
+  background: linear-gradient(118deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,0) 24%,
+                              rgba(255,255,255,0) 76%, rgba(255,255,255,.055) 100%);
+}
+.phone-screen {
+  position: relative; overflow: hidden;
+  border-radius: 12.6%/6.3%;
+  background: var(--bg);
+  container-type: inline-size;
+}
+.phone-screen img { display: block; width: 100%; }
+
+/* Barra de estado: las capturas se tomaron sin ella, así que se dibuja aquí
+   —igual que el hueco que deja el área segura en un iPhone real. */
+.status {
+  position: relative; z-index: 2;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  height: 46px; height: 14.6cqw;
+  padding: 4.4cqw 7cqw 0 8.4cqw;
+  color: #1C1C1E;
+  font-family: var(--font-d); font-weight: 700;
+  font-size: 13px; font-size: 4.1cqw; letter-spacing: -.02em; line-height: 1;
+}
+.st-ic { display: flex; align-items: center; }
+/* Sin viewBox propio el <svg> toma 300x150 por defecto y los iconos se
+   salían de la barra: hay que darle las dos dimensiones. */
+.st-ic svg { width: 52px; height: 15.6px; width: 16.5cqw; height: 4.95cqw; fill: currentColor; }
+.island {
+  position: absolute; left: 50%; top: 3cqw; transform: translateX(-50%);
+  width: 92px; width: 27.5cqw;
+  height: 30px; height: 9cqw;
+  border-radius: 100px; background: #08080A;
+}
+/* Capturas con overlay oscuro arriba (cronómetro y chat): la barra se invierte */
+.phone[data-status="dark"] .phone-screen { background: #57575B; }
+.phone[data-status="dark"] .status { color: #fff; }
+.phone-lg { max-width: 306px; }
 .hero-art { display: flex; justify-content: center; position: relative; }
 .hero-art::before {
   content: ''; position: absolute; inset: -6% -14%;
@@ -454,6 +505,18 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.7-3.9 3.8-6 7.5-6s6.8 2.1 7.5 6"/></symbol>
   <symbol id="i-grupo" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.6-3.5 3.2-5.4 6.5-5.4s5.9 1.9 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 5.2M18 14.9c2.2.6 3.4 2.4 3.8 5.1"/></symbol>
   <symbol id="i-grafico" viewBox="0 0 24 24"><path d="M5.5 20v-6M12 20V4M18.5 20v-9"/></symbol>
+  <symbol id="i-status" viewBox="0 0 80 24" fill="currentColor" stroke="none">
+    <rect x="0" y="12" width="3.4" height="6" rx="1.1"/>
+    <rect x="5.4" y="9" width="3.4" height="9" rx="1.1"/>
+    <rect x="10.8" y="5.6" width="3.4" height="12.4" rx="1.1"/>
+    <rect x="16.2" y="2.6" width="3.4" height="15.4" rx="1.1"/>
+    <path d="M25.4 8.1a11.4 11.4 0 0 1 14.2 0l-1.9 2.4a8.4 8.4 0 0 0-10.4 0z"/>
+    <path d="M28.7 12.2a6.6 6.6 0 0 1 7.6 0l-2 2.5a3.6 3.6 0 0 0-3.6 0z"/>
+    <path d="M32.5 16.3l2.2 2.6-2.2 2.6-2.2-2.6z"/>
+    <rect x="48" y="5.2" width="24" height="13.4" rx="4.2" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"/>
+    <rect x="50" y="7.2" width="17" height="9.4" rx="2.6"/>
+    <path d="M74 9.6v4.6c1.3-.4 2-1.1 2-2.3s-.7-1.9-2-2.3z" opacity=".4"/>
+  </symbol>
   <symbol id="i-comida" viewBox="0 0 24 24"><path d="M6 3v7a2 2 0 0 0 4 0V3M8 10v11M17.5 3c-1.4 1-2 2.6-2 4.5 0 1.6.6 2.7 2 3.2V21"/></symbol>
 </svg>
 
@@ -494,7 +557,12 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
     </div>
     <div class="hero-art">
       <div class="phone phone-lg">
-        <img src="/landing/img/01_atleta_hoy.webp" width="786" height="1320" alt="Pantalla de inicio de Mi Rutina: el entrenamiento del día, comidas y la semana" fetchpriority="high">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/01_atleta_hoy.webp" width="786" height="1320" alt="Pantalla de inicio de Mi Rutina: el entrenamiento del día, comidas y la semana" fetchpriority="high">
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -548,12 +616,26 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
       <div class="split-panel">
         <h3 class="d3">Abres la app, haces lo que toca.</h3>
         <p class="lead">Tu coach diseña tu rutina. La app te dice qué hacer hoy. La IA responde tus dudas en plena serie.</p>
-        <div class="split-art"><div class="phone"><img src="/landing/img/03_atleta_circuito.webp" width="786" height="1320" alt="Circuito de la rutina con miniaturas animadas de cada ejercicio" loading="lazy"></div></div>
+        <div class="split-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/03_atleta_circuito.webp" width="786" height="1320" alt="Circuito de la rutina con miniaturas animadas de cada ejercicio" loading="lazy">
+          </div>
+        </div>
+      </div></div>
       </div>
       <div class="split-panel">
         <h3 class="d3">Más clientes. Menos WhatsApp y Excel.</h3>
         <p class="lead">Armas la semana en cinco minutos, ves lo que entrenó cada atleta y dejas que entrene solo — bien.</p>
-        <div class="split-art"><div class="phone"><img src="/landing/img/11_coach_editor.webp" width="786" height="1320" alt="Editor de rutinas del portal del entrenador" loading="lazy"></div></div>
+        <div class="split-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/11_coach_editor.webp" width="786" height="1320" alt="Editor de rutinas del portal del entrenador" loading="lazy">
+          </div>
+        </div>
+      </div></div>
       </div>
     </div>
   </div>
@@ -581,7 +663,14 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Drop sets y piramidales soportados</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/03_atleta_circuito.webp" width="786" height="1320" alt="Circuito con cuatro ejercicios, cada uno con su miniatura animada" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/03_atleta_circuito.webp" width="786" height="1320" alt="Circuito con cuatro ejercicios, cada uno con su miniatura animada" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="feat flip reveal">
@@ -595,7 +684,14 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Cargado de antemano: no hay que esperar</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/04_atleta_tecnica_gif.webp" width="786" height="1320" alt="Panel de técnica abierto con el GIF del ejercicio en grande" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/04_atleta_tecnica_gif.webp" width="786" height="1320" alt="Panel de técnica abierto con el GIF del ejercicio en grande" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="feat reveal">
@@ -609,7 +705,14 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Recomendaciones según tu objetivo</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/06_atleta_comidas.webp" width="786" height="1320" alt="Registro de comidas del día en Mi Rutina" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/06_atleta_comidas.webp" width="786" height="1320" alt="Registro de comidas del día en Mi Rutina" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="feat flip reveal">
@@ -623,19 +726,40 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Reportes que llegan solos a tu correo</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/07_atleta_progreso.webp" width="786" height="1320" alt="Pantalla de progreso del atleta" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/07_atleta_progreso.webp" width="786" height="1320" alt="Pantalla de progreso del atleta" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="duo reveal">
       <div class="duo-card">
         <h3>Descanso cronometrado</h3>
         <p>60, 90 o 120 segundos entre series, con un toque. Opcional: nada arranca solo, la espera sigue siendo tuya.</p>
-        <div class="duo-shot"><div class="phone"><img src="/landing/img/05_atleta_descanso.webp" width="786" height="1320" alt="Cronómetro de descanso" loading="lazy"></div></div>
+        <div class="duo-shot"><div class="phone" data-status="dark">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/05_atleta_descanso.webp" width="786" height="1320" alt="Cronómetro de descanso" loading="lazy">
+          </div>
+        </div>
+      </div></div>
       </div>
       <div class="duo-card">
         <h3>Asistente IA 24/7</h3>
         <p>«Me duele la muñeca en las elevaciones» — y responde según tu rutina real, tus pesos y tu historial. En español, al toque.</p>
-        <div class="duo-shot"><div class="phone"><img src="/landing/img/09_atleta_asistente.webp" width="786" height="1320" alt="Asistente de IA respondiendo una duda sobre la rutina" loading="lazy"></div></div>
+        <div class="duo-shot"><div class="phone" data-status="dark">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/09_atleta_asistente.webp" width="786" height="1320" alt="Asistente de IA respondiendo una duda sobre la rutina" loading="lazy">
+          </div>
+        </div>
+      </div></div>
       </div>
     </div>
   </div>
@@ -662,7 +786,14 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Crear un atleta toma un minuto</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/10_coach_clientes.webp" width="786" height="1320" alt="Lista de clientes del entrenador con búsqueda y filtros" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/10_coach_clientes.webp" width="786" height="1320" alt="Lista de clientes del entrenador con búsqueda y filtros" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="feat flip reveal">
@@ -677,7 +808,14 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Series, reps o segundos</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/11_coach_editor.webp" width="786" height="1320" alt="Editor de rutinas con las sesiones de la semana" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/11_coach_editor.webp" width="786" height="1320" alt="Editor de rutinas con las sesiones de la semana" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="feat reveal">
@@ -691,19 +829,40 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
           <li><svg><use href="#i-check"/></svg> Onboarding con IA: subes el PDF y llena los campos</li>
         </ul>
       </div>
-      <div class="feat-art"><div class="phone"><img src="/landing/img/14_coach_resumen.webp" width="786" height="1320" alt="Resumen del atleta en el portal del entrenador" loading="lazy"></div></div>
+      <div class="feat-art"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/14_coach_resumen.webp" width="786" height="1320" alt="Resumen del atleta en el portal del entrenador" loading="lazy">
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <div class="duo reveal">
       <div class="duo-card">
         <h3>Historial de sesiones</h3>
         <p>Cada rutina completada, con su fecha y la nota que dejó el atleta al terminar.</p>
-        <div class="duo-shot"><div class="phone"><img src="/landing/img/16_coach_historial.webp" width="786" height="1320" alt="Historial de sesiones completadas del atleta" loading="lazy"></div></div>
+        <div class="duo-shot"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/16_coach_historial.webp" width="786" height="1320" alt="Historial de sesiones completadas del atleta" loading="lazy">
+          </div>
+        </div>
+      </div></div>
       </div>
       <div class="duo-card">
         <h3>Comidas de tu atleta</h3>
         <p>Reportes por día, con foto y macros. Ves si está comiendo lo que acordaron sin tener que preguntarlo.</p>
-        <div class="duo-shot"><div class="phone"><img src="/landing/img/15_coach_comidas.webp" width="786" height="1320" alt="Reportes de comidas del atleta vistos por el entrenador" loading="lazy"></div></div>
+        <div class="duo-shot"><div class="phone">
+        <div class="phone-body">
+          <div class="phone-screen">
+            <div class="status"><span class="st-time">9:41</span><span class="island"></span><span class="st-ic"><svg><use href="#i-status"/></svg></span></div>
+            <img src="/landing/img/15_coach_comidas.webp" width="786" height="1320" alt="Reportes de comidas del atleta vistos por el entrenador" loading="lazy">
+          </div>
+        </div>
+      </div></div>
       </div>
     </div>
   </div>
