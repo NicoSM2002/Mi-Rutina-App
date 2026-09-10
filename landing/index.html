@@ -343,9 +343,20 @@ header {
   pointer-events: none;
 }
 .hero-art .phone { position: relative; }
-/* Va después de .phone-lg a propósito: si se declara antes, la regla de
-   escritorio le gana por orden y el móvil se queda con el teléfono grande. */
-@media (max-width: 900px) { .phone-lg { max-width: 264px; } }
+/* Van después de .phone y .phone-lg a propósito: si se declaran antes, las
+   reglas de escritorio les ganan por orden y el móvil se queda con el
+   teléfono grande. A tamaño de escritorio el marco se comía el 100% del alto
+   de la pantalla del móvil y no dejaba ver nada más. */
+@media (max-width: 900px) {
+  .phone    { max-width: 204px; }
+  .phone-lg { max-width: 222px; }
+  .duo-shot { max-width: 190px; }
+}
+@media (max-width: 400px) {
+  .phone    { max-width: 178px; }
+  .phone-lg { max-width: 194px; }
+  .duo-shot { max-width: 168px; }
+}
 
 /* ── Bloques de sección ─────────────────────────────────────── */
 section { padding: clamp(56px, 8vw, 108px) 0; }
