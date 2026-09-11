@@ -350,12 +350,12 @@ header {
 @media (max-width: 900px) {
   .phone    { max-width: 204px; }
   .phone-lg { max-width: 222px; }
-  .duo-shot { max-width: 190px; }
+  .duo-shot .phone { max-width: 190px; }
 }
 @media (max-width: 400px) {
   .phone    { max-width: 178px; }
   .phone-lg { max-width: 194px; }
-  .duo-shot { max-width: 168px; }
+  .duo-shot .phone { max-width: 168px; }
 }
 
 /* ── Bloques de sección ─────────────────────────────────────── */
@@ -403,7 +403,8 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 .duo-card { background: var(--s1); border-radius: var(--r); padding: 26px; display: flex; flex-direction: column; }
 .duo-card h3 { font-family: var(--font-d); font-size: 19px; font-weight: 700; letter-spacing: -.3px; margin: 0 0 9px; }
 .duo-card p { margin: 0 0 26px; font-size: 15.5px; color: var(--t2); line-height: 1.55; }
-.duo-shot { margin: auto auto 0; width: 100%; max-width: 236px; }
+.duo-shot { margin-top: auto; display: flex; justify-content: center; }
+.duo-shot .phone { max-width: 236px; }
 
 /* ── Dos portales ───────────────────────────────────────────── */
 .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
