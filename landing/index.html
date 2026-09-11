@@ -343,20 +343,6 @@ header {
   pointer-events: none;
 }
 .hero-art .phone { position: relative; }
-/* Van después de .phone y .phone-lg a propósito: si se declaran antes, las
-   reglas de escritorio les ganan por orden y el móvil se queda con el
-   teléfono grande. A tamaño de escritorio el marco se comía el 100% del alto
-   de la pantalla del móvil y no dejaba ver nada más. */
-@media (max-width: 900px) {
-  .phone    { max-width: 204px; }
-  .phone-lg { max-width: 222px; }
-  .duo-shot .phone { max-width: 190px; }
-}
-@media (max-width: 400px) {
-  .phone    { max-width: 178px; }
-  .phone-lg { max-width: 194px; }
-  .duo-shot .phone { max-width: 168px; }
-}
 
 /* ── Bloques de sección ─────────────────────────────────────── */
 section { padding: clamp(56px, 8vw, 108px) 0; }
@@ -405,6 +391,19 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 .duo-card p { margin: 0 0 26px; font-size: 15.5px; color: var(--t2); line-height: 1.55; }
 .duo-shot { margin-top: auto; display: flex; justify-content: center; }
 .duo-shot .phone { max-width: 236px; }
+/* Van después de .phone, .phone-lg Y .duo-shot .phone a propósito: con la
+   misma especificidad decide el orden, y declararlas antes hacía que las
+   reglas de escritorio les ganaran. */
+@media (max-width: 900px) {
+  .phone    { max-width: 204px; }
+  .phone-lg { max-width: 222px; }
+  .duo-shot .phone { max-width: 190px; }
+}
+@media (max-width: 400px) {
+  .phone    { max-width: 178px; }
+  .phone-lg { max-width: 194px; }
+  .duo-shot .phone { max-width: 168px; }
+}
 
 /* ── Dos portales ───────────────────────────────────────────── */
 .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
