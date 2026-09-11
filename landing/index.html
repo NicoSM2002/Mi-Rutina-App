@@ -349,7 +349,7 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 .sec-head { max-width: 62ch; margin-bottom: clamp(36px, 5vw, 60px); }
 
 /* Tarjetas */
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(258px, 100%), 1fr)); gap: 16px; }
 .card { background: var(--s1); border-radius: var(--r); padding: 26px; }
 .card-ic {
   width: 46px; height: 46px; border-radius: 14px; background: var(--s2); color: var(--t2);
@@ -385,7 +385,7 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 @media (max-width: 880px) { .feat { grid-template-columns: 1fr; } .feat.flip .feat-txt { order: 0; } }
 
 /* Par de tarjetas pequeñas con captura */
-.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 30px; }
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; margin-top: 30px; }
 .duo-card { background: var(--s1); border-radius: var(--r); padding: 26px; display: flex; flex-direction: column; }
 .duo-card h3 { font-family: var(--font-d); font-size: 19px; font-weight: 700; letter-spacing: -.3px; margin: 0 0 9px; }
 .duo-card p { margin: 0 0 26px; font-size: 15.5px; color: var(--t2); line-height: 1.55; }
@@ -406,13 +406,13 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 }
 
 /* ── Dos portales ───────────────────────────────────────────── */
-.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 18px; }
 .split-panel { background: var(--s1); border-radius: 26px; padding: clamp(26px, 3.4vw, 38px); display: flex; flex-direction: column; }
 .split-panel .lead { font-size: 16px; margin-top: 12px; }
 .split-art { margin-top: 30px; display: flex; justify-content: center; }
 
 /* ── Pasos ──────────────────────────────────────────────────── */
-.steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 16px; counter-reset: paso; }
+.steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(258px, 100%), 1fr)); gap: 16px; counter-reset: paso; }
 .step-card { background: var(--s1); border-radius: var(--r); padding: 28px; }
 .step-n {
   width: 40px; height: 40px; border-radius: 100px; background: var(--t1); color: #fff;
@@ -435,7 +435,7 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 .gym-item svg { width: 18px; height: 18px; flex: none; stroke: var(--ac); stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── Precios ────────────────────────────────────────────────── */
-.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; align-items: start; }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr)); gap: 16px; align-items: start; }
 .plan { background: var(--s1); border-radius: 24px; padding: 32px; display: flex; flex-direction: column; border: 1px solid transparent; }
 .plan.destacado { border-color: var(--ac); box-shadow: 0 24px 54px -30px rgba(244,119,53,.5); }
 .plan-name { font-family: var(--font-d); font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
