@@ -1979,16 +1979,26 @@ select.na-input {
 }
 .cir-remove:active { color:#C2412B; }
 /* Reordenar: antes solo se podía quitar y volver a crear */
-.cir-move-row { display:flex; gap:10px; margin-top:14px; }
-.cir-move {
-  flex:1; padding:13px 10px; border-radius:12px;
-  background:var(--bg); border:1px solid var(--b); cursor:pointer;
-  color:var(--t1); font-family:var(--font-b); font-size:14.5px; font-weight:500;
-  display:flex; align-items:center; justify-content:center; gap:7px;
+.cir-list-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:4px 0 10px; }
+.cir-list-n { font-size:14px; color:var(--t2); letter-spacing:-.2px; }
+.cir-reordenar {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--bg); border:1px solid var(--b); border-radius:100px;
+  padding:9px 15px; cursor:pointer; min-height:40px;
+  font-family:var(--font-b); font-size:14px; font-weight:500; color:var(--t1);
 }
-.cir-move:active { background:var(--s2); }
-.cir-move:disabled { opacity:.4; cursor:default; }
-.re-move:disabled { opacity:.35; cursor:default; }
+.cir-reordenar.activo { background:var(--ac-soft); border-color:var(--ac-tx); color:var(--ac-tx); }
+/* Fila en modo reordenar: no se abre, solo se mueve */
+.cir-ex-mover { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:default; }
+.cir-ex-mover:active { background:none; }
+.cir-mover-par { display:flex; gap:6px; flex:none; }
+.cir-mover-btn {
+  width:44px; height:44px; border-radius:12px;
+  background:var(--bg); border:1px solid var(--b); color:var(--t1);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.cir-mover-btn:active { background:var(--s2); }
+.cir-mover-btn:disabled { opacity:.3; cursor:default; }
 .re-day-bar::-webkit-scrollbar { display:none; }
 .re-circuit-card { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px; margin-bottom:12px; overflow:hidden; }
 .re-circuit-hdr { padding:10px 14px; font-family:var(--font-d); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; }
@@ -2548,6 +2558,7 @@ select.na-input {
   <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.9-3.9"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16M9 6.5V4.5h6v2M6 6.5l1 13.5h10l1-13.5M10 10v6M14 10v6"/></symbol>
+  <symbol id="i-reordenar" viewBox="0 0 24 24"><path d="M7.5 3.5v17M4 7l3.5-3.5L11 7M16.5 20.5v-17M13 17l3.5 3.5L20 17"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4M8 7.5 12 3.5l4 4M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/></symbol>
@@ -6991,6 +7002,7 @@ function renderRoutineEditor() {
 let editorBlock = null;
 
 function openEditorBlock(kind, ci) {
+  reordenando = false;
   editorBlock = (kind === 'circuit') ? { kind, ci } : { kind };
   renderRoutineEditor();
   const c = document.getElementById('tclient-content');
@@ -7219,6 +7231,17 @@ function renderCircuitBlockHtml(day, ci) {
 
   const SET_LABEL = { normal:'Normal', dropset:'Drop set', piramidal:'Piramidal' };
 
+  // Cabecera de la lista: solo aparece el botón si hay algo que reordenar
+  if ((circuit.exercises || []).length > 1) {
+    html += `<div class="cir-list-head">
+        <span class="cir-list-n">${(circuit.exercises || []).length} ejercicios</span>
+        <button class="cir-reordenar${reordenando ? ' activo' : ''}" onclick="toggleReordenar()">
+          <svg class="ic ic-sm"><use href="#${reordenando ? 'i-check' : 'i-reordenar'}"/></svg>
+          ${reordenando ? 'Hecho' : 'Reordenar'}
+        </button>
+      </div>`;
+  }
+
   (circuit.exercises || []).forEach((ex, ei) => {
     const st = ex.setType || 'normal';
     // En el editor los escalones se muestran en el orden en que están: si se
@@ -7234,6 +7257,24 @@ function renderCircuitBlockHtml(day, ci) {
       const resumen = st === 'normal'
         ? [ex.w1, ex.reps, SET_LABEL[st]].filter(Boolean).join(' · ')
         : `${steps.length} escalón${steps.length===1?'':'es'} · ${SET_LABEL[st]}`;
+      if (reordenando) {
+        const ultimo = (circuit.exercises || []).length - 1;
+        html += `<div class="cir-ex cir-ex-closed cir-ex-mover">
+            <span class="cir-ex-body">
+              <span class="cir-ex-name">${reEscAttr(ex.name || 'Sin ejercicio')}</span>
+              <span class="cir-ex-meta">${ei + 1} de ${ultimo + 1}</span>
+            </span>
+            <span class="cir-mover-par">
+              <button class="cir-mover-btn" onclick="moveExercise('${editorDay}',${ci},${ei},-1)"${ei === 0 ? ' disabled' : ''} aria-label="Subir ${reEscAttr(ex.name || 'ejercicio')}">
+                <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
+              </button>
+              <button class="cir-mover-btn" onclick="moveExercise('${editorDay}',${ci},${ei},1)"${ei === ultimo ? ' disabled' : ''} aria-label="Bajar ${reEscAttr(ex.name || 'ejercicio')}">
+                <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg>
+              </button>
+            </span>
+          </div>`;
+        return;
+      }
       html += `<button class="cir-ex cir-ex-closed" onclick="openEditorExercise(${ei})">
           <span class="cir-ex-body">
             <span class="cir-ex-name">${reEscAttr(ex.name || 'Sin ejercicio')}</span>
@@ -7313,12 +7354,6 @@ function renderCircuitBlockHtml(day, ci) {
             <span class="cir-ex-name">${reEscAttr(ex.name || 'Elegir ejercicio…')}</span>
             <svg class="ic ic-sm cir-ex-swap"><use href="#i-chevron-r"/></svg>
           </button>
-          <button class="re-del-btn re-move" onclick="moveExercise('${editorDay}',${ci},${ei},-1)"${ei === 0 ? ' disabled' : ''} title="Subir ejercicio" aria-label="Subir ejercicio">
-            <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
-          </button>
-          <button class="re-del-btn re-move" onclick="moveExercise('${editorDay}',${ci},${ei},1)"${ei === (circuit.exercises || []).length - 1 ? ' disabled' : ''} title="Bajar ejercicio" aria-label="Bajar ejercicio">
-            <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg>
-          </button>
           <button class="re-del-btn" onclick="removeExercise('${editorDay}',${ci},${ei})" title="Quitar ejercicio" aria-label="Quitar ejercicio">
             <svg class="ic ic-sm"><use href="#i-close"/></svg>
           </button>
@@ -7350,21 +7385,21 @@ function renderCircuitBlockHtml(day, ci) {
   html += `<button class="re-add-btn" onclick="openExercisePickerMulti(${ci})">
       <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar ejercicios
     </button>`;
-  const nCircuitos = (day.circuits || []).length;
-  if (nCircuitos > 1) {
-    html += `<div class="cir-move-row">
-        <button class="cir-move" onclick="moveCircuit('${editorDay}',${ci},-1)"${ci === 0 ? ' disabled' : ''}>
-          <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg> Subir circuito
-        </button>
-        <button class="cir-move" onclick="moveCircuit('${editorDay}',${ci},1)"${ci === nCircuitos - 1 ? ' disabled' : ''}>
-          <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg> Bajar circuito
-        </button>
-      </div>`;
-  }
   html += `<button class="cir-remove" onclick="removeCircuit('${editorDay}',${ci})">
       <svg class="ic ic-sm"><use href="#i-trash"/></svg> Quitar este circuito
     </button>`;
   return html;
+}
+
+/* Modo reordenar: mientras está activo la lista no se abre, solo se mueve.
+   Es el patrón de "Editar" de las listas del sistema — con los controles
+   dentro de cada tarjeta abierta la cabecera acumulaba cinco iconos sin
+   etiqueta, dos de ellos con el mismo chevron. */
+let reordenando = false;
+function toggleReordenar() {
+  reordenando = !reordenando;
+  if (reordenando) editorExercise = -1;   // reordenar se hace viendo la lista
+  renderRoutineEditor();
 }
 
 /* Ejercicio abierto dentro del circuito (-1 = todos plegados) */
@@ -7645,16 +7680,6 @@ function moveExercise(day, ci, ei, dir) {
   if (destino < 0 || destino >= lista.length) return;
   [lista[ei], lista[destino]] = [lista[destino], lista[ei]];
   editorExercise = destino;
-  renderRoutineEditor();
-}
-
-/* Mover un circuito completo dentro de la sesión */
-function moveCircuit(day, ci, dir) {
-  const lista = editorData[day].circuits;
-  const destino = ci + dir;
-  if (destino < 0 || destino >= lista.length) return;
-  [lista[ci], lista[destino]] = [lista[destino], lista[ci]];
-  if (editorBlock && editorBlock.kind === 'circuit') editorBlock.ci = destino;
   renderRoutineEditor();
 }
 
