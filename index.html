@@ -3443,7 +3443,9 @@ async function showRoutine() {
 
   currentWeek = state.week;
   currentDay  = state.sessionKey;
-  routineStep = 0;
+  // Si quedó una sesión a medias hoy, se retoma donde iba
+  const guardado = leerPaso();
+  routineStep = (guardado && guardado.dia === currentDay) ? guardado.paso : 0;
   render();
 }
 
@@ -4196,22 +4198,52 @@ const FALLBACK_DATA_MSARAVIA = {
 
 let data = JSON.parse(JSON.stringify(FALLBACK_DATA));
 
+/* ── Punto de la sesión ──
+   routineStep vivía solo en memoria: si el atleta salía a contestar un
+   WhatsApp y iOS descartaba la pestaña, al volver aparecía en el
+   calentamiento otra vez. Se guarda el punto, atado al día y a la sesión
+   para no restaurar algo de ayer. */
+function claveP()  { return 'rutinaPaso_' + (currentAthlete || ''); }
+function hoyISO() {
+  const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function guardarPaso() {
+  if (!currentAthlete || !currentDay) return;
+  try {
+    localStorage.setItem(claveP(), JSON.stringify({
+      dia: currentDay, semana: currentWeek, paso: routineStep, fecha: hoyISO()
+    }));
+  } catch (e) {}
+}
+function leerPaso() {
+  try {
+    const g = JSON.parse(localStorage.getItem(claveP()) || 'null');
+    if (!g || g.fecha !== hoyISO()) return null;     // solo de hoy
+    return g;
+  } catch (e) { return null; }
+}
+function olvidarPaso() { try { localStorage.removeItem(claveP()); } catch (e) {} }
+
 /* ── week / day ── */
 function setWeek(w) {
   currentWeek = w;
   routineStep = 0;
+  guardarPaso();
   document.querySelectorAll('.week-seg-btn').forEach((b,i) => b.classList.toggle('active', i+1===w));
   render();
 }
 function setDay(d) {
   currentDay = d;
   routineStep = 0;
+  guardarPaso();
   document.querySelectorAll('#routine-days-bar .day-chip').forEach(b => b.classList.toggle('active', b.dataset.day === d));
   render();
   document.getElementById('content').scrollTop = 0;
 }
 function nextStep() {
   routineStep++;
+  guardarPaso();
   render();
   document.getElementById('content').scrollTop = 0;
 }
@@ -4219,6 +4251,7 @@ function nextStep() {
 function prevStep() {
   if (routineStep > 0) {
     routineStep--;
+    guardarPaso();
     render();
     document.getElementById('content').scrollTop = 0;
   }
@@ -6517,6 +6550,7 @@ async function confirmComplete() {
       btn.textContent = '✅ ¡Enviado!';
       launchConfetti();
       advanceSession(currentAthlete);
+      olvidarPaso();   // la sesion quedo cerrada: no hay nada que retomar
       setTimeout(() => {
         closeComplete();
         renderRestDay(getSessionState(currentAthlete));
@@ -8177,6 +8211,10 @@ function renderToday() {
     const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
     const wuN = parseInt(day.warmupSeries) || 2;
     const nCirc = (day.circuits || []).length;
+    const totalPasos = (nWu ? 1 : 0) + nCirc + (day.cardio ? 1 : 0);
+    // Sesión a medias de hoy: se ofrece retomarla en vez de empezar de cero
+    const g = leerPaso();
+    const enCurso = (g && g.dia === key && g.paso > 0) ? g : null;
     const detalle = nWu
       ? `${wuN} vuelta${wuN===1?'':'s'} · ${nWu} ejercicio${nWu===1?'':'s'}`
       : `${nCirc} circuito${nCirc===1?'':'s'}`;
@@ -8184,12 +8222,12 @@ function renderToday() {
         <div class="today-eyebrow">Tu entrenamiento</div>
         ${state ? `<div class="pill-session today-pill">Sesión ${state.sessionNum} <span class="ps-of">de ${state.total}</span></div>` : ''}
         <div class="today-title">${deriveSessionTitle(day, (key.match(/\d+/)||[''])[0])}</div>
-        <div class="today-sub">${nWu ? 'Empieza con el calentamiento.' : 'Tu entrenamiento de hoy.'}</div>
+        <div class="today-sub">${enCurso ? `Vas por el paso ${enCurso.paso + 1} de ${totalPasos}.` : (nWu ? 'Empieza con el calentamiento.' : 'Tu entrenamiento de hoy.')}</div>
         <div class="today-detail">
           <svg class="ic ic-sm"><use href="#i-repeat"/></svg> ${detalle}
         </div>
         <button class="btn-primary today-cta" onclick="showRoutine();activateNav('routine')">
-          Comenzar entrenamiento <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
+          ${enCurso ? 'Continuar entrenamiento' : 'Comenzar entrenamiento'} <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
         </button>
       </div>`;
   } else {
