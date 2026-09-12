@@ -610,14 +610,15 @@ html, body {
 .r-content::-webkit-scrollbar { display:none; }
 
 /* Day header */
-.day-header { margin-bottom:20px; }
+.day-header { margin-bottom:16px; }
+.day-header:empty { display:none; }
 .day-title { font-family:var(--font-d); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-1.1px; line-height:1.08; }
 .day-today { color:var(--t2); font-size:16px; margin-top:6px; font-weight:400; letter-spacing:-.2px; }
 .day-sub { color:var(--t2); font-size:15px; margin-top:4px; font-weight:400; line-height:1.5; }
 
 /* Fila plegable "Ver sesión completa" */
 .session-full-row {
-  width:100%; margin-top:14px; cursor:pointer;
+  width:100%; margin-top:6px; cursor:pointer;
   background:var(--s1); border:none; border-radius:16px;
   padding:17px 16px;
   display:flex; align-items:center; justify-content:space-between;
@@ -1977,6 +1978,17 @@ select.na-input {
   display:flex; align-items:center; justify-content:center; gap:8px;
 }
 .cir-remove:active { color:#C2412B; }
+/* Reordenar: antes solo se podía quitar y volver a crear */
+.cir-move-row { display:flex; gap:10px; margin-top:14px; }
+.cir-move {
+  flex:1; padding:13px 10px; border-radius:12px;
+  background:var(--bg); border:1px solid var(--b); cursor:pointer;
+  color:var(--t1); font-family:var(--font-b); font-size:14.5px; font-weight:500;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+.cir-move:active { background:var(--s2); }
+.cir-move:disabled { opacity:.4; cursor:default; }
+.re-move:disabled { opacity:.35; cursor:default; }
 .re-day-bar::-webkit-scrollbar { display:none; }
 .re-circuit-card { background:var(--s1); border:1px solid rgba(255,255,255,.04); border-radius:16px; margin-bottom:12px; overflow:hidden; }
 .re-circuit-hdr { padding:10px 14px; font-family:var(--font-d); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; }
@@ -3450,6 +3462,7 @@ async function showRoutine() {
 }
 
 function renderRestDay(state) {
+  ponTituloRutina('Mi rutina');
   document.getElementById('content').innerHTML = `
     <div class="done-wrap">
       <div class="done-check"><svg class="ic"><use href="#i-check"/></svg></div>
@@ -4388,6 +4401,7 @@ function render() {
   const w = currentWeek;
   // Guard: sesión sin contenido todavía (warmup null, sin circuitos, sin cardio)
   if (!day || (!Array.isArray(day.warmup) && !Array.isArray(day.warmupHombro) && (!day.circuits || !day.circuits.length) && !day.cardio)) {
+    ponTituloRutina('Mi rutina');
     document.getElementById('content').innerHTML = `
       <div class="rest-card">
         <div class="rest-emoji"><svg class="ic ic-lg" style="color:#B4B4AF"><use href="#i-doc"/></svg></div>
@@ -4413,9 +4427,10 @@ function render() {
   const sessionNum = (currentDay.match(/\d+/) || [''])[0];
   const shownTitle = deriveSessionTitle(day, sessionNum);
   const shownSub = deriveSessionSub(day) || day.sub || '';
+  ponTituloRutina(shownTitle);
+  // "Tu entrenamiento de hoy" sobraba: ya lo dicen el pill de sesión y la
+  // pestaña activa. El título ahora vive en la cabecera fija.
   let html = `<div class="day-header">
-      <div class="day-title">${shownTitle}</div>
-      <div class="day-today">Tu entrenamiento de hoy.</div>
       ${shownSub ? `<button class="session-full-row" onclick="toggleSessionFull()">
         <span>Ver sesión completa</span>
         <svg class="ic session-full-chev"><use href="#i-chevron-r"/></svg>
@@ -4542,6 +4557,14 @@ const CARDIO_ICONOS = [
 function cardioIcon(txt) {
   const hit = CARDIO_ICONOS.find(([re]) => re.test(String(txt || '')));
   return hit ? hit[1] : 'i-c-pulso';
+}
+
+/* La cabecera fija muestra la sesión que se está haciendo en vez de un
+   "Mi rutina" que la pestaña activa ya dice. Así el título sigue a la vista
+   al scrollear y el contenido empieza 50px más arriba. */
+function ponTituloRutina(txt) {
+  const el = document.querySelector('#routine .r-title');
+  if (el) el.textContent = txt || 'Mi rutina';
 }
 
 /* ── toggles ── */
@@ -7290,6 +7313,12 @@ function renderCircuitBlockHtml(day, ci) {
             <span class="cir-ex-name">${reEscAttr(ex.name || 'Elegir ejercicio…')}</span>
             <svg class="ic ic-sm cir-ex-swap"><use href="#i-chevron-r"/></svg>
           </button>
+          <button class="re-del-btn re-move" onclick="moveExercise('${editorDay}',${ci},${ei},-1)"${ei === 0 ? ' disabled' : ''} title="Subir ejercicio" aria-label="Subir ejercicio">
+            <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
+          </button>
+          <button class="re-del-btn re-move" onclick="moveExercise('${editorDay}',${ci},${ei},1)"${ei === (circuit.exercises || []).length - 1 ? ' disabled' : ''} title="Bajar ejercicio" aria-label="Bajar ejercicio">
+            <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg>
+          </button>
           <button class="re-del-btn" onclick="removeExercise('${editorDay}',${ci},${ei})" title="Quitar ejercicio" aria-label="Quitar ejercicio">
             <svg class="ic ic-sm"><use href="#i-close"/></svg>
           </button>
@@ -7321,6 +7350,17 @@ function renderCircuitBlockHtml(day, ci) {
   html += `<button class="re-add-btn" onclick="openExercisePickerMulti(${ci})">
       <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar ejercicios
     </button>`;
+  const nCircuitos = (day.circuits || []).length;
+  if (nCircuitos > 1) {
+    html += `<div class="cir-move-row">
+        <button class="cir-move" onclick="moveCircuit('${editorDay}',${ci},-1)"${ci === 0 ? ' disabled' : ''}>
+          <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg> Subir circuito
+        </button>
+        <button class="cir-move" onclick="moveCircuit('${editorDay}',${ci},1)"${ci === nCircuitos - 1 ? ' disabled' : ''}>
+          <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg> Bajar circuito
+        </button>
+      </div>`;
+  }
   html += `<button class="cir-remove" onclick="removeCircuit('${editorDay}',${ci})">
       <svg class="ic ic-sm"><use href="#i-trash"/></svg> Quitar este circuito
     </button>`;
@@ -7594,6 +7634,27 @@ function addExercise(day, ci) {
     name:'Nuevo ejercicio', muscle:'', img:'', tip:'',
     w1:'', reps:'', setType:'normal'
   });
+  renderRoutineEditor();
+}
+
+/* Mover ejercicio dentro de su circuito. Se mantiene abierto el mismo
+   ejercicio tras moverlo, que es lo que espera quien está reordenando. */
+function moveExercise(day, ci, ei, dir) {
+  const lista = editorData[day].circuits[ci].exercises;
+  const destino = ei + dir;
+  if (destino < 0 || destino >= lista.length) return;
+  [lista[ei], lista[destino]] = [lista[destino], lista[ei]];
+  editorExercise = destino;
+  renderRoutineEditor();
+}
+
+/* Mover un circuito completo dentro de la sesión */
+function moveCircuit(day, ci, dir) {
+  const lista = editorData[day].circuits;
+  const destino = ci + dir;
+  if (destino < 0 || destino >= lista.length) return;
+  [lista[ci], lista[destino]] = [lista[destino], lista[ci]];
+  if (editorBlock && editorBlock.kind === 'circuit') editorBlock.ci = destino;
   renderRoutineEditor();
 }
 
