@@ -457,13 +457,66 @@ html, body {
 .met-more-sub { display:block; font-size:14px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; }
 .met-more-chev { transition:transform .2s; }
 .met-more[open] .met-more-chev { transform:rotate(90deg); }
-.met-more-grid {
-  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
-  padding-bottom:18px; border-top:1px solid var(--b2); padding-top:16px;
+/* En tres columnas no cabía "Masa muscular" junto a su icono */
+.met-lista { border-top:1px solid var(--b2); padding-bottom:8px; }
+.met-fila-wrap + .met-fila-wrap { border-top:1px solid var(--b2); }
+.met-fila {
+  width:100%; display:flex; align-items:center; gap:12px; min-height:52px;
+  padding:15px 0; background:none; border:none; cursor:pointer; text-align:left;
+  font-family:var(--font-b);
 }
-.met-mini { text-align:center; }
-.met-mini-v { font-family:var(--font-d); font-size:21px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
-.met-mini-l { font-size:12px; color:var(--t2); margin-top:5px; text-transform:uppercase; letter-spacing:.5px; }
+.met-fila:active { opacity:.55; }
+.met-fila-l {
+  flex:1; min-width:0; font-size:15.5px; color:var(--t1); letter-spacing:-.2px;
+  display:inline-flex; align-items:center; gap:7px; flex-wrap:wrap;
+}
+.met-fila-i { width:15px; height:15px; stroke-width:1.9; color:var(--t3); flex:none; }
+.met-fila-v {
+  flex:none; font-family:var(--font-d); font-size:19px; font-weight:700;
+  color:var(--t1); letter-spacing:-.4px;
+}
+.met-fila-v.vacio { font-family:var(--font-b); font-size:15.5px; font-weight:500; color:var(--t3); letter-spacing:-.2px; }
+.met-fila-v.vacio .met-unit-sm { display:none; }
+.met-unit-sm { font-size:13px; font-weight:600; color:var(--t2); letter-spacing:-.2px; }
+.met-fila[aria-expanded="true"] .met-fila-l { color:var(--ac-tx); }
+.met-fila[aria-expanded="true"] .met-fila-i { color:var(--ac-tx); }
+.met-lista .met-panel { margin-top:0; padding-bottom:16px; }
+
+/* Explicación de cada métrica: qué es y, si se puede, dónde cae el valor */
+.met-head { display:flex; align-items:center; gap:8px; }
+.met-info-btn {
+  width:28px; height:28px; border-radius:100px; flex:none; position:relative;
+  background:var(--bg); border:1px solid var(--b); color:var(--t2);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.met-info-btn .ic { width:16px; height:16px; stroke-width:1.8; }
+/* El circulo se ve de 28px, pero el area que responde al dedo es de 44 */
+.met-info-btn::after { content:''; position:absolute; inset:-8px; }
+.met-info-btn[aria-expanded="true"] { background:var(--ac-soft); border-color:var(--ac-tx); color:var(--ac-tx); }
+.met-info-btn:active { background:var(--s2); }
+
+.met-panel { display:none; margin-top:14px; }
+.met-panel.show { display:block; }
+.met-panel-txt {
+  font-size:14.5px; color:var(--t2); line-height:1.6; letter-spacing:-.1px;
+  background:var(--bg); border-left:3px solid var(--ac); border-radius:0 12px 12px 0;
+  padding:13px 15px;
+}
+.met-panel-txt + .met-panel-txt { margin-top:8px; }
+.met-panel-txt strong { color:var(--t1); font-weight:600; }
+
+/* Escala del IMC: la posición se marca con texto y con un punto, no solo
+   con color, para que se entienda sin distinguir tonos. */
+.met-escala { margin-top:12px; display:grid; gap:1px; background:var(--b2); border-radius:12px; overflow:hidden; }
+.met-escala-fila {
+  display:flex; align-items:center; gap:10px; padding:11px 14px;
+  background:var(--s1); font-size:14px; color:var(--t2);
+}
+.met-escala-fila.aqui { background:var(--ac-soft); color:var(--ac-tx); font-weight:600; }
+.met-escala-nom { flex:1; }
+.met-escala-val { font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+.met-escala-tu { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; flex:none; }
 
 .met-link {
   display:flex; align-items:center; gap:9px;
@@ -3087,15 +3140,27 @@ select.na-input {
       <!-- Peso e IMC destacados; el resto se despliega bajo demanda -->
       <div class="group met-main">
         <div class="met-row">
-          <div class="met-label">Peso</div>
+          <div class="met-head">
+            <div class="met-label">Peso</div>
+            <button class="met-info-btn" onclick="toggleMetrica('peso', this)" aria-expanded="false" aria-label="Qué es el peso corporal">
+              <svg class="ic"><use href="#i-info"/></svg>
+            </button>
+          </div>
           <div class="met-value"><span id="pg-weight">—</span> <span class="met-unit">kg</span></div>
           <div class="met-note" id="pg-weight-date">Sin fecha de medición.</div>
+          <div class="met-panel" id="met-panel-peso"></div>
         </div>
         <div class="group-sep"></div>
         <div class="met-row">
-          <div class="met-label">IMC</div>
+          <div class="met-head">
+            <div class="met-label">IMC</div>
+            <button class="met-info-btn" onclick="toggleMetrica('imc', this)" aria-expanded="false" aria-label="Qué es el índice de masa corporal">
+              <svg class="ic"><use href="#i-info"/></svg>
+            </button>
+          </div>
           <div class="met-value"><span id="pg-bmi">—</span></div>
-          <div class="met-note">Relaciona tu peso con tu altura.</div>
+          <div class="met-note" id="pg-bmi-estado">Relaciona tu peso con tu altura.</div>
+          <div class="met-panel" id="met-panel-imc"></div>
         </div>
       </div>
       <details class="group met-more" id="pg-more">
@@ -3106,10 +3171,28 @@ select.na-input {
           </span>
           <svg class="ic blk-chev met-more-chev"><use href="#i-chevron-r"/></svg>
         </summary>
-        <div class="met-more-grid">
-          <div class="met-mini"><div class="met-mini-v" id="pg-bf">—</div><div class="met-mini-l">Grasa %</div></div>
-          <div class="met-mini"><div class="met-mini-v" id="pg-muscle">—</div><div class="met-mini-l">Músculo kg</div></div>
-          <div class="met-mini"><div class="met-mini-v" id="pg-bmr">—</div><div class="met-mini-l">BMR kcal</div></div>
+        <div class="met-lista">
+          <div class="met-fila-wrap">
+            <button class="met-fila" onclick="toggleMetrica('grasa', this)" aria-expanded="false">
+              <span class="met-fila-l">Grasa corporal <svg class="ic met-fila-i"><use href="#i-info"/></svg></span>
+              <span class="met-fila-v"><span id="pg-bf">—</span></span>
+            </button>
+            <div class="met-panel"></div>
+          </div>
+          <div class="met-fila-wrap">
+            <button class="met-fila" onclick="toggleMetrica('musculo', this)" aria-expanded="false">
+              <span class="met-fila-l">Masa muscular <svg class="ic met-fila-i"><use href="#i-info"/></svg></span>
+              <span class="met-fila-v"><span id="pg-muscle">—</span> <span class="met-unit-sm">kg</span></span>
+            </button>
+            <div class="met-panel"></div>
+          </div>
+          <div class="met-fila-wrap">
+            <button class="met-fila" onclick="toggleMetrica('metabolismo', this)" aria-expanded="false">
+              <span class="met-fila-l">Metabolismo basal <svg class="ic met-fila-i"><use href="#i-info"/></svg></span>
+              <span class="met-fila-v"><span id="pg-bmr">—</span> <span class="met-unit-sm">kcal</span></span>
+            </button>
+            <div class="met-panel"></div>
+          </div>
         </div>
       </details>
       <div class="pg-metrics-note" id="pg-metrics-note">Sin datos registrados.</div>
@@ -4896,6 +4979,122 @@ function computeBMR(weightKg, heightCm, age, sex = 'm') {
   return Math.round(base + (sex === 'f' ? -161 : 5));
 }
 
+/* ── Qué significa cada métrica ───────────────────────────────────
+   El perfil enseñaba cinco números sin contexto y nadie sabe si un IMC
+   de 24,8 es bueno o malo. Cada métrica se despliega con el icono ⓘ.
+   Solo el IMC lleva veredicto: es el único que se puede situar en un
+   rango con los datos que la app pide hoy. */
+const IMC_RANGOS = [
+  { nom:'Bajo peso', val:'menos de 18,5', hasta:18.5,    dice:'por debajo del rango de referencia' },
+  { nom:'Normal',    val:'18,5 – 24,9',   hasta:25,      dice:'dentro del rango normal' },
+  { nom:'Sobrepeso', val:'25 – 29,9',     hasta:30,      dice:'por encima del rango de referencia' },
+  { nom:'Obesidad',  val:'30 o más',      hasta:Infinity, dice:'muy por encima del rango de referencia' },
+];
+
+function evaluarIMC(bmi) {
+  const v = Number(bmi);
+  if (bmi === null || bmi === undefined || bmi === '' || !isFinite(v) || v <= 0) return null;
+  const i = IMC_RANGOS.findIndex(r => v < r.hasta);
+  return { i, ...IMC_RANGOS[i] };
+}
+
+/* Valores del atleta que se está mirando, para los paneles */
+let metricasAtleta = {};
+const numEs = v => String(v).replace('.', ',');
+
+const METRICAS_INFO = {
+  peso: () => `
+    <div class="met-panel-txt">
+      <strong>Tu peso total:</strong> músculo, grasa, huesos y agua, todo junto.
+      Puede subir aunque estés mejorando, porque el músculo que ganas también pesa.
+    </div>
+    <div class="met-panel-txt">
+      Lo que cuenta es la tendencia de varias semanas, no el número de un día:
+      entre la mañana y la noche es normal moverse un kilo o dos solo por comida
+      y líquidos. Pésate siempre en las mismas condiciones.
+    </div>`,
+
+  imc: m => {
+    const ev = evaluarIMC(m.bmi);
+    const escala = IMC_RANGOS.map((r, i) => `
+      <div class="met-escala-fila${ev && ev.i === i ? ' aqui' : ''}">
+        <span class="met-escala-nom">${r.nom}</span>
+        <span class="met-escala-val">${r.val}</span>
+        ${ev && ev.i === i ? '<span class="met-escala-tu">Tú</span>' : ''}
+      </div>`).join('');
+    return `
+      <div class="met-panel-txt">
+        <strong>Índice de masa corporal.</strong> Relaciona tu peso con tu altura
+        (peso dividido entre la altura al cuadrado). Es la referencia rápida que
+        usa la Organización Mundial de la Salud para hacerse una idea general.
+      </div>
+      <div class="met-escala">${escala}</div>
+      <div class="met-panel-txt">
+        <strong>Tómalo con pinzas:</strong> el IMC no distingue músculo de grasa.
+        Si entrenas fuerza puedes salir en “sobrepeso” teniendo poca grasa, y
+        tampoco tiene en cuenta tu edad ni cómo repartes ese peso. Míralo junto
+        al porcentaje de grasa y con lo que te diga tu entrenador.
+      </div>`;
+  },
+
+  grasa: () => `
+    <div class="met-panel-txt">
+      <strong>Qué parte de tu peso es grasa.</strong> Dice mucho más que el peso
+      solo: dos personas de 70 kg pueden verse y rendir muy distinto según
+      cuánto de eso sea músculo y cuánto grasa.
+    </div>
+    <div class="met-panel-txt">
+      No hay un único rango bueno. Como referencia general, en hombres suele ir
+      entre el 10 % y el 20 %, y en mujeres entre el 18 % y el 28 %, porque el
+      cuerpo femenino necesita más grasa esencial. También cambia con la edad,
+      así que aquí no te ponemos un veredicto: es tu entrenador quien lo
+      interpreta junto al resto de tus datos.
+    </div>`,
+
+  musculo: () => `
+    <div class="met-panel-txt">
+      <strong>Los kilos de tu cuerpo que son músculo</strong>, sin contar grasa,
+      huesos ni agua. Es la métrica que te interesa ver subir mientras entrenas
+      fuerza: más músculo es más fuerza, mejor postura y más calorías gastadas
+      incluso en reposo.
+    </div>
+    <div class="met-panel-txt">
+      Sube despacio. Ganar entre 0,2 y 0,5 kg al mes ya es buen ritmo, así que
+      compara medición con medición y no semana con semana.
+    </div>`,
+
+  metabolismo: () => `
+    <div class="met-panel-txt">
+      <strong>Las calorías que tu cuerpo gastaría en un día entero en reposo
+      absoluto</strong>, solo por mantenerte vivo: respirar, bombear sangre,
+      mantener la temperatura.
+    </div>
+    <div class="met-panel-txt">
+      No incluye caminar ni entrenar, así que el gasto real de tu día queda por
+      encima de esta cifra. Es una estimación a partir de tu peso, tu altura y
+      tu edad, no una medición: sirve como punto de partida para tu plan de
+      comidas, que ajusta tu entrenador.
+    </div>`,
+};
+
+/* Un panel abierto a la vez: son textos largos y dos abiertos dejan el número
+   que explican fuera de pantalla. */
+function toggleMetrica(clave, btn) {
+  const zona = document.getElementById('profile-generic');
+  if (!zona || !btn) return;
+  const panel = (btn.closest('.met-row, .met-fila-wrap') || zona).querySelector('.met-panel');
+  if (!panel) return;
+  const yaAbierto = btn.getAttribute('aria-expanded') === 'true';
+  zona.querySelectorAll('.met-panel').forEach(p => { p.classList.remove('show'); p.innerHTML = ''; });
+  zona.querySelectorAll('.met-info-btn, .met-fila').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  if (yaAbierto) return;
+  const hacer = METRICAS_INFO[clave];
+  if (!hacer) return;
+  panel.innerHTML = hacer(metricasAtleta);
+  panel.classList.add('show');
+  btn.setAttribute('aria-expanded', 'true');
+}
+
 function showGenericProfile(athlete) {
   const p = athlete.profile || {};
   document.getElementById('pg-name').textContent = athlete.name || athlete.username || '—';
@@ -4913,8 +5112,8 @@ function showGenericProfile(athlete) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = v;
-    const caja = el.closest('.met-value') || el.parentElement;
-    if (caja && caja.classList.contains('met-value')) caja.classList.toggle('vacio', v === '—');
+    const caja = el.closest('.met-value, .met-fila-v');
+    if (caja) caja.classList.toggle('vacio', v === '—');
   };
   ponValor('pg-weight', fmt(p.weight));
   ponValor('pg-bf',     fmt(p.bodyFat, '%'));
@@ -4922,8 +5121,24 @@ function showGenericProfile(athlete) {
   const age = computeAge(athlete.birthdate);
   const bmi = p.bmi ?? computeBMI(p.weight, p.height);
   const bmr = p.bmr ?? computeBMR(p.weight, p.height, age, p.sex || 'm');
-  document.getElementById('pg-bmi').textContent    = fmt(bmi);
-  document.getElementById('pg-bmr').textContent    = fmt(bmr);
+  ponValor('pg-bmi', fmt(bmi));
+  ponValor('pg-bmr', fmt(bmr));
+  metricasAtleta = { weight:p.weight, height:p.height, bodyFat:p.bodyFat,
+                     muscleMass:p.muscleMass, bmi, bmr, age };
+  // Bajo el IMC, en qué rango cae; sin dato, qué es
+  const evImc = evaluarIMC(bmi);
+  const imcNota = document.getElementById('pg-bmi-estado');
+  if (imcNota) {
+    imcNota.textContent = evImc
+      ? 'Tu peso está ' + evImc.dice + '.'
+      : 'Relaciona tu peso con tu altura.';
+  }
+  // Al cambiar de atleta no debe quedarse abierto el panel del anterior
+  const zonaMet = document.getElementById('profile-generic');
+  if (zonaMet) {
+    zonaMet.querySelectorAll('.met-panel').forEach(p => { p.classList.remove('show'); p.innerHTML = ''; });
+    zonaMet.querySelectorAll('.met-info-btn, .met-fila').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  }
   // Nota "sin mediciones" sólo cuando no hay ninguna métrica cargada
   const hasAny = [p.weight, p.bodyFat, p.muscleMass, bmi, bmr]
     .some(v => v !== null && v !== undefined && v !== '');
@@ -7679,7 +7894,9 @@ function moveExercise(day, ci, ei, dir) {
   const destino = ei + dir;
   if (destino < 0 || destino >= lista.length) return;
   [lista[ei], lista[destino]] = [lista[destino], lista[ei]];
-  editorExercise = destino;
+  // En modo Reordenar la lista se queda plegada; si no, el ejercicio
+  // movido sigue siendo el que estaba abierto
+  if (!reordenando) editorExercise = destino;
   renderRoutineEditor();
 }
 
