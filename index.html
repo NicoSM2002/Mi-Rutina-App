@@ -3677,11 +3677,14 @@ window.addEventListener('load', () => {
         return;
       }
     }
-    // 2) Si hay atleta guardado y sesión válida, restaurar a perfil del atleta
+    // 2) Si hay atleta guardado, restaurar. Entra por Hoy, igual que al
+    //    iniciar sesión: ahora que la sesión no caduca, reabrir la app es el
+    //    camino normal y caer en Perfil cada vez no tenía sentido.
     if (typeof tryRestoreAthleteSession === 'function') {
       const ok = await tryRestoreAthleteSession();
       if (ok) {
-        show('profile-generic');
+        showToday();
+        activateNav('today');
         return;
       }
     }
@@ -5393,10 +5396,16 @@ try {
 } catch {}
 
 /* ══ INACTIVITY / AUTO-LOGOUT ══
-   Atleta: 2 horas (UX prioriza estar siempre logueado entre sesiones)
-   Entrenador: 10 minutos (seguridad — datos de todos los atletas) */
+   Entrenador: 10 minutos. Ve los datos de los 24 atletas, así que un
+   teléfono olvidado encima de una mesa sí es un problema.
+
+   Atleta: no caduca. Caducaba a las 2 horas y sacaba de la app en mitad
+   del día. El cierre automático parecía prudente, pero el login de atleta
+   es sólo-usuario y sin contraseña: quien alcance el teléfono desbloqueado
+   vuelve a entrar escribiendo el usuario. Cerrar la sesión sola costaba
+   UX y no cerraba esa puerta. La sesión termina cuando él le da a
+   "Cerrar sesión". */
 const INACTIVITY_MS_TRAINER = 10 * 60 * 1000;       // 10 min
-const INACTIVITY_MS_ATLETA  = 2 * 60 * 60 * 1000;   // 2 horas
 let _inactivityInterval = null;
 
 function _hasActiveSession() {
@@ -5412,10 +5421,15 @@ function _readLastActivity() {
 }
 
 function _isSessionExpired() {
+  // Sólo caduca la del entrenador. Se mira currentTrainer y no currentAthlete
+  // porque esta última arrastra un valor por defecto ('nicolas') de cuando la
+  // app era de un solo atleta: con el ternario anterior nunca era nula, así
+  // que al entrenador se le aplicaban las 2 horas del atleta y sus 10 minutos
+  // no llegaron a cumplirse nunca.
+  if (!currentTrainer) return false;
   const last = _readLastActivity();
-  if (!last) return false; // nunca registró actividad → no expira todavía
-  const limit = currentAthlete ? INACTIVITY_MS_ATLETA : INACTIVITY_MS_TRAINER;
-  return (Date.now() - last) >= limit;
+  if (!last) return false;   // nunca registró actividad: no expira todavía
+  return (Date.now() - last) >= INACTIVITY_MS_TRAINER;
 }
 
 function startInactivityTracking() {
@@ -5513,17 +5527,8 @@ async function tryRestoreAthleteSession() {
   try { saved = localStorage.getItem('currentAthlete'); } catch {}
   if (!saved) return false;
 
-  // Set currentAthlete first so _isSessionExpired uses ATLETA timeout (2h)
+  // Se fija antes de comprobar la caducidad: con sesión de atleta no caduca
   currentAthlete = saved;
-
-  if (_isSessionExpired()) {
-    // Pasaron > 2h: limpiar todo
-    try { localStorage.removeItem('currentAthlete'); } catch {}
-    try { localStorage.removeItem(`selfToken_${saved}`); } catch {}
-    try { localStorage.removeItem('lastActivityTs'); } catch {}
-    currentAthlete = null;
-    return false;
-  }
 
   let token = null;
   try { token = localStorage.getItem(`selfToken_${saved}`); } catch {}
@@ -8141,14 +8146,14 @@ const EXERCISE_CATALOG = [
   { name: 'Giros rusos', muscle: 'abdomen', unit: 'total', step: 5, img: './gifs/abdomen/Giros rusos/Giros rusos.gif', tip: 'Sentado con rodillas flexionadas y torso inclinado atrás. Gira el tronco llevando las manos a cada costado. Controla el movimiento, no uses impulso.' },
   { name: 'Plancha estática', muscle: 'abdomen', unit: 'corporal', step: 0, img: './gifs/abdomen/Plancha estática/Plancha estática.gif', tip: 'Mantén cuerpo alineado de cabeza a talones con abdomen y glúteos activos. No dejes caer la cadera ni eleves demasiado la pelvis.' },
   { name: 'Curl de muñeca con mancuerna', muscle: 'antebrazo', unit: 'mancuerna', step: 5, img: './gifs/antebrazo/Curl de muñeca con mancuerna/Curl de muñeca con mancuerna.gif', tip: 'Apoya el antebrazo y mueve solo la muñeca. Sube completo, aprieta arriba y baja lento sin usar impulso.' },
-  { name: 'Curl de muñeca inverso con barra', muscle: 'antebrazo', unit: 'lado', step: 5, img: './gifs/antebrazo/Curl de muñeca inverso con barra/Curl de muñeca inverso con barra.gif', tip: 'Antebrazos apoyados, palmas hacia abajo. Extiende las muñecas subiendo la barra. Baja controlado para estirar los extensores.' },
-  { name: 'Curl inverso con barra', muscle: 'antebrazo', unit: 'lado', step: 5, img: './gifs/antebrazo/Curl inverso con barra/Curl inverso con barra.gif', tip: 'Agarre prono (palmas abajo). Activa principalmente el BRAQUIORRADIAL y braquial. Complementa los curls clasicos. Control total en el descenso.' },
+  { name: 'Curl de muñeca inverso con barra', muscle: 'antebrazo', unit: 'total', step: 5, img: './gifs/antebrazo/Curl de muñeca inverso con barra/Curl de muñeca inverso con barra.gif', tip: 'Antebrazos apoyados, palmas hacia abajo. Extiende las muñecas subiendo la barra. Baja controlado para estirar los extensores.' },
+  { name: 'Curl inverso con barra', muscle: 'antebrazo', unit: 'total', step: 5, img: './gifs/antebrazo/Curl inverso con barra/Curl inverso con barra.gif', tip: 'Agarre prono (palmas abajo). Activa principalmente el BRAQUIORRADIAL y braquial. Complementa los curls clasicos. Control total en el descenso.' },
   { name: 'Farmer\'s walk', muscle: 'antebrazo', unit: 'mancuerna', step: 5, img: './gifs/antebrazo/Farmer\'s walk/Farmer\'s walk.gif', tip: 'Mancuernas o kettlebells pesadas en cada mano. Camina erguido, hombros atrás, core activo. Mantén agarre firme y pasos estables.' },
   { name: 'Curl Zottman', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl Zottman/Curl Zottman.gif', tip: 'Sube con agarre supino y gira a pronación arriba. Baja lento para trabajar también el antebrazo.' },
-  { name: 'Curl araña con barra', muscle: 'biceps', unit: 'lado', step: 5, img: './gifs/biceps/Curl araña con barra/Curl araña con barra.gif', tip: 'Acostado boca abajo en banco inclinado, barra colgando con agarre supino. Curla sin mover los hombros ni los codos. Baja controlado estirando el bíceps.' },
+  { name: 'Curl araña con barra', muscle: 'biceps', unit: 'total', step: 5, img: './gifs/biceps/Curl araña con barra/Curl araña con barra.gif', tip: 'Acostado boca abajo en banco inclinado, barra colgando con agarre supino. Curla sin mover los hombros ni los codos. Baja controlado estirando el bíceps.' },
   { name: 'Curl araña con mancuernas', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl araña con mancuernas/Curl araña con mancuernas.gif', tip: 'Acostado boca abajo en banco inclinado, brazos colgando. Curla con el trícep apoyado, sin balanceo. Aprieta arriba y baja lento.' },
   { name: 'Curl bayesiano en polea', muscle: 'biceps', unit: 'placa', step: 10, img: './gifs/biceps/Curl bayesiano en polea/Curl bayesiano en polea.gif', tip: 'Colócate de espaldas a la polea con el brazo atrás. Mantén tensión constante y recorrido completo.' },
-  { name: 'Curl de bíceps con barra', muscle: 'biceps', unit: 'lado', step: 5, img: './gifs/biceps/Curl de bíceps con barra/Curl de bíceps con barra.gif', tip: 'Codos pegados al torso y fijos. Supina las muñecas al subir, aprieta en el pico. Baja controlado sin bloquear el codo.' },
+  { name: 'Curl de bíceps con barra', muscle: 'biceps', unit: 'total', step: 5, img: './gifs/biceps/Curl de bíceps con barra/Curl de bíceps con barra.gif', tip: 'Codos pegados al torso y fijos. Supina las muñecas al subir, aprieta en el pico. Baja controlado sin bloquear el codo.' },
   { name: 'Curl de bíceps con mancuernas', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl de bíceps con mancuernas/Curl de bíceps con mancuernas.gif', tip: 'Supina la muneca al subir. Baja completo sin soltar la tension.' },
   { name: 'Curl de concentración', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl de concentración/Curl de concentración.gif', tip: 'Sentado, apoya el codo contra el interior del muslo. Curla la mancuerna apretando el bíceps arriba. Baja lento sin mover el codo.' },
   { name: 'Curl en polea alta doble bíceps', muscle: 'biceps', unit: 'placa', step: 10, img: './gifs/biceps/Curl en polea alta doble bíceps/Curl en polea alta doble bíceps.gif', tip: 'Mantén los brazos elevados y flexiona sin bajar los codos. Contrae fuerte al final.' },
@@ -8157,10 +8162,10 @@ const EXERCISE_CATALOG = [
   { name: 'Curl inclinado con mancuernas', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl inclinado con mancuernas/Curl inclinado con mancuernas.gif', tip: 'Banco a 45-60°, brazos colgando totalmente extendidos. Mantén los codos ligeramente atrás del torso (clave para máximo estiramiento). Supina al subir, contrae arriba, baja en 2-3 seg sin perder tensión.' },
   { name: 'Curl martillo', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl martillo/Curl martillo.gif', tip: 'Codo fijo al cuerpo. Sin balanceo del torso. Activa braquial y braquiorradial.' },
   { name: 'Curl martillo cruzado al hombro', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl martillo cruzado al hombro/Curl martillo cruzado al hombro.gif', tip: 'Mantén agarre neutro y lleva la mancuerna hacia el hombro contrario. Evita balancear el cuerpo.' },
-  { name: 'Curl predicador barra EZ', muscle: 'biceps', unit: 'lado', step: 5, img: './gifs/biceps/Curl predicador barra EZ/Curl predicador barra EZ.gif', tip: 'Tríceps apoyados en cojín Scott, barra EZ con agarre cómodo. Curla sin despegar brazos. Baja controlado sin bloquear.' },
+  { name: 'Curl predicador barra EZ', muscle: 'biceps', unit: 'total', step: 5, img: './gifs/biceps/Curl predicador barra EZ/Curl predicador barra EZ.gif', tip: 'Tríceps apoyados en cojín Scott, barra EZ con agarre cómodo. Curla sin despegar brazos. Baja controlado sin bloquear.' },
   { name: 'Curl predicador con mancuerna', muscle: 'biceps', unit: 'mancuerna', step: 5, img: './gifs/biceps/Curl predicador con mancuerna/Curl predicador con mancuerna.gif', tip: 'Sentado en banco Scott, apoya el trícep contra el cojín. Curla la mancuerna supinando completo arriba. Controla la bajada sin extender del todo el codo.' },
   { name: 'Curl predicador en máquina', muscle: 'biceps', unit: 'placa', step: 10, img: './gifs/biceps/Curl predicador en máquina/Curl predicador en máquina.gif', tip: 'Apoya bien el brazo y evita despegar el codo. Baja lento para mayor estímulo.' },
-  { name: 'Curl predicador maquina discos', muscle: 'biceps', unit: 'lado', step: 5, img: './gifs/biceps/Curl predicador maquina discos/Curl predicador maquina discos.gif', tip: 'Apoya completamente los brazos en el pad y controla el movimiento en todo el recorrido. Evita despegar los codos y prioriza la fase negativa.' },
+  { name: 'Curl predicador maquina discos', muscle: 'biceps', unit: 'total', step: 5, img: './gifs/biceps/Curl predicador maquina discos/Curl predicador maquina discos.gif', tip: 'Apoya completamente los brazos en el pad y controla el movimiento en todo el recorrido. Evita despegar los codos y prioriza la fase negativa.' },
   { name: 'Curl unilateral en polea', muscle: 'biceps', unit: 'placa', step: 10, img: './gifs/biceps/Curl unilateral en polea/Curl unilateral en polea.gif', tip: 'Trabaja un brazo a la vez, manteniendo el torso estable. Enfócate en control y simetría.' },
   { name: 'Dominadas supinas (Chin-up)', muscle: 'biceps', unit: 'corporal', step: 0, img: './gifs/biceps/Dominadas supinas (Chin-up)/Dominadas supinas (Chin-up).gif', tip: 'Mantén el core firme, evita balanceos y controla el descenso.' },
   { name: 'Waiter curl', muscle: 'biceps', unit: 'total', step: 5, img: './gifs/biceps/Waiter curl/Waiter curl.gif', tip: 'Sostén una mancuerna vertical con ambas manos bajo el disco superior. Curla hacia el pecho sin mover codos. Ideal para muñecas.' },
@@ -8225,7 +8230,7 @@ const EXERCISE_CATALOG = [
   { name: 'Cuban press con mancuernas', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Cuban press con mancuernas/Cuban press con mancuernas.gif', tip: 'De pie con mancuernas. Remo al mentón, rota externamente los hombros hasta que las pesas estén arriba, y presiona sobre la cabeza. Ideal para manguito rotador.' },
   { name: 'Elevaciones frontales alternas con mancuernas', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Elevaciones frontales alternas con mancuernas/Elevaciones frontales alternas con mancuernas.gif', tip: 'Mantén el torso quieto y eleva un brazo a la vez hasta la altura del hombro. Baja lento y evita impulsarte con la espalda.' },
   { name: 'Elevaciones laterales con mancuernas', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Elevaciones laterales con mancuernas/Elevaciones laterales con mancuernas.gif', tip: 'Inclina apenas el torso, deja una ligera flexión del codo y eleva hacia los lados hasta la línea del hombro. Baja con control sin encoger trapecios.' },
-  { name: 'Elevación frontal con barra', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Elevación frontal con barra/Elevación frontal con barra.gif', tip: 'Mantén abdomen firme y eleva la barra al frente hasta la altura del hombro. Baja lento sin balancear el cuerpo ni elevar demasiado los trapecios.' },
+  { name: 'Elevación frontal con barra', muscle: 'hombros', unit: 'total', step: 5, img: './gifs/hombros/Elevación frontal con barra/Elevación frontal con barra.gif', tip: 'Mantén abdomen firme y eleva la barra al frente hasta la altura del hombro. Baja lento sin balancear el cuerpo ni elevar demasiado los trapecios.' },
   { name: 'Elevación frontal con disco', muscle: 'hombros', unit: 'total', step: 5, img: './gifs/hombros/Elevación frontal con disco/Elevación frontal con disco.gif', tip: 'Disco con ambas manos a la altura de los muslos. Sube al frente hasta nivel de ojos con brazos rectos. Baja con control.' },
   { name: 'Elevación lateral en polea', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Elevación lateral en polea/Elevación lateral en polea.gif', tip: 'Trabaja con un brazo o ambos según la estación, manteniendo el torso quieto. Eleva lateralmente con control y aprovecha la tensión constante del cable.' },
   { name: 'Face Pull con cuerda en polea', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Face Pull con cuerda en polea/Face Pull con cuerda en polea.gif', tip: 'Coloca la polea a la altura de la cara y jala separando la soga. Lleva los codos altos y hacia atras sin arquear la zona lumbar.' },
@@ -8234,14 +8239,14 @@ const EXERCISE_CATALOG = [
   { name: 'Press de hombro en multipower', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press de hombro en multipower/Press de hombro en multipower.gif', tip: 'Coloca el banco de forma que la barra baje al frente de la cabeza. Presiona en vertical con core firme y controla el descenso.' },
   { name: 'Press de hombro en máquina', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Press de hombro en máquina/Press de hombro en máquina.gif', tip: 'Ajusta el asiento para iniciar con manos a la altura del hombro. Empuja sin despegar la espalda y baja con control.' },
   { name: 'Press de hombro sentado con mancuernas', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Press de hombro sentado con mancuernas/Press de hombro sentado con mancuernas.gif', tip: 'Siéntate firme con respaldo y pies bien apoyados. Presiona las mancuernas arriba manteniendo muñecas neutras y sin arquear la espalda.' },
-  { name: 'Press landmine', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press landmine/Press landmine.gif', tip: 'Presiona el extremo de la barra en diagonal manteniendo costillas abajo y glúteos firmes. Extiende arriba sin girar el torso.' },
+  { name: 'Press landmine', muscle: 'hombros', unit: 'total', step: 5, img: './gifs/hombros/Press landmine/Press landmine.gif', tip: 'Presiona el extremo de la barra en diagonal manteniendo costillas abajo y glúteos firmes. Extiende arriba sin girar el torso.' },
   { name: 'Press militar abiertas y cerradas', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press militar abiertas y cerradas/Press militar abiertas y cerradas.gif', tip: 'Barra al pecho, alterna agarre ancho y cerrado entre series. Presiona vertical. Evita arco lumbar excesivo.' },
   { name: 'Press militar con barra', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press militar con barra/Press militar con barra.gif', tip: 'Toma la barra un poco más ancho que hombros, aprieta el abdomen y presiona en línea vertical. Baja con control al frente sin compensar con la zona lumbar.' },
   { name: 'Press militar sentada barra', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press militar sentada barra/Press militar sentada barra.gif', tip: 'Sentado en banco con respaldo, barra a la clavícula. Presiona vertical sin arquear la espalda. Baja controlado al pecho alto.' },
   { name: 'Pájaro en cables (pec deck inversa)', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Pájaro en cables (pec deck inversa)/Pájaro en cables (pec deck inversa).gif', tip: 'Poleas cruzadas altas, toma manija contraria. Abre los brazos como pájaro manteniendo leve flexión de codo. Aprieta deltoides posterior.' },
   { name: 'Pájaros con mancuernas inclinado', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Pájaros con mancuernas inclinado/Pájaros con mancuernas inclinado.gif', tip: 'Cruza los cables al frente y abre los brazos hacia atras con ligera flexion del codo. Mantén tension constante y evita mover el torso para aislar deltoide posterior y espalda alta.' },
   { name: 'Remo al mentón cable', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Remo al mentón cable/Remo al mentón cable.gif', tip: 'Polea baja con barra corta. Jala hacia el mentón llevando los codos altos. Activa trapecio y deltoide lateral.' },
-  { name: 'Remo al mentón con barra', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Remo al mentón con barra/Remo al mentón con barra.gif', tip: 'Usa agarre medio o ancho y eleva la barra guiando con los codos. Sube hasta donde no haya molestia en hombro y baja sin tirones.' },
+  { name: 'Remo al mentón con barra', muscle: 'hombros', unit: 'total', step: 5, img: './gifs/hombros/Remo al mentón con barra/Remo al mentón con barra.gif', tip: 'Usa agarre medio o ancho y eleva la barra guiando con los codos. Sube hasta donde no haya molestia en hombro y baja sin tirones.' },
   { name: 'Vuelos laterales sentada', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Vuelos laterales sentada/Vuelos laterales sentada.gif', tip: 'Sentado en banco con respaldo, mancuernas al costado. Eleva lateral sin balanceo (el respaldo lo evita). Baja controlado.' },
   { name: 'Buenos días con barra', muscle: 'isquio', unit: 'lado', step: 5, img: './gifs/isquiotibiales/Buenos días con barra/Buenos días con barra.gif', tip: 'Coloca la barra sobre trapecios, desbloquea apenas las rodillas y bisagra la cadera hacia atras. Mantén abdomen firme y regresa usando glúteos e isquios.' },
   { name: 'Curl femoral sentado', muscle: 'isquio', unit: 'placa', step: 10, img: './gifs/isquiotibiales/Curl femoral sentado/Curl femoral sentado.gif', tip: 'Ajusta el respaldo y la almohadilla para quedar alineado. Flexiona llevando los talones hacia abajo, aprieta arriba y regresa lento sin despegar la cadera.' },
@@ -8293,16 +8298,16 @@ const EXERCISE_CATALOG = [
   { name: 'Extensiones de tríceps en polea con cuerda', muscle: 'triceps', unit: 'placa', step: 10, img: './gifs/triceps/Extensiones de tríceps en polea con cuerda/Extensiones de tríceps en polea con cuerda.gif', tip: 'Fija los codos al costado y empuja la soga hacia abajo sin mover el hombro. Separa las puntas al final y vuelve lento.' },
   { name: 'Extensión de tríceps sentado con mancuerna', muscle: 'triceps', unit: 'mancuerna', step: 5, img: './gifs/triceps/Extensión de tríceps sentado con mancuerna/Extensión de tríceps sentado con mancuerna.gif', tip: 'Siéntate estable con el abdomen firme y baja la mancuerna detrás de la cabeza. Mantén codos relativamente cerrados y extiende completo arriba.' },
   { name: 'Extensión de tríceps sobre la cabeza', muscle: 'triceps', unit: 'mancuerna', step: 5, img: './gifs/triceps/Extensión de tríceps sobre la cabeza/Extensión de tríceps sobre la cabeza.gif', tip: 'Mantén los codos apuntando al frente o arriba durante todo el recorrido. Baja detrás de la cabeza con control y extiende completo sin abrirlos de más.' },
-  { name: 'Extensión tríceps barra plana en pronación', muscle: 'triceps', unit: 'lado', step: 5, img: './gifs/triceps/Extensión tríceps barra plana en pronación/Extensión tríceps barra plana en pronación.gif', tip: 'Polea alta con barra recta, agarre prono (palmas hacia abajo). Codos fijos al costado. Empuja extendiendo los codos completamente. Contrae tríceps al final.' },
-  { name: 'Extensión tríceps barra plana en supinación', muscle: 'triceps', unit: 'lado', step: 5, img: './gifs/triceps/Extensión tríceps barra plana en supinación/Extensión tríceps barra plana en supinación.gif', tip: 'Polea alta con barra recta, agarre supino (palmas hacia arriba). Codos fijos al costado. Empuja extendiendo los codos. El agarre énfasis en la cabeza medial del tríceps.' },
+  { name: 'Extensión tríceps barra plana en pronación', muscle: 'triceps', unit: 'total', step: 5, img: './gifs/triceps/Extensión tríceps barra plana en pronación/Extensión tríceps barra plana en pronación.gif', tip: 'Polea alta con barra recta, agarre prono (palmas hacia abajo). Codos fijos al costado. Empuja extendiendo los codos completamente. Contrae tríceps al final.' },
+  { name: 'Extensión tríceps barra plana en supinación', muscle: 'triceps', unit: 'total', step: 5, img: './gifs/triceps/Extensión tríceps barra plana en supinación/Extensión tríceps barra plana en supinación.gif', tip: 'Polea alta con barra recta, agarre supino (palmas hacia arriba). Codos fijos al costado. Empuja extendiendo los codos. El agarre énfasis en la cabeza medial del tríceps.' },
   { name: 'Extensión unilateral de tríceps sobre cabeza en polea', muscle: 'triceps', unit: 'placa', step: 10, img: './gifs/triceps/Extensión unilateral de tríceps sobre cabeza en polea/Extensión unilateral de tríceps sobre cabeza en polea.gif', tip: 'Trabaja un brazo a la vez manteniendo el codo estable cerca de la cabeza. Extiende completo y regresa controlado sin arquear el torso.' },
   { name: 'Fondos asistidos en máquina', muscle: 'triceps', unit: 'placa', step: 10, img: './gifs/triceps/Fondos asistidos en máquina/Fondos asistidos en máquina.gif', tip: 'Usa la asistencia justa para mantener técnica limpia. Torso vertical, codos cerca del cuerpo y extensión fuerte al subir.' },
   { name: 'Fondos en banco', muscle: 'triceps', unit: 'corporal', step: 0, img: './gifs/triceps/Fondos en banco/Fondos en banco.gif', tip: 'Apoya las manos al borde del banco detrás tuyo con los dedos hacia adelante. Desliza la cadera fuera del banco y baja flexionando codos hasta 90°. Empuja con los tríceps para subir sin bloquear el codo arriba.' },
   { name: 'Fondos en paralelas para tríceps', muscle: 'triceps', unit: 'corporal', step: 0, img: './gifs/triceps/Fondos en paralelas para tríceps/Fondos en paralelas para tríceps.gif', tip: 'Mantén el torso más vertical que en fondos para pecho y lleva los codos cerca del cuerpo. Baja controlado y sube extendiendo fuerte sin balancearte.' },
-  { name: 'JM Press con barra', muscle: 'triceps', unit: 'lado', step: 5, img: './gifs/triceps/JM Press con barra/JM Press con barra.gif', tip: 'Acostado con barra, codos apuntan al frente. Baja la barra cerca del cuello doblando codos hacia adentro. Presiona hasta extender. Mezcla de press y extensión.' },
+  { name: 'JM Press con barra', muscle: 'triceps', unit: 'total', step: 5, img: './gifs/triceps/JM Press con barra/JM Press con barra.gif', tip: 'Acostado con barra, codos apuntan al frente. Baja la barra cerca del cuello doblando codos hacia adentro. Presiona hasta extender. Mezcla de press y extensión.' },
   { name: 'Patada de tríceps con mancuerna', muscle: 'triceps', unit: 'mancuerna', step: 5, img: './gifs/triceps/Patada de tríceps con mancuerna/Patada de tríceps con mancuerna.gif', tip: 'Fija el brazo arriba y paralelo al torso durante toda la serie. Extiende el codo completo, aprieta arriba y baja lento sin mover el hombro.' },
   { name: 'Press de banca agarre cerrado', muscle: 'triceps', unit: 'lado', step: 5, img: './gifs/triceps/Press de banca agarre cerrado/Press de banca agarre cerrado.gif', tip: 'Usa un agarre cercano al ancho de hombros y baja con codos relativamente pegados. Empuja en línea estable sin perder la posición de las escápulas.' },
-  { name: 'Press francés acostado con barra', muscle: 'triceps', unit: 'lado', step: 5, img: './gifs/triceps/Press francés acostado con barra/Press francés acostado con barra.gif', tip: 'Mantén los brazos estables sobre el pecho y flexiona solo el codo. Baja la barra con control y extiende fuerte sin abrir demasiado los codos.' },
+  { name: 'Press francés acostado con barra', muscle: 'triceps', unit: 'total', step: 5, img: './gifs/triceps/Press francés acostado con barra/Press francés acostado con barra.gif', tip: 'Mantén los brazos estables sobre el pecho y flexiona solo el codo. Baja la barra con control y extiende fuerte sin abrir demasiado los codos.' },
   { name: 'Skull crusher con mancuernas', muscle: 'triceps', unit: 'mancuerna', step: 5, img: './gifs/triceps/Skull crusher con mancuernas/Skull crusher con mancuernas.gif', tip: 'Acostado con mancuernas arriba del pecho. Baja doblando codos hacia la frente. Extiende arriba sin mover los hombros.' },
   { name: 'Tate press con mancuernas', muscle: 'triceps', unit: 'mancuerna', step: 5, img: './gifs/triceps/Tate press con mancuernas/Tate press con mancuernas.gif', tip: 'Acostado con mancuernas arriba. Dobla los codos llevando las pesas al centro del pecho en forma de V. Extiende arriba contrayendo tríceps.' },
 ];

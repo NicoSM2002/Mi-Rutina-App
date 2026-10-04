@@ -131,7 +131,7 @@ export const CATALOGO = [
  {
   "name": "Curl de muñeca inverso con barra",
   "muscle": "antebrazo",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/antebrazo/Curl de muñeca inverso con barra/Curl de muñeca inverso con barra.gif",
   "tip": "Antebrazos apoyados, palmas hacia abajo. Extiende las muñecas subiendo la barra. Baja controlado para estirar los extensores."
@@ -139,7 +139,7 @@ export const CATALOGO = [
  {
   "name": "Curl inverso con barra",
   "muscle": "antebrazo",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/antebrazo/Curl inverso con barra/Curl inverso con barra.gif",
   "tip": "Agarre prono (palmas abajo). Activa principalmente el BRAQUIORRADIAL y braquial. Complementa los curls clasicos. Control total en el descenso."
@@ -163,7 +163,7 @@ export const CATALOGO = [
  {
   "name": "Curl araña con barra",
   "muscle": "biceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/biceps/Curl araña con barra/Curl araña con barra.gif",
   "tip": "Acostado boca abajo en banco inclinado, barra colgando con agarre supino. Curla sin mover los hombros ni los codos. Baja controlado estirando el bíceps."
@@ -187,7 +187,7 @@ export const CATALOGO = [
  {
   "name": "Curl de bíceps con barra",
   "muscle": "biceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/biceps/Curl de bíceps con barra/Curl de bíceps con barra.gif",
   "tip": "Codos pegados al torso y fijos. Supina las muñecas al subir, aprieta en el pico. Baja controlado sin bloquear el codo."
@@ -259,7 +259,7 @@ export const CATALOGO = [
  {
   "name": "Curl predicador barra EZ",
   "muscle": "biceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/biceps/Curl predicador barra EZ/Curl predicador barra EZ.gif",
   "tip": "Tríceps apoyados en cojín Scott, barra EZ con agarre cómodo. Curla sin despegar brazos. Baja controlado sin bloquear."
@@ -283,7 +283,7 @@ export const CATALOGO = [
  {
   "name": "Curl predicador maquina discos",
   "muscle": "biceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/biceps/Curl predicador maquina discos/Curl predicador maquina discos.gif",
   "tip": "Apoya completamente los brazos en el pad y controla el movimiento en todo el recorrido. Evita despegar los codos y prioriza la fase negativa."
@@ -803,7 +803,7 @@ export const CATALOGO = [
  {
   "name": "Elevación frontal con barra",
   "muscle": "hombros",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/hombros/Elevación frontal con barra/Elevación frontal con barra.gif",
   "tip": "Mantén abdomen firme y eleva la barra al frente hasta la altura del hombro. Baja lento sin balancear el cuerpo ni elevar demasiado los trapecios."
@@ -875,7 +875,7 @@ export const CATALOGO = [
  {
   "name": "Press landmine",
   "muscle": "hombros",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/hombros/Press landmine/Press landmine.gif",
   "tip": "Presiona el extremo de la barra en diagonal manteniendo costillas abajo y glúteos firmes. Extiende arriba sin girar el torso."
@@ -931,7 +931,7 @@ export const CATALOGO = [
  {
   "name": "Remo al mentón con barra",
   "muscle": "hombros",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/hombros/Remo al mentón con barra/Remo al mentón con barra.gif",
   "tip": "Usa agarre medio o ancho y eleva la barra guiando con los codos. Sube hasta donde no haya molestia en hombro y baja sin tirones."
@@ -1347,7 +1347,7 @@ export const CATALOGO = [
  {
   "name": "Extensión tríceps barra plana en pronación",
   "muscle": "triceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/triceps/Extensión tríceps barra plana en pronación/Extensión tríceps barra plana en pronación.gif",
   "tip": "Polea alta con barra recta, agarre prono (palmas hacia abajo). Codos fijos al costado. Empuja extendiendo los codos completamente. Contrae tríceps al final."
@@ -1355,7 +1355,7 @@ export const CATALOGO = [
  {
   "name": "Extensión tríceps barra plana en supinación",
   "muscle": "triceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/triceps/Extensión tríceps barra plana en supinación/Extensión tríceps barra plana en supinación.gif",
   "tip": "Polea alta con barra recta, agarre supino (palmas hacia arriba). Codos fijos al costado. Empuja extendiendo los codos. El agarre énfasis en la cabeza medial del tríceps."
@@ -1395,7 +1395,7 @@ export const CATALOGO = [
  {
   "name": "JM Press con barra",
   "muscle": "triceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/triceps/JM Press con barra/JM Press con barra.gif",
   "tip": "Acostado con barra, codos apuntan al frente. Baja la barra cerca del cuello doblando codos hacia adentro. Presiona hasta extender. Mezcla de press y extensión."
@@ -1419,7 +1419,7 @@ export const CATALOGO = [
  {
   "name": "Press francés acostado con barra",
   "muscle": "triceps",
-  "unit": "lado",
+  "unit": "total",
   "step": 5,
   "img": "./gifs/triceps/Press francés acostado con barra/Press francés acostado con barra.gif",
   "tip": "Mantén los brazos estables sobre el pecho y flexiona solo el codo. Baja la barra con control y extiende fuerte sin abrir demasiado los codos."
