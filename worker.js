@@ -1,3 +1,4 @@
+import { CATALOGO, PorMusculo, PorNombre } from './catalogo-ejercicios.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
 // is missing or the trainer record has no email. Real routing uses
@@ -132,6 +133,395 @@ async function verifySelfToken(env, clientId, token) {
   if (!clientId || !token) return false;
   const expected = await computeSelfToken(env, clientId);
   return expected === token;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOTOR DE PROGRESIÓN
+
+   Esquema de progresión doble: las repeticiones suben dentro del rango del
+   ejercicio y, cuando tocan el techo, sube la carga un salto y las reps
+   vuelven al suelo del rango. Es el estándar para hipertrofia y sobre todo
+   es predecible.
+
+   La única entrada son los tres botones que el atleta marca al cerrar cada
+   circuito. Sin marca no se toca nada: inventar un incremento porque pasó
+   una semana desincroniza la app del gimnasio en un mes.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Lista explícita. El resto de atletas sigue dependiendo de su entrenador y
+   a su rutina no la toca nadie automáticamente. */
+const ATLETAS_IA = ['nicolassaravia'];
+
+/* Cómo se lee la carga de cada aparato. Lo trae el ejercicio desde el
+   catálogo; el sufijo es para que el número de la app sea el mismo que el
+   atleta ve en el hierro. */
+const SUFIJO_CARGA = {
+  lado: ' lbs/lado', mancuerna: ' lbs c/u', placa: ' lbs', total: ' lbs', corporal: ''
+};
+
+function numeroDePeso(txt) {
+  const m = String(txt || '').match(/(\d+(?:[.,]\d+)?)/);
+  return m ? parseFloat(m[1].replace(',', '.')) : 0;
+}
+
+function escribePeso(num, unidad) {
+  if (!num || num <= 0) return '';
+  return Math.round(num) + (SUFIJO_CARGA[unidad] !== undefined ? SUFIJO_CARGA[unidad] : ' lbs');
+}
+
+/* Aplica una respuesta a un ejercicio. Devuelve qué cambió, o null si no
+   había nada que marcar. Muta el ejercicio. */
+function progresarEjercicio(ex, resp) {
+  const paso = parseInt(ex.step) || 0;
+  const lo   = parseInt(ex.repMin) || 8;
+  const hi   = parseInt(ex.repMax) || 12;
+  const corporal = ex.unit === 'corporal' || !paso;
+
+  const repsAntes = parseInt(ex.repNow) || lo;
+  const pesoAntes = numeroDePeso(ex.w1);
+  let reps = repsAntes, peso = pesoAntes;
+  let fallos = parseInt(ex.fallos) || 0;
+  let motivo = '';
+
+  if (resp === 'facil') {
+    fallos = 0;
+    if (reps < hi)       { reps = Math.min(hi, reps + 2); motivo = 'iba sobrado'; }
+    else if (corporal)   { reps = reps + 2;               motivo = 'iba sobrado'; }
+    else                 { peso = peso + paso; reps = lo; motivo = 'llegó al tope del rango sobrado'; }
+
+  } else if (resp === 'justo') {
+    fallos = 0;
+    if (reps < hi)       { reps = reps + 1;               motivo = 'subiendo dentro del rango'; }
+    else if (corporal)   { reps = reps + 1;               motivo = 'subiendo dentro del rango'; }
+    else                 { peso = peso + paso; reps = lo; motivo = 'completó el rango'; }
+
+  } else if (resp === 'fallo') {
+    fallos = fallos + 1;
+    if (fallos >= 2) {
+      // Dos semanas sin llegar no es mala suerte: la carga está por encima
+      fallos = 0;
+      if (corporal)      { reps = Math.max(lo, reps - 2); }
+      else               { peso = Math.max(paso, peso - paso); reps = lo; }
+      motivo = 'dos semanas sin llegar';
+    } else {
+      motivo = 'se repite la misma carga una semana más';
+    }
+
+  } else {
+    return null;   // sin marcar
+  }
+
+  ex.repNow = reps;
+  ex.reps = reps + ' reps';
+  ex.fallos = fallos;
+  if (!corporal) ex.w1 = escribePeso(peso, ex.unit);
+
+  const cambioPeso = Math.round(peso) !== Math.round(pesoAntes);
+  const cambioReps = reps !== repsAntes;
+  return {
+    name: ex.name,
+    resp,
+    motivo,
+    pesoAntes: escribePeso(pesoAntes, ex.unit),
+    pesoDespues: escribePeso(peso, ex.unit),
+    repsAntes, repsDespues: reps,
+    cambio: cambioPeso ? (peso > pesoAntes ? 'sube carga' : 'baja carga')
+          : cambioReps ? (reps > repsAntes ? 'sube reps' : 'baja reps')
+          : 'sin cambio'
+  };
+}
+
+/* Recorre la rutina aplicando las marcas de la semana.
+   `marcas` viene indexado por "sesionN|Nombre del ejercicio". */
+function progresarRutina(rutina, marcas) {
+  const cambios = [];
+  for (const clave of Object.keys(rutina || {})) {
+    const dia = rutina[clave];
+    if (!dia || !Array.isArray(dia.circuits)) continue;
+    for (const c of dia.circuits) {
+      const exs = Array.isArray(c.exercises) ? c.exercises : [];
+      let fallosDelCircuito = 0;
+      for (const ex of exs) {
+        const resp = marcas[clave + '|' + ex.name];
+        const r = progresarEjercicio(ex, resp);
+        if (r) { r.sesion = clave; r.circuito = c.label || ''; cambios.push(r); }
+        if (resp === 'fallo') fallosDelCircuito++;
+      }
+      // Si el circuito entero se cae dos semanas seguidas, el problema no es
+      // la carga sino el volumen: se le quita una serie (nunca por debajo de 3).
+      if (exs.length && fallosDelCircuito === exs.length) {
+        c.fallosSeguidos = (parseInt(c.fallosSeguidos) || 0) + 1;
+        if (c.fallosSeguidos >= 2) {
+          c.fallosSeguidos = 0;
+          const antes = parseInt(c.series) || 4;
+          if (antes > 3) {
+            c.series = antes - 1;
+            cambios.push({ sesion: clave, circuito: c.label || '', name: '(volumen)',
+              cambio: 'baja series', motivo: 'el circuito entero se cayó dos semanas',
+              repsAntes: antes, repsDespues: c.series });
+          }
+        }
+      } else {
+        c.fallosSeguidos = 0;
+      }
+    }
+  }
+  return cambios;
+}
+
+/* Las marcas de los últimos 7 días, la más reciente por ejercicio. */
+function marcasDeLaSemana(completions, desdeTs) {
+  const marcas = {};
+  const orden = [...(completions || [])].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  for (const c of orden) {
+    if (desdeTs && (c.ts || 0) < desdeTs) continue;
+    for (const f of (Array.isArray(c.feedback) ? c.feedback : [])) {
+      if (!f || !f.name || !f.resp) continue;
+      marcas[(c.sessionKey || '') + '|' + f.name] = f.resp;
+    }
+  }
+  return marcas;
+}
+
+/* Semana ISO, para no correr dos veces la misma. */
+function claveSemana(d) {
+  const f = new Date(d);
+  const j = new Date(Date.UTC(f.getUTCFullYear(), f.getUTCMonth(), f.getUTCDate()));
+  j.setUTCDate(j.getUTCDate() + 4 - (j.getUTCDay() || 7));
+  const ini = new Date(Date.UTC(j.getUTCFullYear(), 0, 1));
+  const sem = Math.ceil((((j - ini) / 86400000) + 1) / 7);
+  return j.getUTCFullYear() + '-S' + String(sem).padStart(2, '0');
+}
+
+
+/* ── Rotación de ejercicios ───────────────────────────────────────────
+   Cada 6 semanas se cambian hasta 3 ejercicios que llevan tiempo sin
+   moverse. No es por variar porque sí: si un ejercicio no sube en tres
+   semanas, cambiar el estímulo suele destrabarlo. Los que progresan se
+   quedan — no se toca lo que funciona. */
+
+const SEMANAS_ENTRE_ROTACIONES = 6;
+
+/* Rango de repeticiones de un ejercicio nuevo, por tipo de movimiento */
+function rangoDeReps(nombre) {
+  const n = String(nombre || '').toLowerCase()
+    .replace(/[áà]/g,'a').replace(/[éè]/g,'e').replace(/[íì]/g,'i')
+    .replace(/[óò]/g,'o').replace(/[úùü]/g,'u');
+  if (/talones|crunch|plancha|abdomen|piernas/.test(n)) return [12, 20];
+  if (/press de banca|press inclinado|press militar|press de hombro|sentadilla|peso muerto|dominada|remo con barra|remo en barra|remo pendlay|hack|prensa|hip thrust|zancada/.test(n)) return [6, 10];
+  if (/curl|extension|elevacion|apertura|cruce|cable|pajaro|vuelo|face ?pull|peck deck|patada|encogimiento|skull|jm press|press frances|fondos/.test(n)) return [10, 15];
+  return [8, 12];
+}
+
+/* Ejercicios que llevan varias semanas sin subir ni carga ni repeticiones */
+function ejerciciosEstancados(historial, limite) {
+  const ultimas = (historial || []).slice(0, 3);
+  if (ultimas.length < 3) return [];
+  const movio = new Set();
+  const vistos = new Set();
+  for (const h of ultimas) {
+    for (const c of (h.cambios || [])) {
+      vistos.add(c.name);
+      if (c.cambio === 'sube carga' || c.cambio === 'sube reps') movio.add(c.name);
+    }
+  }
+  return [...vistos].filter(nm => nm !== '(volumen)' && !movio.has(nm)).slice(0, limite || 3);
+}
+
+async function proponerRotacion(env, rutina, estancados) {
+  if (!estancados.length || !env.ANTHROPIC_API_KEY) return [];
+
+  // Lo que ya está en la rutina no puede proponerse como reemplazo
+  const yaEstan = new Set();
+  for (const k of Object.keys(rutina)) {
+    for (const c of (rutina[k].circuits || [])) {
+      for (const e of (c.exercises || [])) yaEstan.add(e.name);
+    }
+  }
+
+  const fichas = [];
+  for (const nombre of estancados) {
+    const actual = PorNombre[nombre];
+    if (!actual) continue;
+    const alternativas = (PorMusculo[actual.muscle] || [])
+      .filter(e => !yaEstan.has(e.name))
+      .map(e => e.name);
+    if (alternativas.length) fichas.push({ actual: nombre, musculo: actual.muscle, alternativas });
+  }
+  if (!fichas.length) return [];
+
+  const prompt = `Eres un entrenador de fuerza. Un atleta avanzado (69 kg, 1,79 m, objetivo hipertrofia)
+lleva tres semanas sin progresar en estos ejercicios. Para cada uno, elige UN reemplazo de su lista de
+alternativas que entrene el mismo músculo con un estímulo distinto (otro ángulo, otro patrón, otro tipo
+de resistencia). No elijas una variante casi idéntica a la que ya hace.
+
+${JSON.stringify(fichas, null, 1)}
+
+Responde SOLO con un JSON array, sin texto alrededor:
+[{"actual":"...","nuevo":"...","porque":"una frase corta en español de Colombia, tuteando (nunca voseo)"}]
+El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternativas.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 900,
+                             messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    const m = txt.match(/\[[\s\S]*\]/);
+    if (!m) return [];
+    const propuestas = JSON.parse(m[0]);
+
+    // El modelo propone; aquí se comprueba. Lo que no cuadre, se descarta.
+    return propuestas.filter(p => {
+      if (!p || !p.actual || !p.nuevo) return false;
+      const viejo = PorNombre[p.actual], nuevo = PorNombre[p.nuevo];
+      if (!viejo || !nuevo) return false;
+      if (viejo.muscle !== nuevo.muscle) return false;
+      if (yaEstan.has(p.nuevo)) return false;
+      return estancados.includes(p.actual);
+    });
+  } catch (e) {
+    console.log('[ROTACION] falló la propuesta: ' + e.message);
+    return [];
+  }
+}
+
+/* Aplica las rotaciones validadas sobre la rutina */
+function aplicarRotacion(rutina, propuestas) {
+  const hechas = [];
+  for (const p of propuestas) {
+    const nuevo = PorNombre[p.nuevo];
+    for (const k of Object.keys(rutina)) {
+      for (const c of (rutina[k].circuits || [])) {
+        const exs = c.exercises || [];
+        for (let i = 0; i < exs.length; i++) {
+          if (exs[i].name !== p.actual) continue;
+          const anterior = exs[i];
+          const [lo, hi] = rangoDeReps(nuevo.name);
+          // El peso sólo se hereda si se lee igual en el aparato; si no,
+          // se deja en blanco y el atleta lo fija el primer día.
+          const heredaPeso = anterior.unit === nuevo.unit && nuevo.unit !== 'corporal';
+          exs[i] = {
+            name: nuevo.name, muscle: nuevo.muscle, unit: nuevo.unit, step: nuevo.step,
+            img: nuevo.img, tip: nuevo.tip,
+            w1: heredaPeso ? anterior.w1 : '',
+            reps: lo + ' reps', repMin: lo, repMax: hi, repNow: lo, fallos: 0,
+            calibrar: !heredaPeso && nuevo.unit !== 'corporal',
+          };
+          hechas.push({ sesion: k, circuito: c.label || '', de: p.actual, a: nuevo.name,
+                        porque: String(p.porque || '').slice(0, 200), heredaPeso });
+        }
+      }
+    }
+  }
+  return hechas;
+}
+
+/* ── Resumen de la semana ─────────────────────────────────────────────
+   Aquí la IA sí aporta: convierte una lista de cambios en algo que se lee.
+   Con respaldo determinista, porque el resumen no puede depender de que
+   una API responda. */
+
+function resumenDeRespaldo(cambios, rotaciones) {
+  const sube = cambios.filter(c => c.cambio === 'sube carga').length;
+  const reps = cambios.filter(c => c.cambio === 'sube reps').length;
+  const baja = cambios.filter(c => c.cambio === 'baja carga').length;
+  const vol  = cambios.filter(c => c.cambio === 'baja series').length;
+  const partes = [];
+  if (sube) partes.push(`sube la carga en ${sube} ejercicio${sube === 1 ? '' : 's'}`);
+  if (reps) partes.push(`suben las repeticiones en ${reps}`);
+  if (baja) partes.push(`baja la carga en ${baja} donde no llegaste dos semanas seguidas`);
+  if (vol)  partes.push(`se quita una serie en ${vol} circuito${vol === 1 ? '' : 's'}`);
+  if (rotaciones && rotaciones.length) partes.push(rotaciones.length === 1
+    ? 'y cambia un ejercicio que llevaba semanas sin moverse'
+    : `y cambian ${rotaciones.length} ejercicios que llevaban semanas sin moverse`);
+  if (!partes.length) return 'Esta semana la rutina se queda igual.';
+  return 'Para la semana que viene ' + partes.join(', ') + '.';
+}
+
+async function resumenSemana(env, cambios, rotaciones) {
+  const respaldo = resumenDeRespaldo(cambios, rotaciones);
+  if (!env.ANTHROPIC_API_KEY || !cambios.length) return respaldo;
+  const prompt = `Eres el entrenador de Nicolás (hipertrofia, avanzado). Estos son los ajustes que el
+sistema hizo a su rutina para la semana que viene, a partir de cómo marcó cada ejercicio:
+
+${JSON.stringify(cambios.slice(0, 40), null, 1)}
+${rotaciones && rotaciones.length ? 'Ejercicios cambiados:\n' + JSON.stringify(rotaciones, null, 1) : ''}
+
+Escríbele 2 o 3 frases diciéndole qué cambió y por qué. Directo y concreto, sin motivación de
+cartel ni emojis. Si bajó carga en algo, dilo sin dramatizar: es parte del plan.
+
+Español de Colombia, tuteando: "subes", "sumas", "llegaste". NUNCA voseo rioplatense — nada de
+"subís", "sumás", "tenés", "vos". No lo llames por su nombre, háblale directo.
+Responde solo el texto.`;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 400,
+                             messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const txt = (data.content && data.content[0] && data.content[0].text || '').trim();
+    return txt || respaldo;
+  } catch (e) {
+    console.log('[RESUMEN] falló, va el de respaldo: ' + e.message);
+    return respaldo;
+  }
+}
+
+/* Orquesta la semana: lee, progresa, guarda y deja registro.
+   `motivo` sólo sirve para el log: 'viernes' o 'cron'. */
+async function correrProgresion(env, clientId, motivo) {
+  if (!ATLETAS_IA.includes(clientId)) return { ok: false, razon: 'no tiene rutina autogestionada' };
+
+  const semana = claveSemana(Date.now());
+  const historial = await env.DB.get(`progresion:${clientId}`, 'json') || [];
+  if (historial.some(h => h.semana === semana)) {
+    return { ok: false, razon: 'ya se corrió esta semana', semana };
+  }
+
+  const [rutina, completions] = await Promise.all([
+    env.DB.get(`routine:${clientId}`, 'json'),
+    env.DB.get(`completions:${clientId}`, 'json')
+  ]);
+  if (!rutina) return { ok: false, razon: 'sin rutina' };
+
+  const hace7dias = Date.now() - 7 * 86400000;
+  const marcas = marcasDeLaSemana(completions || [], hace7dias);
+  if (!Object.keys(marcas).length) {
+    return { ok: false, razon: 'ninguna sesión marcada esta semana', semana };
+  }
+
+  const cambios = progresarRutina(rutina, marcas);
+
+  // Cada 6 semanas, cambiar lo que lleva tiempo sin moverse
+  let rotaciones = [];
+  const toca = historial.length > 0 && historial.length % SEMANAS_ENTRE_ROTACIONES === 0;
+  if (toca) {
+    const estancados = ejerciciosEstancados(historial, 3);
+    if (estancados.length) {
+      const propuestas = await proponerRotacion(env, rutina, estancados);
+      rotaciones = aplicarRotacion(rutina, propuestas);
+      console.log(`[ROTACION] ${clientId}: ${estancados.length} estancados, ${rotaciones.length} cambiados`);
+    }
+  }
+
+  await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
+
+  const resumen = await resumenSemana(env, cambios, rotaciones);
+  const entrada = { semana, fecha: new Date().toISOString(), motivo, cambios, rotaciones, resumen };
+  historial.unshift(entrada);
+  await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial.slice(0, 60)));
+
+  console.log(`[PROGRESION] ${clientId} semana=${semana} motivo=${motivo} cambios=${cambios.length} rotaciones=${rotaciones.length}`);
+  return { ok: true, semana, cambios, rotaciones, resumen };
 }
 
 // Authorize a read of a specific athlete's private data (routine, completions,
@@ -405,6 +795,11 @@ export default {
         sessionKey: body.day,
         week: body.week,
         notes: body.notes,
+        // Cómo fue cada ejercicio: de aquí sale la progresión de la semana
+        feedback: Array.isArray(body.feedback)
+          ? body.feedback.filter(f => f && f.name && ['facil','justo','fallo'].includes(f.resp))
+                         .map(f => ({ ci: parseInt(f.ci) || 0, name: String(f.name).slice(0, 120), resp: f.resp }))
+          : [],
         date: new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }),
         ts: Date.now(),
         snapshot
@@ -419,6 +814,14 @@ export default {
       records.unshift(entry);
       if (records.length > 200) records = records.slice(0, 200);
       await env.DB.put(kvKey, JSON.stringify(records));
+
+      // Rutina autogestionada: al cerrar la última sesión de la semana se
+      // recalcula la siguiente. Si esta semana no se llegó al viernes, lo
+      // recoge el cron del sábado.
+      if (ATLETAS_IA.includes(client) && body.day === 'sesion5') {
+        ctx.waitUntil(correrProgresion(env, client, 'viernes').catch(e =>
+          console.log('[PROGRESION] falló al cerrar viernes: ' + e.message)));
+      }
 
       // ── Email detallado ──
       const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -702,6 +1105,14 @@ export default {
     }
 
     // ── GET ROUTINE ──
+    // Último ajuste semanal, para que el atleta vea qué cambió y por qué
+    if (body.action === 'get-progresion') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
+      const historial = await env.DB.get(`progresion:${client}`, 'json') || [];
+      return new Response(JSON.stringify({ ok: true, ultima: historial[0] || null }), { headers: cors });
+    }
+
     if (body.action === 'get-routine') {
       const authErr = await authorizeReadForClient(env, body, client, cors);
       if (authErr) return authErr;
@@ -1071,7 +1482,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       if (body.hard) {
         // Hard delete secuencial: si alguno falla, loggeamos y seguimos los
         // otros (sin Promise.all para que un error no deje huérfanos los otros).
-        const keys = [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `meals:${id}`, `payment:${id}`, `support-chat:${id}`];
+        const keys = [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `meals:${id}`, `payment:${id}`, `support-chat:${id}`, `progresion:${id}`];
         for (const k of keys) {
           try { await env.DB.delete(k); }
           catch (err) { console.error(`[delete-athlete] failed to delete ${k}:`, err?.message); }
@@ -1482,7 +1893,15 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
     // Weekly report: Sunday 01:00 UTC = Saturday 20:00 Colombia
     if (utcHour === 1 && utcDay === 0) {
-      console.log('[CRON] -> sendWeeklyReport');
+      console.log('[CRON] -> progresión semanal + sendWeeklyReport');
+      // Primero la rutina de la semana que viene: si el viernes ya la corrió,
+      // correrProgresion se sale sola al ver la semana en el historial.
+      for (const id of ATLETAS_IA) {
+        try {
+          const r = await correrProgresion(env, id, 'cron');
+          console.log(`[CRON] progresión ${id}: ${r.ok ? r.cambios.length + ' cambios' : r.razon}`);
+        } catch (e) { console.log(`[CRON] progresión ${id} falló: ${e.message}`); }
+      }
       await sendWeeklyReport(env);
       return;
     }

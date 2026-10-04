@@ -1506,6 +1506,37 @@ button.ex-presc:active { background:#FBDCC9; }
 .complete-sheet-sub {
   font-size:13px; color:var(--t2); margin-bottom:20px;
 }
+/* Ajuste semanal de la rutina, en Inicio */
+.aj-card { border-left:3px solid var(--ac); }
+.aj-top { display:flex; align-items:flex-start; gap:12px; }
+.aj-resumen { font-size:15.5px; color:var(--t1); line-height:1.55; letter-spacing:-.2px; margin-top:5px; }
+.aj-cerrar {
+  width:34px; height:34px; flex:none; border-radius:100px;
+  background:var(--s2); border:none; color:var(--t2); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.aj-cerrar:active { background:var(--b); }
+.aj-detalle { margin-top:14px; }
+.aj-ver {
+  list-style:none; cursor:pointer; font-size:14.5px; font-weight:600;
+  color:var(--ac-tx); padding:6px 0; letter-spacing:-.2px;
+}
+.aj-ver::-webkit-details-marker { display:none; }
+.aj-lista { margin-top:8px; border-top:1px solid var(--b2); }
+.aj-fila {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:11px 0; border-bottom:1px solid var(--b2);
+}
+.aj-nombre { font-size:14.5px; color:var(--t1); letter-spacing:-.2px; line-height:1.4; }
+.aj-flecha { color:var(--t2); }
+.aj-dato {
+  font-size:14px; font-weight:600; flex:none; color:var(--t2);
+  font-variant-numeric:tabular-nums; letter-spacing:-.2px; text-align:right;
+}
+.aj-dato.aj-sube { color:var(--ok); }
+.aj-dato.aj-baja { color:var(--ac-tx); }
+.aj-dato.aj-nuevo { color:var(--t2); font-weight:500; font-style:italic; }
+
 /* Cómo te fue: tres opciones por ejercicio al cerrar el circuito */
 .fb-bloque { margin-top:26px; }
 .fb-head { padding:0 2px; margin-bottom:12px; }
@@ -3664,6 +3695,19 @@ let currentDay   = 'sesion1';
 let routineStep  = 0;
 
 /* ── session progression ── */
+/* Atletas cuya sesión la decide el día de la semana y no un contador.
+   Lista explícita: para el resto no cambia nada. */
+const ATLETAS_RUTINA_FIJA = ['nicolassaravia'];
+
+/* Lunes→sesión 1 … viernes→sesión 5. El fin de semana apunta al lunes, que
+   es el próximo entrenamiento. */
+function sesionPorDiaDeLaSemana() {
+  const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const d = hoy.getDay();                 // 0=domingo … 6=sábado
+  const num = (d >= 1 && d <= 5) ? d : 1; // sábado y domingo → lunes
+  return { num, esFinDeSemana: d === 0 || d === 6 };
+}
+
 function getSessionState(athlete) {
   // Preferir el total real de la rutina dinámica; si no hay, caer al FALLBACK.
   const dynamicKeys = data && typeof data === 'object'
@@ -3676,12 +3720,20 @@ function getSessionState(athlete) {
     const fb = athlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
     total = Object.keys(fb).length;
   }
+  if (ATLETAS_RUTINA_FIJA.includes(athlete) && total >= 5) {
+    const { num, esFinDeSemana } = sesionPorDiaDeLaSemana();
+    return { idx: num - 1, total, week: 1, sessionNum: num,
+             sessionKey: 'sesion' + num, porDia: true, esFinDeSemana };
+  }
   const idx    = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   const offset = parseInt(localStorage.getItem('sessionOffset_' + athlete) || '0');
   const num    = ((idx + offset) % total) + 1;
   return { idx, total, week: 1, sessionNum: num, sessionKey: 'sesion' + num };
 }
 function advanceSession(athlete) {
+  // Con rutina por día de la semana no hay contador que avanzar: mañana es
+  // mañana. Avanzarlo adelantaría la sesión un día.
+  if (ATLETAS_RUTINA_FIJA.includes(athlete)) return;
   const idx = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   localStorage.setItem('sessionIdx_' + athlete, idx + 1);
   localStorage.setItem('lastCompleted_' + athlete, new Date().toDateString());
@@ -8680,10 +8732,83 @@ function renderToday() {
         <svg class="ic"><use href="#i-logout"/></svg>
       </button>
     </div>
+    <div id="today-ajuste"></div>
     ${entrenamiento}${comidas}${semana}`;
 
   // Los datos de la semana llegan aparte
   loadTodayWeek();
+  loadAjusteSemanal();
+}
+
+/* ── Ajuste semanal de la rutina ──────────────────────────────────
+   Sólo aparece para quien tiene rutina autogestionada, y sólo la semana
+   en que hubo ajuste. Si el atleta lo cierra, no vuelve a salir. */
+
+function textoDelCambio(c) {
+  if (c.cambio === 'baja series') return `de ${c.repsAntes} a ${c.repsDespues} series`;
+  if (c.cambio === 'sube carga' || c.cambio === 'baja carga')
+    return `${c.pesoAntes || '—'} → ${c.pesoDespues || '—'}`;
+  if (c.cambio === 'sube reps' || c.cambio === 'baja reps')
+    return `${c.repsAntes} → ${c.repsDespues} reps`;
+  return 'se repite igual';
+}
+
+const AJUSTE_CLASE = {
+  'sube carga': 'aj-sube', 'sube reps': 'aj-sube',
+  'baja carga': 'aj-baja', 'baja reps': 'aj-baja', 'baja series': 'aj-baja',
+};
+
+async function loadAjusteSemanal() {
+  const el = document.getElementById('today-ajuste');
+  if (!el || !currentAthlete) return;
+  let ultima = null;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get-progresion', client: currentAthlete, selfToken: getSelfToken() })
+    });
+    const d = await res.json();
+    ultima = d.ultima;
+  } catch (e) { return; }
+  if (!ultima || !ultima.semana) return;
+  // Ya lo leyó y lo cerró
+  if (localStorage.getItem('ajusteVisto_' + currentAthlete) === ultima.semana) return;
+
+  const cambios = (ultima.cambios || []).filter(c => c.cambio && c.cambio !== 'sin cambio');
+  const rots = ultima.rotaciones || [];
+  if (!cambios.length && !rots.length) return;
+
+  const filas = cambios.map(c => `<div class="aj-fila">
+      <span class="aj-nombre">${c.name}</span>
+      <span class="aj-dato ${AJUSTE_CLASE[c.cambio] || ''}">${textoDelCambio(c)}</span>
+    </div>`).join('');
+
+  const filasRot = rots.map(r => `<div class="aj-fila aj-fila-rot">
+      <span class="aj-nombre">${r.de}<br><span class="aj-flecha">↳ ${r.a}</span></span>
+      <span class="aj-dato aj-nuevo">${r.heredaPeso ? 'mismo peso' : 'ajusta el peso'}</span>
+    </div>`).join('');
+
+  el.innerHTML = `<div class="today-card aj-card">
+      <div class="aj-top">
+        <div>
+          <div class="today-eyebrow">Tu rutina se actualizó</div>
+          <div class="aj-resumen">${ultima.resumen || ''}</div>
+        </div>
+        <button class="aj-cerrar" onclick="cerrarAjuste('${ultima.semana}')" aria-label="Entendido, no mostrar más">
+          <svg class="ic ic-sm"><use href="#i-check"/></svg>
+        </button>
+      </div>
+      ${(filas || filasRot) ? `<details class="aj-detalle">
+        <summary class="aj-ver">Ver qué cambió (${cambios.length + rots.length})</summary>
+        <div class="aj-lista">${filasRot}${filas}</div>
+      </details>` : ''}
+    </div>`;
+}
+
+function cerrarAjuste(semana) {
+  try { localStorage.setItem('ajusteVisto_' + currentAthlete, semana); } catch (e) {}
+  const el = document.getElementById('today-ajuste');
+  if (el) el.innerHTML = '';
 }
 
 async function loadTodayWeek() {
