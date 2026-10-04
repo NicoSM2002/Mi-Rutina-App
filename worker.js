@@ -149,6 +149,22 @@ async function verifySelfToken(env, clientId, token) {
    una semana desincroniza la app del gimnasio en un mes.
    ══════════════════════════════════════════════════════════════════════ */
 
+/* El texto de una respuesta de la API.
+
+   No vale con content[0].text: los modelos con razonamiento devuelven
+   primero un bloque de pensamiento y el texto va en uno posterior, así que
+   leer el primero daba cadena vacía y la llamada parecía haber fallado
+   sin ruido. */
+function textoDeRespuesta(data) {
+  const bloques = (data && Array.isArray(data.content)) ? data.content : [];
+  const texto = bloques.filter(b => b && b.type === 'text' && typeof b.text === 'string')
+                       .map(b => b.text).join('\n').trim();
+  if (!texto && bloques.length) {
+    console.log('[IA] respuesta sin bloque de texto; tipos: ' + bloques.map(b => b && b.type).join(','));
+  }
+  return texto;
+}
+
 /* Lista explícita. El resto de atletas sigue dependiendo de su entrenador y
    a su rutina no la toca nadie automáticamente. */
 const ATLETAS_IA = ['nicolassaravia'];
@@ -284,6 +300,14 @@ function marcasDeLaSemana(completions, desdeTs) {
   return marcas;
 }
 
+/* Las notas que escribió al cerrar cada sesión de la semana. */
+function notasDeLaSemana(completions, desdeTs) {
+  return [...(completions || [])]
+    .filter(c => (!desdeTs || (c.ts || 0) >= desdeTs) && String(c.notes || '').trim())
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0))
+    .map(c => ({ dia: c.dayLabel || c.sessionKey || '', texto: String(c.notes).trim().slice(0, 600) }));
+}
+
 /* Semana ISO, para no correr dos veces la misma. */
 function claveSemana(d) {
   const f = new Date(d);
@@ -329,8 +353,61 @@ function ejerciciosEstancados(historial, limite) {
   return [...vistos].filter(nm => nm !== '(volumen)' && !movio.has(nm)).slice(0, limite || 3);
 }
 
-async function proponerRotacion(env, rutina, estancados) {
-  if (!estancados.length || !env.ANTHROPIC_API_KEY) return [];
+/* Busca en las notas ejercicios que dieron problema. Devuelve sólo nombres
+   que estén de verdad en la rutina: el modelo señala, el código comprueba. */
+async function ejerciciosSeñaladosEnNotas(env, rutina, notas) {
+  if (!notas.length || !env.ANTHROPIC_API_KEY) return [];
+
+  const enRutina = [];
+  for (const k of Object.keys(rutina)) {
+    for (const c of (rutina[k].circuits || [])) {
+      for (const e of (c.exercises || [])) enRutina.push(e.name);
+    }
+  }
+
+  const prompt = `Estas son las notas que un atleta escribió al terminar sus entrenamientos esta semana:
+
+${notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n')}
+
+Ejercicios de su rutina:
+${enRutina.join('\n')}
+
+¿Menciona algún ejercicio que le diera problema — dolor, molestia, se sintió mal, no lo pudo hacer
+bien? Si lo menciona de forma indirecta ("el press de hombro me dejó el hombro raro"), cuenta.
+No incluyas un ejercicio sólo porque le costó o pesó mucho: eso ya lo cubren otros datos.
+
+Responde SOLO un JSON array, vacío si no hay nada:
+[{"nombre":"nombre EXACTO de la lista","detalle":"qué dijo, en pocas palabras","dolor":true|false}]
+"dolor" es true sólo si habla de dolor o molestia física, no de cansancio ni de equipo ocupado.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 700,
+                             messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      console.log(`[NOTAS] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+      return [];
+    }
+    const txt = textoDeRespuesta(data);
+    const m = txt.match(/\[[\s\S]*\]/);
+    if (!m) { console.log('[NOTAS] respuesta sin JSON: ' + txt.slice(0, 200)); return []; }
+    return JSON.parse(m[0])
+      .filter(x => x && x.nombre && enRutina.includes(x.nombre))
+      .slice(0, 3)
+      .map(x => ({ name: x.nombre, detalle: String(x.detalle || '').slice(0, 160), dolor: !!x.dolor }));
+  } catch (e) {
+    console.log('[NOTAS] no se pudieron leer: ' + e.message);
+    return [];
+  }
+}
+
+async function proponerRotacion(env, rutina, candidatos) {
+  if (!candidatos.length || !env.ANTHROPIC_API_KEY) return [];
 
   // Lo que ya está en la rutina no puede proponerse como reemplazo
   const yaEstan = new Set();
@@ -341,20 +418,28 @@ async function proponerRotacion(env, rutina, estancados) {
   }
 
   const fichas = [];
-  for (const nombre of estancados) {
-    const actual = PorNombre[nombre];
+  for (const c of candidatos) {
+    const actual = PorNombre[c.name];
     if (!actual) continue;
     const alternativas = (PorMusculo[actual.muscle] || [])
       .filter(e => !yaEstan.has(e.name))
       .map(e => e.name);
-    if (alternativas.length) fichas.push({ actual: nombre, musculo: actual.muscle, alternativas });
+    if (alternativas.length) {
+      fichas.push({ actual: c.name, musculo: actual.muscle, motivo: c.razon,
+                    detalle: c.detalle || '', alternativas });
+    }
   }
   if (!fichas.length) return [];
 
   const prompt = `Eres un entrenador de fuerza. Un atleta avanzado (69 kg, 1,79 m, objetivo hipertrofia)
-lleva tres semanas sin progresar en estos ejercicios. Para cada uno, elige UN reemplazo de su lista de
-alternativas que entrene el mismo músculo con un estímulo distinto (otro ángulo, otro patrón, otro tipo
-de resistencia). No elijas una variante casi idéntica a la que ya hace.
+necesita cambiar estos ejercicios. Para cada uno, elige UN reemplazo de su lista de alternativas que
+entrene el mismo músculo con un estímulo distinto (otro ángulo, otro patrón, otro tipo de resistencia).
+No elijas una variante casi idéntica a la que ya hace.
+
+El campo "motivo" dice por qué se cambia:
+ - "estancado": lleva tres semanas sin progresar. Busca un estímulo nuevo.
+ - "molestia": le dio problema; lee el "detalle". Aquí evita además el patrón que se lo causó —
+   si molestó un press por encima de la cabeza, no propongas otro press por encima de la cabeza.
 
 ${JSON.stringify(fichas, null, 1)}
 
@@ -371,9 +456,13 @@ El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternat
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
-    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    if (!res.ok || data.error) {
+      console.log(`[ROTACION] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+      return [];
+    }
+    const txt = textoDeRespuesta(data);
     const m = txt.match(/\[[\s\S]*\]/);
-    if (!m) return [];
+    if (!m) { console.log('[ROTACION] respuesta sin JSON: ' + txt.slice(0, 200)); return []; }
     const propuestas = JSON.parse(m[0]);
 
     // El modelo propone; aquí se comprueba. Lo que no cuadre, se descarta.
@@ -383,7 +472,7 @@ El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternat
       if (!viejo || !nuevo) return false;
       if (viejo.muscle !== nuevo.muscle) return false;
       if (yaEstan.has(p.nuevo)) return false;
-      return estancados.includes(p.actual);
+      return candidatos.some(c => c.name === p.actual);
     });
   } catch (e) {
     console.log('[ROTACION] falló la propuesta: ' + e.message);
@@ -444,17 +533,23 @@ function resumenDeRespaldo(cambios, rotaciones) {
   return 'Para la semana que viene ' + partes.join(', ') + '.';
 }
 
-async function resumenSemana(env, cambios, rotaciones) {
+async function resumenSemana(env, cambios, rotaciones, notas, señalados) {
   const respaldo = resumenDeRespaldo(cambios, rotaciones);
-  if (!env.ANTHROPIC_API_KEY || !cambios.length) return respaldo;
+  if (!env.ANTHROPIC_API_KEY || (!cambios.length && !(notas || []).length)) return respaldo;
   const prompt = `Eres el entrenador de Nicolás (hipertrofia, avanzado). Estos son los ajustes que el
 sistema hizo a su rutina para la semana que viene, a partir de cómo marcó cada ejercicio:
 
 ${JSON.stringify(cambios.slice(0, 40), null, 1)}
 ${rotaciones && rotaciones.length ? 'Ejercicios cambiados:\n' + JSON.stringify(rotaciones, null, 1) : ''}
+${(notas || []).length ? 'Lo que escribió él al terminar cada sesión:\n' + notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n') : ''}
+${(señalados || []).some(x => x.dolor) ? 'Reportó molestia física en: ' + señalados.filter(x => x.dolor).map(x => x.name).join(', ') : ''}
 
 Escríbele 2 o 3 frases diciéndole qué cambió y por qué. Directo y concreto, sin motivación de
 cartel ni emojis. Si bajó carga en algo, dilo sin dramatizar: es parte del plan.
+
+Si escribió notas, tenlas en cuenta y menciónalo cuando hayan cambiado algo — que vea que
+sirvieron de algo. Si reportó una molestia física, dilo en una frase y dile que si sigue, lo mire
+alguien; cambiar el ejercicio alivia el síntoma, no diagnostica. No alargues por eso.
 
 Español de Colombia, tuteando: "subes", "sumas", "llegaste". NUNCA voseo rioplatense — nada de
 "subís", "sumás", "tenés", "vos". No lo llames por su nombre, háblale directo.
@@ -468,7 +563,11 @@ Responde solo el texto.`;
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
-    const txt = (data.content && data.content[0] && data.content[0].text || '').trim();
+    if (!res.ok || data.error) {
+      console.log(`[RESUMEN] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+      return respaldo;
+    }
+    const txt = textoDeRespuesta(data);
     return txt || respaldo;
   } catch (e) {
     console.log('[RESUMEN] falló, va el de respaldo: ' + e.message);
@@ -478,7 +577,7 @@ Responde solo el texto.`;
 
 /* Orquesta la semana: lee, progresa, guarda y deja registro.
    `motivo` sólo sirve para el log: 'viernes' o 'cron'. */
-async function correrProgresion(env, clientId, motivo) {
+async function correrProgresion(env, clientId, motivo, completionsEnMano) {
   if (!ATLETAS_IA.includes(clientId)) return { ok: false, razon: 'no tiene rutina autogestionada' };
 
   const semana = claveSemana(Date.now());
@@ -487,36 +586,49 @@ async function correrProgresion(env, clientId, motivo) {
     return { ok: false, razon: 'ya se corrió esta semana', semana };
   }
 
-  const [rutina, completions] = await Promise.all([
+  // KV es de consistencia eventual: al dispararse justo después de guardar la
+  // sesión, releerla aquí devuelve la lista SIN la que se acaba de escribir y
+  // el ajuste se salta en silencio. Quien ya las tiene en memoria las pasa.
+  const [rutina, completionsLeidas] = await Promise.all([
     env.DB.get(`routine:${clientId}`, 'json'),
-    env.DB.get(`completions:${clientId}`, 'json')
+    completionsEnMano ? Promise.resolve(completionsEnMano) : env.DB.get(`completions:${clientId}`, 'json')
   ]);
+  const completions = completionsEnMano || completionsLeidas;
   if (!rutina) return { ok: false, razon: 'sin rutina' };
 
   const hace7dias = Date.now() - 7 * 86400000;
   const marcas = marcasDeLaSemana(completions || [], hace7dias);
+  const notas = notasDeLaSemana(completions || [], hace7dias);
   if (!Object.keys(marcas).length) {
     return { ok: false, razon: 'ninguna sesión marcada esta semana', semana };
   }
 
   const cambios = progresarRutina(rutina, marcas);
 
-  // Cada 6 semanas, cambiar lo que lleva tiempo sin moverse
-  let rotaciones = [];
+  // Lo que escribió esta semana puede pedir un cambio ya, sin esperar ciclo
+  const señalados = await ejerciciosSeñaladosEnNotas(env, rutina, notas);
+  const candidatos = señalados.map(x => ({ name: x.name, razon: 'molestia', detalle: x.detalle }));
+
+  // Y cada 6 semanas, cambiar lo que lleva tiempo sin moverse
   const toca = historial.length > 0 && historial.length % SEMANAS_ENTRE_ROTACIONES === 0;
   if (toca) {
-    const estancados = ejerciciosEstancados(historial, 3);
-    if (estancados.length) {
-      const propuestas = await proponerRotacion(env, rutina, estancados);
-      rotaciones = aplicarRotacion(rutina, propuestas);
-      console.log(`[ROTACION] ${clientId}: ${estancados.length} estancados, ${rotaciones.length} cambiados`);
+    for (const nm of ejerciciosEstancados(historial, 3)) {
+      if (!candidatos.some(c => c.name === nm)) candidatos.push({ name: nm, razon: 'estancado' });
     }
+  }
+
+  let rotaciones = [];
+  if (candidatos.length) {
+    const propuestas = await proponerRotacion(env, rutina, candidatos.slice(0, 3));
+    rotaciones = aplicarRotacion(rutina, propuestas);
+    console.log(`[ROTACION] ${clientId}: ${candidatos.length} candidatos (${señalados.length} por notas), ${rotaciones.length} cambiados`);
   }
 
   await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
 
-  const resumen = await resumenSemana(env, cambios, rotaciones);
-  const entrada = { semana, fecha: new Date().toISOString(), motivo, cambios, rotaciones, resumen };
+  const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados);
+  const entrada = { semana, fecha: new Date().toISOString(), motivo, cambios, rotaciones, resumen,
+                    notas: notas.length, molestias: señalados.filter(x => x.dolor).map(x => x.name) };
   historial.unshift(entrada);
   await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial.slice(0, 60)));
 
@@ -819,7 +931,7 @@ export default {
       // recalcula la siguiente. Si esta semana no se llegó al viernes, lo
       // recoge el cron del sábado.
       if (ATLETAS_IA.includes(client) && body.day === 'sesion5') {
-        ctx.waitUntil(correrProgresion(env, client, 'viernes').catch(e =>
+        ctx.waitUntil(correrProgresion(env, client, 'viernes', records).catch(e =>
           console.log('[PROGRESION] falló al cerrar viernes: ' + e.message)));
       }
 

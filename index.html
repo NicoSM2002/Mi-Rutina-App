@@ -771,6 +771,10 @@ html, body {
 }
 .ex-row:last-child { margin-bottom:0; }
 .ex-row-head { display:flex; gap:13px; align-items:flex-start; }
+/* La fila entera abre la técnica: la ⓘ sola era un blanco de 28px */
+.ex-row-head-tocable { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.ex-row-head-tocable:active .ex-name-txt { opacity:.55; }
+.ex-row-head-tocable:active .ex-info-btn { background:var(--ac-soft); border-color:var(--ac-tx); color:var(--ac-tx); }
 
 /* Miniatura: el GIF corre solo, así no hay que abrir nada para saber cuál
    es el ejercicio. El icono queda de fondo por si el GIF no carga. */
@@ -1558,6 +1562,10 @@ button.ex-presc:active { background:#FBDCC9; }
 .fb-btn.on {
   background:var(--ac-str); border-color:var(--ac-str); color:#fff; font-weight:600;
 }
+
+.complete-notes-head { margin-bottom:10px; }
+.complete-notes-title { font-family:var(--font-d); font-size:15.5px; font-weight:700; color:var(--t1); letter-spacing:-.3px; }
+.complete-notes-sub { font-size:13.5px; color:var(--t2); margin-top:3px; line-height:1.45; letter-spacing:-.1px; }
 
 .complete-notes {
   width:100%; background:var(--s2); border:1px solid var(--b); border-radius:12px;
@@ -3485,6 +3493,10 @@ select.na-input {
   <div class="complete-sheet">
     <div class="complete-sheet-title">¡Sesión completada!</div>
     <div class="complete-sheet-sub" id="complete-sub">Lunes</div>
+    <div class="complete-notes-head" id="complete-notes-head" hidden>
+      <div class="complete-notes-title">Notas para el ajuste</div>
+      <div class="complete-notes-sub">Lo que no cabe en los botones: una molestia, un ejercicio que se sintió raro, la máquina ocupada, dormiste mal.</div>
+    </div>
     <textarea class="complete-notes" id="complete-notes" placeholder="Notas opcionales: ¿Cómo te sentiste? ¿Subiste algún peso? ¿Algo que destacar?"></textarea>
     <div class="complete-sheet-btns">
       <button class="complete-cancel" onclick="closeComplete()">Cancelar</button>
@@ -4563,7 +4575,7 @@ function renderExCard(ex, ci, ei, w) {
   const prescInner = `${repsDisplay ? `<em>${repsDisplay}${wv ? ' ·' : ''}</em>` : ''}${wv ? ` ${wv}` : ''}`;
   const prescHtml = (!isSpecial && (repsDisplay || wv))
     ? (timerSeconds > 0
-        ? `<button class="ex-presc" onclick="startTimer(${timerSeconds})">
+        ? `<button class="ex-presc" onclick="event.stopPropagation();startTimer(${timerSeconds})">
              <svg class="ic"><use href="#i-clock"/></svg>${prescInner}
            </button>`
         : `<span class="ex-presc">${prescInner}</span>`)
@@ -4576,9 +4588,10 @@ function renderExCard(ex, ci, ei, w) {
   /* La ⓘ reemplaza a "Técnica" y "Ver ejercicio": solo aparece si hay algo
      que mostrar. */
   const hasInfo = !!(currentTip || currentImg);
+  // Sin onclick propio: el clic sube a la cabecera, que es quien abre. Sigue
+  // siendo un botón para que se pueda enfocar y usar con teclado.
   const infoBtnHtml = hasInfo
-    ? `<button class="ex-info-btn" id="exi_${uid}" aria-expanded="false" aria-label="Ver técnica"
-         onclick="toggleExInfo('${uid}'${currentImg ? `,'${imgArg}'` : ''})">
+    ? `<button class="ex-info-btn" id="exi_${uid}" aria-expanded="false" aria-label="Ver técnica">
          <svg class="ic"><use href="#i-info"/></svg>
        </button>`
     : '';
@@ -4589,8 +4602,12 @@ function renderExCard(ex, ci, ei, w) {
        </div>`
     : '';
 
+  const abrir = hasInfo
+    ? ` class="ex-row-head ex-row-head-tocable" onclick="toggleExInfo('${uid}'${currentImg ? `,'${imgArg}'` : ''})"`
+    : ' class="ex-row-head"';
+
   return `<div class="ex-row">
-    <div class="ex-row-head">
+    <div${abrir}>
       <div class="ex-thumb">
         <svg class="ic ex-thumb-ic"><use href="#i-rutina"/></svg>
         ${currentImg ? `<img class="ex-thumb-gif" data-gif="${currentImg}" alt="" decoding="async">` : ''}
@@ -6900,10 +6917,25 @@ const DAY_NAMES = {
 function openComplete() {
   document.getElementById('complete-sub').textContent = `${DAY_NAMES[currentDay] || currentDay}`;
   document.getElementById('complete-notes').value = '';
+
+  // Sin entrenador al otro lado, las notas son la entrada del ajuste semanal
+  const solo = typeof ATLETAS_RUTINA_FIJA !== 'undefined'
+            && ATLETAS_RUTINA_FIJA.includes(currentAthlete);
+  const cab = document.getElementById('complete-notes-head');
+  const txt = document.getElementById('complete-notes');
+  const btn = document.getElementById('complete-confirm');
+  if (cab) cab.hidden = !solo;
+  if (txt) txt.placeholder = solo
+    ? 'Opcional, pero es lo que más ayuda.'
+    : 'Notas opcionales: ¿Cómo te sentiste? ¿Subiste algún peso? ¿Algo que destacar?';
+  if (btn && !btn.disabled) btn.textContent = solo ? 'Guardar sesión' : 'Enviar al entrenador';
+
   document.getElementById('complete-overlay').classList.add('show');
 }
 function closeComplete() {
   document.getElementById('complete-overlay').classList.remove('show');
+  const btn = document.getElementById('complete-confirm');
+  if (btn) btn.disabled = false;   // openComplete le repone el texto
 }
 
 function launchConfetti() {
