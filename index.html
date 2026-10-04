@@ -1506,6 +1506,28 @@ button.ex-presc:active { background:#FBDCC9; }
 .complete-sheet-sub {
   font-size:13px; color:var(--t2); margin-bottom:20px;
 }
+/* Cómo te fue: tres opciones por ejercicio al cerrar el circuito */
+.fb-bloque { margin-top:26px; }
+.fb-head { padding:0 2px; margin-bottom:12px; }
+.fb-title { font-family:var(--font-d); font-size:19px; font-weight:800; color:var(--t1); letter-spacing:-.5px; }
+.fb-sub { font-size:14px; color:var(--t2); margin-top:4px; letter-spacing:-.2px; line-height:1.45; }
+.fb-lista { padding:4px 16px; }
+.fb-row { padding:15px 0; }
+.fb-row + .fb-row { border-top:1px solid var(--b2); }
+.fb-nombre { font-size:15.5px; font-weight:600; color:var(--t1); letter-spacing:-.2px; line-height:1.35; }
+.fb-row.respondida .fb-nombre { color:var(--t2); font-weight:500; }
+.fb-opciones { display:flex; gap:8px; margin-top:11px; }
+.fb-btn {
+  flex:1; min-height:44px; padding:11px 6px; border-radius:12px;
+  background:var(--bg); border:1px solid var(--b); color:var(--t1);
+  font-family:var(--font-b); font-size:14.5px; font-weight:500; cursor:pointer;
+  letter-spacing:-.2px; transition:background .15s, border-color .15s, color .15s;
+}
+.fb-btn:active { background:var(--s2); }
+.fb-btn.on {
+  background:var(--ac-str); border-color:var(--ac-str); color:#fff; font-weight:600;
+}
+
 .complete-notes {
   width:100%; background:var(--s2); border:1px solid var(--b); border-radius:12px;
   padding:13px 14px; color:var(--t1); font-family:var(--font-b);
@@ -3552,6 +3574,7 @@ async function showRoutine() {
   // Si quedó una sesión a medias hoy, se retoma donde iba
   const guardado = leerPaso();
   routineStep = (guardado && guardado.dia === currentDay) ? guardado.paso : 0;
+  feedbackSesion = leerFeedback();   // lo marcado antes de cerrar la app
   render();
 }
 
@@ -4311,6 +4334,46 @@ let data = JSON.parse(JSON.stringify(FALLBACK_DATA));
    calentamiento otra vez. Se guarda el punto, atado al día y a la sesión
    para no restaurar algo de ayer. */
 function claveP()  { return 'rutinaPaso_' + (currentAthlete || ''); }
+function claveF()  { return 'rutinaFeedback_' + (currentAthlete || ''); }
+
+/* Cómo fue cada ejercicio de la sesión de hoy: { "0|Press de banca": "facil" }.
+   Vive en el teléfono hasta que se envía la sesión, para que cerrar la app a
+   mitad de entrenamiento no borre lo ya marcado. */
+let feedbackSesion = {};
+
+function guardarFeedback() {
+  if (!currentAthlete) return;
+  try {
+    localStorage.setItem(claveF(), JSON.stringify({ fecha: hoyISO(), dia: currentDay, marcas: feedbackSesion }));
+  } catch (e) {}
+}
+function leerFeedback() {
+  try {
+    const g = JSON.parse(localStorage.getItem(claveF()) || 'null');
+    if (!g || g.fecha !== hoyISO() || g.dia !== currentDay) return {};
+    return g.marcas || {};
+  } catch (e) { return {}; }
+}
+function olvidarFeedback() {
+  feedbackSesion = {};
+  try { localStorage.removeItem(claveF()); } catch (e) {}
+}
+
+/* Una marca por ejercicio. Volver a tocar la misma la quita: marcarse por
+   error no debe obligar a elegir algo. */
+function marcarEjercicio(ci, nombre, valor, btn) {
+  const k = ci + '|' + nombre;
+  feedbackSesion[k] = (feedbackSesion[k] === valor) ? undefined : valor;
+  if (feedbackSesion[k] === undefined) delete feedbackSesion[k];
+  guardarFeedback();
+  const fila = btn.closest('.fb-row');
+  if (fila) {
+    fila.querySelectorAll('.fb-btn').forEach(b => {
+      b.classList.toggle('on', b.dataset.v === feedbackSesion[k]);
+    });
+    fila.classList.toggle('respondida', !!feedbackSesion[k]);
+  }
+}
 function hoyISO() {
   const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
@@ -4592,6 +4655,7 @@ function render() {
       <div class="ex-cards">`;
     c.exercises.forEach((ex, ei) => { html += renderExCard(ex, ci, ei, w); });
     html += `</div>`;
+    html += renderFeedbackBlock(c, ci);
 
   } else {
     /* cardio */
@@ -4634,6 +4698,37 @@ function render() {
   document.getElementById('content').innerHTML = html;
   preloadVisibleGifs();
   hydrateThumbGifs();
+}
+
+/* Cómo fue cada ejercicio. De esto sale la progresión de la semana que viene:
+   sin una señal de si llegaste o no, subir el peso sería inventar. */
+const FB_OPCIONES = [
+  { v: 'facil',  txt: 'Fácil' },
+  { v: 'justo',  txt: 'Justo' },
+  { v: 'fallo',  txt: 'No llegué' },
+];
+
+function renderFeedbackBlock(c, ci) {
+  const filas = (c.exercises || []).map(ex => {
+    const nombre = ex.name || '';
+    const marca = feedbackSesion[ci + '|' + nombre];
+    const botones = FB_OPCIONES.map(o =>
+      `<button class="fb-btn${marca === o.v ? ' on' : ''}" data-v="${o.v}"
+         onclick="marcarEjercicio(${ci}, ${JSON.stringify(nombre).replace(/"/g, '&quot;')}, '${o.v}', this)">
+         ${o.txt}
+       </button>`).join('');
+    return `<div class="fb-row${marca ? ' respondida' : ''}">
+        <div class="fb-nombre">${nombre}</div>
+        <div class="fb-opciones">${botones}</div>
+      </div>`;
+  }).join('');
+  return `<div class="fb-bloque">
+      <div class="fb-head">
+        <div class="fb-title">¿Cómo te fue?</div>
+        <div class="fb-sub">Con esto se ajusta tu próxima semana. Si no marcas, el peso se queda igual.</div>
+      </div>
+      <div class="group fb-lista">${filas}</div>
+    </div>`;
 }
 
 /* El cardio se escribe libre ("Caminadora 20 min — Nivel 6"), así que la
@@ -6791,7 +6886,11 @@ async function confirmComplete() {
         dayLabel: DAY_NAMES[currentDay] || currentDay,
         week: 1,
         context: buildContext(),
-        notes: notes
+        notes: notes,
+        feedback: Object.entries(feedbackSesion).map(([k, v]) => {
+          const corte = k.indexOf('|');
+          return { ci: parseInt(k.slice(0, corte)), name: k.slice(corte + 1), resp: v };
+        })
       })
     });
     const data = await res.json();
@@ -6799,7 +6898,8 @@ async function confirmComplete() {
       btn.textContent = '✅ ¡Enviado!';
       launchConfetti();
       advanceSession(currentAthlete);
-      olvidarPaso();   // la sesion quedo cerrada: no hay nada que retomar
+      olvidarPaso();       // la sesion quedo cerrada: no hay nada que retomar
+      olvidarFeedback();
       setTimeout(() => {
         closeComplete();
         renderRestDay(getSessionState(currentAthlete));
