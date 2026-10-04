@@ -1502,6 +1502,9 @@ button.ex-presc:active { background:#FBDCC9; }
   padding:28px 24px calc(var(--sab) + 28px);
   transform:translateY(100%);
   transition:transform .35s cubic-bezier(.34,1.3,.64,1);
+  /* Con el teclado abierto en un teléfono pequeño la hoja mide más que la
+     pantalla y el título se salía por arriba, sin forma de alcanzarlo. */
+  max-height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
 .complete-overlay.show .complete-sheet { transform:translateY(0); }
 .complete-sheet-title {
