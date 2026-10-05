@@ -123,6 +123,21 @@ html, body {
   touch-action: pan-y;
 }
 
+/* ── Las tarjetas no se aplastan ──
+   Varios de esos contenedores son columnas flex. Un hijo flex con overflow
+   distinto de visible PIERDE su tamaño mínimo automático, así que .group
+   (que lleva overflow:hidden por las esquinas redondeadas) se encogía a lo
+   que sobrara en vez de medir su contenido: en Progreso la tarjeta de
+   constancia quedaba en 40px de los 241 que ocupa, con los círculos de los
+   días cortados por la mitad. Se veía peor cuanto más estrecha la pantalla,
+   porque la cabecera ocupaba más líneas y dejaba menos sitio. */
+.r-content > *, .meals-content > *, .resumen-content > *, .tclient-content > *,
+.tportal-body > *, .nutrition-body > *, .profile-body > *, .payments-body > *,
+.admin-tools-list > *, .admin-trainers-list > * {
+  flex-shrink: 0;
+}
+
+
 /* Iconos lineales (SF Symbols-like) */
 .ic { width:22px; height:22px; display:inline-block; flex:none;
       stroke:currentColor; stroke-width:1.7; fill:none;
