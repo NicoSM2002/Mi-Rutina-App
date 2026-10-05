@@ -1222,7 +1222,21 @@ export default {
       const authErr = await authorizeReadForClient(env, body, client, cors);
       if (authErr) return authErr;
       const historial = await env.DB.get(`progresion:${client}`, 'json') || [];
-      return new Response(JSON.stringify({ ok: true, ultima: historial[0] || null }), { headers: cors });
+      // La app arma el registro de fuerza con el historial entero: cada ajuste
+      // guarda el peso antes y después de cada ejercicio, así que de ahí sale
+      // la serie de semanas sin tener que guardarla aparte.
+      return new Response(JSON.stringify({
+        ok: true,
+        ultima: historial[0] || null,
+        historial: historial.slice(0, 26).map(h => ({
+          semana: h.semana, fecha: h.fecha,
+          cambios: (h.cambios || []).map(c => ({
+            name: c.name, pesoAntes: c.pesoAntes, pesoDespues: c.pesoDespues,
+            repsAntes: c.repsAntes, repsDespues: c.repsDespues, cambio: c.cambio,
+          })),
+          rotaciones: (h.rotaciones || []).map(r => ({ de: r.de, a: r.a })),
+        })),
+      }), { headers: cors });
     }
 
     if (body.action === 'get-routine') {

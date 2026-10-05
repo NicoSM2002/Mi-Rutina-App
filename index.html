@@ -49,20 +49,21 @@ body.kbd-open #app-shell {
      lleva texto o comunica estado hay dos variantes medidas. */
   --ac:  #F47735;   /* naranja de marca — solo decorativo */
   --acl: #F47735;
-  --ac-str: #D2570F; /* superficies con texto blanco: 4.11:1 · gráficos sobre marfil: 3.83:1 */
-  --ac-tx:  #B85416; /* naranja como texto o icono sobre claro: 4.53:1 en marfil, 4.86:1 en blanco */
+  --ac-str: #BE4D0B; /* superficies con texto blanco: 4.93:1 · sobre marfil: 4.60:1 */
+  --ac-tx:  #A64A12; /* naranja como texto o icono sobre claro: 5.06:1 sobre el pill, 5.42:1 en blanco */
   --ac-soft: #FDECE2; /* naranja muy suave para pills y fondos */
 
   /* ── Texto ── */
   --t1:  #1C1C1E;   /* primario casi negro */
-  --t2:  #6E6E73;   /* secundario legible */
+  --t2:  #6B6B70;   /* secundario — #6E6E73 daba 4.44:1 sobre la superficie gris, bajo el mínimo */
   --t3:  #6A6A6F;   /* terciario — #8E8E93 daba 3.04:1 en marfil, por debajo de 4.5:1 */
 
   /* ── Tags de músculo / tipo de serie ── */
   --tag-muscle-bg: #EFEAFB;  --tag-muscle-tx: #6D51B5;
   --tag-drop-bg:   #FDE3D2;  --tag-drop-tx:   #C2591C;
   --tag-tri-bg:    #FCEFD4;  --tag-tri-tx:    #9A6B12;
-  --gr:  #34A853;
+  --gr:  #34A853;   /* sólo decorativo — con blanco encima da 3.06:1 */
+  --gr-str: #1B7A3C; /* verde de confirmación con texto blanco: 5.39:1 */
   --ok:  #289446;   /* verde de "completado" — #2FA84F daba 2.86:1 en marfil, por debajo de 3:1 */
   --am:  #E0A020;
 
@@ -1559,21 +1560,46 @@ button.ex-presc:active { background:#FBDCC9; }
 .aj-dato.aj-baja { color:var(--ac-tx); }
 .aj-dato.aj-nuevo { color:var(--t2); font-weight:500; font-style:italic; }
 
-/* Cómo te fue: tres opciones por ejercicio al cerrar el circuito */
-.fb-bloque { margin-top:26px; }
-.fb-head { padding:0 2px; margin-bottom:12px; }
-.fb-title { font-family:var(--font-d); font-size:19px; font-weight:800; color:var(--t1); letter-spacing:-.5px; }
-.fb-sub { font-size:14px; color:var(--t2); margin-top:4px; letter-spacing:-.2px; line-height:1.45; }
-.fb-lista { padding:4px 16px; }
-.fb-row { padding:15px 0; }
-.fb-row + .fb-row { border-top:1px solid var(--b2); }
-.fb-nombre { font-size:15.5px; font-weight:600; color:var(--t1); letter-spacing:-.2px; line-height:1.35; }
-.fb-row.respondida .fb-nombre { color:var(--t2); font-weight:500; }
-.fb-opciones { display:flex; gap:8px; margin-top:11px; }
+/* ── La carga, que es el dato que se lee de pie ──
+   Cifras tabulares para que el número no se mueva al cambiar de semana. */
+.ex-carga {
+  display:flex; align-items:baseline; gap:9px;
+  margin:13px 0 0; padding:0 2px;
+}
+.ex-peso {
+  font-family:var(--font-d); font-size:38px; font-weight:800; color:var(--t1);
+  letter-spacing:-1.8px; line-height:1; font-variant-numeric:tabular-nums;
+}
+.ex-unidad { font-family:var(--font-d); font-size:15px; font-weight:700; color:var(--t2); letter-spacing:-.3px; }
+.ex-reps {
+  margin-left:auto; flex:none; font-family:var(--font-d); font-size:17px; font-weight:700;
+  color:var(--t1); background:var(--s2); border:none; border-radius:10px; padding:7px 12px;
+  letter-spacing:-.4px; font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.ex-reps small { font-size:12.5px; font-weight:600; color:var(--t2); letter-spacing:0; }
+.ex-reps-timer { cursor:pointer; min-height:40px; }
+.ex-reps-timer .ic { width:15px; height:15px; color:var(--ac-tx); }
+.ex-musculo {
+  font-size:12.5px; font-weight:600; color:var(--t3); margin-top:4px;
+  text-transform:uppercase; letter-spacing:.5px;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+
+/* Cómo te fue: tres opciones dentro de la tarjeta de su ejercicio */
+.fb-aviso {
+  font-size:14px; color:var(--t2); letter-spacing:-.2px; line-height:1.45;
+  margin:-4px 2px 14px;
+}
+.fb-row {
+  display:flex; gap:7px; margin-top:14px; padding-top:13px;
+  border-top:1px solid var(--b2);
+}
+.ex-row.ex-hecho .ex-name-txt { opacity:.6; }
 .fb-btn {
-  flex:1; min-height:44px; padding:11px 6px; border-radius:12px;
+  flex:1; min-height:44px; padding:11px 4px; border-radius:12px;
   background:var(--bg); border:1px solid var(--b); color:var(--t1);
-  font-family:var(--font-b); font-size:14.5px; font-weight:500; cursor:pointer;
+  font-family:var(--font-b); font-size:14px; font-weight:500; cursor:pointer;
   letter-spacing:-.2px; transition:background .15s, border-color .15s, color .15s;
 }
 .fb-btn:active { background:var(--s2); }
@@ -1596,8 +1622,8 @@ button.ex-presc:active { background:#FBDCC9; }
 .complete-sheet-btns { display:flex; gap:10px; }
 .complete-confirm {
   flex:1; padding:15px; border-radius:14px; border:none;
-  background:linear-gradient(135deg, var(--gr), #059669);
-  font-family:var(--font-d); font-size:15px; font-weight:700;
+  background:var(--gr-str);
+  font-family:var(--font-d); font-size:16px; font-weight:700;
   color:#fff; cursor:pointer; transition:opacity .15s;
 }
 .complete-confirm:active { opacity:.8; }
@@ -2164,7 +2190,8 @@ select.na-input {
 .re-combo input[type=number] { -moz-appearance:textfield; }
 .re-unit-select { flex:0 0 auto; background:transparent; border:none; border-left:1px solid var(--b2); padding:0 26px 0 12px; color:var(--t2); font-family:var(--font-b); font-size:15px; font-weight:400; outline:none; cursor:pointer; -webkit-appearance:none; appearance:none; text-align:left; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%236E6E73' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>"); background-repeat:no-repeat; background-position:right 9px center; }
 .re-nota { width:100%; background:var(--s2); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px 14px; color:var(--t1); font-family:var(--font-b); font-size:14px; outline:none; resize:none; -webkit-appearance:none; margin-top:8px; font-size:16px; }
-.re-save-btn { width:100%; padding:16px; background:linear-gradient(135deg,#FF6B2C,#FF8F5E); border:none; border-radius:14px; font-family:var(--font-d); font-size:16px; font-weight:700; color:#fff; cursor:pointer; margin-top:14px; }
+.re-save-btn { width:100%; padding:16px; background:var(--ac-str); border:none; border-radius:14px; font-family:var(--font-d); font-size:16px; font-weight:700; color:#fff; cursor:pointer; margin-top:14px; }
+.re-save-btn:active { opacity:.85; }
 .re-save-btn:active { opacity:.85; }
 .re-save-btn:disabled { opacity:.5; }
 .re-set-type { display:flex; gap:6px; margin-bottom:10px; }
@@ -2308,7 +2335,12 @@ select.na-input {
 .step-dot { width:7px; height:7px; border-radius:50%; background:var(--b2); border:1.5px solid var(--b); transition:all .25s; }
 .step-dot.done { background:var(--gr); border-color:var(--gr); }
 .step-dot.active { background:var(--ac-str); border-color:var(--ac-tx); width:18px; border-radius:3px; }
-.step-next-btn { width:100%; padding:16px; border:none; border-radius:16px; cursor:pointer; background:linear-gradient(135deg,#FF6B2C,#FF8F5E); color:#fff; font-family:var(--font-d); font-size:15px; font-weight:700; letter-spacing:.2px; box-shadow:0 6px 24px rgba(255,107,44,.3); }
+.step-next-btn {
+  width:100%; padding:17px 16px; border:none; border-radius:16px; cursor:pointer;
+  background:var(--ac-str); color:#fff;
+  font-family:var(--font-d); font-size:16px; font-weight:700; letter-spacing:-.2px;
+}
+.step-next-btn:active { opacity:.85; }
 
 .wu-photo { margin:4px 0 2px; border-radius:12px; overflow:hidden; }
 
@@ -2453,6 +2485,10 @@ select.na-input {
   flex-shrink:0;
 }
 .resumen-title { font-family:var(--font-d); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-1.1px; margin-bottom:16px; }
+/* La navegación por semanas se oculta en la pestaña de fuerza, que mira
+   la tendencia y no una semana suelta. Su display:flex le ganaba al
+   [hidden] que trae el navegador. */
+.resumen-week-nav[hidden] { display:none !important; }
 .resumen-week-nav {
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   padding-bottom:16px;
@@ -2468,6 +2504,48 @@ select.na-input {
   font-family:var(--font-d); font-size:15px; font-weight:600; color:var(--t2);
   cursor:pointer; letter-spacing:-.2px; transition:background .15s, color .15s; min-height:44px; }
 .prog-tab.active { background:var(--ac-str); color:#fff; }
+
+/* ── Registro de fuerza ──
+   El número que cargas es lo que se viene a ver aquí, así que manda él. */
+.fz-cargando { padding:40px 0; text-align:center; color:var(--t2); font-size:15px; }
+.fz-hero { padding:20px 18px; }
+.fz-hero-l { font-size:13px; color:var(--t2); text-transform:uppercase; letter-spacing:.8px; font-weight:700; }
+.fz-hero-n {
+  font-family:var(--font-d); font-size:44px; font-weight:800; color:var(--t1);
+  letter-spacing:-2px; line-height:1.05; margin-top:8px; font-variant-numeric:tabular-nums;
+}
+.fz-hero-n span { font-size:20px; color:var(--t2); letter-spacing:-.5px; }
+.fz-hero-s { font-size:14.5px; color:var(--t2); margin-top:5px; line-height:1.45; letter-spacing:-.2px; }
+
+.fz-lift { padding:15px 16px; }
+.fz-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.fz-nom { font-size:15px; font-weight:600; color:var(--t1); letter-spacing:-.2px; line-height:1.3; min-width:0; }
+.fz-val {
+  flex:none; font-family:var(--font-d); font-size:24px; font-weight:800; color:var(--t1);
+  letter-spacing:-.9px; font-variant-numeric:tabular-nums; display:inline-flex; align-items:baseline; gap:7px;
+}
+.fz-val em { font-size:12.5px; font-weight:700; color:var(--t2); font-style:normal; letter-spacing:-.2px; }
+.fz-delta {
+  font-family:var(--font-b); font-size:12.5px; font-weight:800; letter-spacing:-.1px;
+  background:#E7F3EB; color:var(--gr-str); padding:3px 8px; border-radius:7px;
+}
+.fz-delta.baja { background:var(--ac-soft); color:var(--ac-tx); }
+.fz-delta.igual { background:var(--s2); color:var(--t2); }
+
+/* Cada barra es una semana; la altura, la carga de esa semana */
+.fz-barras { display:flex; align-items:flex-end; gap:5px; height:54px; margin-top:12px; }
+.fz-barras i { flex:1; background:#E3DED6; border-radius:4px 4px 0 0; display:block; min-height:5px; }
+.fz-barras i.ult { background:var(--ac-str); }
+.fz-pie {
+  display:flex; justify-content:space-between; gap:12px;
+  font-size:11.5px; color:var(--t3); margin-top:6px; letter-spacing:.2px;
+  font-variant-numeric:tabular-nums;
+}
+.fz-nota { font-size:12.5px; color:var(--ac-tx); margin-top:9px; letter-spacing:-.1px; }
+
+.fz-vacio { padding:22px 18px; }
+.fz-vacio-t { font-family:var(--font-d); font-size:18px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+.fz-vacio-s { font-size:14.5px; color:var(--t2); margin-top:7px; line-height:1.5; letter-spacing:-.2px; }
 
 /* Constancia semanal */
 .prog-streak { padding:20px 18px; }
@@ -3455,7 +3533,8 @@ select.na-input {
   <div class="resumen-header">
     <h1 class="resumen-title">Tu progreso</h1>
     <div class="prog-tabs" id="prog-tabs">
-      <button class="prog-tab active" id="prog-tab-entreno" onclick="setProgressTab('entreno')">Entrenamiento</button>
+      <button class="prog-tab" id="prog-tab-fuerza" onclick="setProgressTab('fuerza')" hidden>Fuerza</button>
+      <button class="prog-tab active" id="prog-tab-entreno" onclick="setProgressTab('entreno')">Constancia</button>
       <button class="prog-tab" id="prog-tab-comida" onclick="setProgressTab('comida')">Alimentación</button>
     </div>
     <div class="resumen-week-nav" id="resumen-week-nav"></div>
@@ -4458,6 +4537,9 @@ function marcarEjercicio(ci, nombre, valor, btn) {
     });
     fila.classList.toggle('respondida', !!feedbackSesion[k]);
   }
+  // La tarjeta entera se apaga un poco cuando ya está resuelta
+  const tarjeta = btn.closest('.ex-row');
+  if (tarjeta) tarjeta.classList.toggle('ex-hecho', !!feedbackSesion[k]);
 }
 function hoyISO() {
   const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
@@ -4624,7 +4706,23 @@ function renderExCard(ex, ci, ei, w) {
     ? ` class="ex-row-head ex-row-head-tocable" onclick="toggleExInfo('${uid}'${currentImg ? `,'${imgArg}'` : ''})"`
     : ' class="ex-row-head"';
 
-  return `<div class="ex-row">
+  // El peso en grande; las reps a su lado, en una pastilla.
+  const pw = parseWeight(wv);
+  const sufijo = String(wv || '').replace(/^\s*[\d.,]+\s*(kg|kilos?|lbs?|libras?)?\s*/i, '').trim();
+  const cargaHtml = (!isSpecial && (pw.num || repsDisplay))
+    ? `<div class="ex-carga">
+         ${pw.num ? `<span class="ex-peso">${pw.num.replace('.', ',')}</span>
+                     <span class="ex-unidad">${pw.unit}${sufijo ? (sufijo[0] === '/' ? '' : ' ') + sufijo : ''}</span>` : ''}
+         ${repsDisplay ? (timerSeconds > 0
+            ? `<button class="ex-reps ex-reps-timer" onclick="event.stopPropagation();startTimer(${timerSeconds})">
+                 <svg class="ic ic-sm"><use href="#i-clock"/></svg>${repsDisplay}</button>`
+            : `<span class="ex-reps">${parseReps(currentReps||'').num || repsDisplay}<small>reps</small></span>`) : ''}
+       </div>`
+    : '';
+
+  const yaMarcado = !!feedbackSesion[ci + '|' + currentName];
+
+  return `<div class="ex-row${yaMarcado ? ' ex-hecho' : ''}">
     <div${abrir}>
       <div class="ex-thumb">
         <svg class="ic ex-thumb-ic"><use href="#i-rutina"/></svg>
@@ -4633,12 +4731,14 @@ function renderExCard(ex, ci, ei, w) {
       </div>
       <div class="ex-info">
         <div class="ex-name"><span class="ex-name-txt">${currentName}</span>${infoBtnHtml}</div>
-        <div class="ex-foot">${tagsHtml}${prescHtml}</div>
-        ${stepsHtml}
+        ${muscleName ? `<div class="ex-musculo">${muscleName}${badgeHtml}</div>` : badgeHtml}
       </div>
     </div>
+    ${cargaHtml}
+    ${isSpecial ? stepsHtml : ''}
     ${trainerNoteHtml}
     ${panelHtml}
+    ${renderFeedbackFila(currentName, ci)}
   </div>`;
 }
 
@@ -4743,9 +4843,9 @@ function render() {
       </div>
       <div class="sec-head-sub">${nSeries} serie${nSeries===1?'':'s'}</div>
       <div class="ex-cards">`;
+    html += `<div class="fb-aviso">Marca cada ejercicio al terminar su última serie: de ahí sale tu próxima semana.</div>`;
     c.exercises.forEach((ex, ei) => { html += renderExCard(ex, ci, ei, w); });
     html += `</div>`;
-    html += renderFeedbackBlock(c, ci);
 
   } else {
     /* cardio */
@@ -4798,27 +4898,15 @@ const FB_OPCIONES = [
   { v: 'fallo',  txt: 'No llegué' },
 ];
 
-function renderFeedbackBlock(c, ci) {
-  const filas = (c.exercises || []).map(ex => {
-    const nombre = ex.name || '';
-    const marca = feedbackSesion[ci + '|' + nombre];
-    const botones = FB_OPCIONES.map(o =>
-      `<button class="fb-btn${marca === o.v ? ' on' : ''}" data-v="${o.v}"
-         onclick="marcarEjercicio(${ci}, ${JSON.stringify(nombre).replace(/"/g, '&quot;')}, '${o.v}', this)">
-         ${o.txt}
-       </button>`).join('');
-    return `<div class="fb-row${marca ? ' respondida' : ''}">
-        <div class="fb-nombre">${nombre}</div>
-        <div class="fb-opciones">${botones}</div>
-      </div>`;
-  }).join('');
-  return `<div class="fb-bloque">
-      <div class="fb-head">
-        <div class="fb-title">¿Cómo te fue?</div>
-        <div class="fb-sub">Con esto se ajusta tu próxima semana. Si no marcas, el peso se queda igual.</div>
-      </div>
-      <div class="group fb-lista">${filas}</div>
-    </div>`;
+/* Los tres botones de un ejercicio, para pintarlos dentro de su tarjeta */
+function renderFeedbackFila(nombre, ci) {
+  const marca = feedbackSesion[ci + '|' + nombre];
+  const botones = FB_OPCIONES.map(o =>
+    `<button class="fb-btn${marca === o.v ? ' on' : ''}" data-v="${o.v}"
+       onclick="event.stopPropagation();marcarEjercicio(${ci}, ${JSON.stringify(nombre).replace(/"/g, '&quot;')}, '${o.v}', this)">
+       ${o.txt}
+     </button>`).join('');
+  return `<div class="fb-row${marca ? ' respondida' : ''}">${botones}</div>`;
 }
 
 /* El cardio se escribe libre ("Caminadora 20 min — Nivel 6"), así que la
@@ -6333,9 +6421,19 @@ function renderTrainerTab() {
 /* ── resumen semanal ── */
 let resumenWeekOf = null;
 
+/* La pestaña de fuerza sólo para quien tiene rutina autogestionada */
+function ajustaPestanasProgreso() {
+  const b = document.getElementById('prog-tab-fuerza');
+  if (!b) return;
+  b.hidden = !(typeof ATLETAS_RUTINA_FIJA !== 'undefined'
+            && ATLETAS_RUTINA_FIJA.includes(currentAthlete));
+}
+
 async function showResumen(weekOf) {
   show('resumen');
   document.getElementById('bottom-nav').style.display = 'flex';
+  ajustaPestanasProgreso();
+  if (progressTab === 'fuerza') { renderFuerza(); return; }
   const nav = document.getElementById('resumen-week-nav');
   const content = document.getElementById('resumen-content');
   nav.innerHTML = '';
@@ -6374,11 +6472,163 @@ async function renderTrainerResumen(weekOf) {
 let progressTab = 'entreno';
 function setProgressTab(t) {
   progressTab = t;
+  document.getElementById('prog-tab-fuerza')?.classList.toggle('active', t === 'fuerza');
   document.getElementById('prog-tab-entreno')?.classList.toggle('active', t === 'entreno');
   document.getElementById('prog-tab-comida')?.classList.toggle('active', t === 'comida');
+  // La navegación por semanas no aplica a fuerza: ahí se mira la tendencia
+  const nav = document.getElementById('resumen-week-nav');
+  if (nav) nav.hidden = (t === 'fuerza');
+  if (t === 'fuerza') { renderFuerza(); return; }
   if (_lastResumenData) renderResumenContent(_lastResumenData, 'resumen-week-nav', 'resumen-content', false);
 }
 let _lastResumenData = null;
+let _historialFuerza = null;   // lo que devuelve get-progresion
+
+/* ══ REGISTRO DE FUERZA ══════════════════════════════════════════
+   La serie de cada ejercicio se reconstruye del historial de ajustes:
+   cada semana guarda el peso de antes y el de después, así que
+   encadenándolos sale la progresión sin almacenarla aparte. */
+
+function pesoNum(txt) {
+  const m = String(txt || '').match(/[\d.,]+/);
+  return m ? parseFloat(m[0].replace(',', '.')) : null;
+}
+
+/* Los ejercicios de la rutina de hoy, con su carga actual */
+function ejerciciosDeHoy() {
+  const out = new Map();
+  for (const k of Object.keys(data || {})) {
+    const dia = data[k];
+    if (!dia || !Array.isArray(dia.circuits)) continue;
+    dia.circuits.forEach((c, ci) => {
+      (c.exercises || []).forEach((e, ei) => {
+        if (!e || !e.name || out.has(e.name)) return;
+        out.set(e.name, {
+          name: e.name, w1: e.w1 || '', unit: e.unit || '',
+          actual: pesoNum(e.w1), principal: ci === 0 && ei === 0, sesion: k,
+        });
+      });
+    });
+  }
+  return out;
+}
+
+/* Serie de pesos por ejercicio, de la semana más vieja a hoy */
+function seriesDeFuerza(historial, hoy) {
+  const viejoANuevo = [...(historial || [])].reverse();
+  const serie = new Map();
+  for (const h of viejoANuevo) {
+    for (const c of (h.cambios || [])) {
+      if (!c || !c.name || c.name === '(volumen)') continue;
+      const antes = pesoNum(c.pesoAntes), despues = pesoNum(c.pesoDespues);
+      if (antes === null && despues === null) continue;
+      if (!serie.has(c.name)) serie.set(c.name, []);
+      const l = serie.get(c.name);
+      if (!l.length && antes !== null) l.push(antes);
+      if (despues !== null) l.push(despues);
+    }
+  }
+  // La carga de hoy manda: el entrenador o el propio atleta pudo cambiarla a mano
+  for (const [nombre, info] of hoy) {
+    if (!serie.has(nombre)) continue;
+    const l = serie.get(nombre);
+    if (info.actual !== null && l[l.length - 1] !== info.actual) l.push(info.actual);
+  }
+  return serie;
+}
+
+function sufijoDe(w1) {
+  const m = String(w1 || '').match(/[\d.,]+\s*(.*)$/);
+  return m ? m[1].trim() : '';
+}
+
+/* Las barras: se escalan al rango del propio ejercicio, no a cero, porque
+   de 40 a 55 lbs sobre una escala desde cero son seis barras casi iguales. */
+function barrasHtml(valores) {
+  const max = Math.max(...valores), min = Math.min(...valores);
+  const suelo = min - (max - min || max * 0.12) * 0.55;
+  const alto = v => Math.max(7, Math.round(((v - suelo) / (max - suelo)) * 100));
+  return `<div class="fz-barras">${valores.map((v, i) =>
+    `<i class="${i === valores.length - 1 ? 'ult' : ''}" style="height:${alto(v)}%"></i>`).join('')}</div>`;
+}
+
+async function renderFuerza() {
+  const el = document.getElementById('resumen-content');
+  if (!el) return;
+  if (!_historialFuerza) {
+    el.innerHTML = `<div class="fz-cargando">Cargando tu registro…</div>`;
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-progresion', client: currentAthlete, selfToken: getSelfToken() })
+      });
+      const d = await res.json();
+      _historialFuerza = d.historial || [];
+    } catch (e) { _historialFuerza = []; }
+    if (progressTab !== 'fuerza') return;
+  }
+
+  const hoy = ejerciciosDeHoy();
+  const serie = seriesDeFuerza(_historialFuerza, hoy);
+
+  // Sin ajustes todavía: se enseña el punto de partida, que ya es información
+  if (!serie.size) {
+    const principales = [...hoy.values()].filter(e => e.principal && e.actual !== null);
+    el.innerHTML = `
+      <div class="group fz-vacio">
+        <div class="fz-vacio-t">Tu punto de partida</div>
+        <div class="fz-vacio-s">Aquí vas a ver cuánto sube cada ejercicio. Aparece en cuanto
+          se ajuste tu primera semana, el sábado por la noche.</div>
+      </div>
+      ${principales.length ? `<h2 class="h-sec sec-title">Con lo que arrancas</h2>
+      ${principales.map(e => `<div class="group fz-lift">
+          <div class="fz-top">
+            <span class="fz-nom">${e.name}</span>
+            <span class="fz-val">${pesoNum(e.w1)}<em>${sufijoDe(e.w1)}</em></span>
+          </div>
+        </div>`).join('')}` : ''}`;
+    return;
+  }
+
+  // Con historial: cuánto subió cada uno
+  const lifts = [...serie.entries()].map(([nombre, vals]) => {
+    const info = hoy.get(nombre) || {};
+    const ini = vals[0], act = vals[vals.length - 1];
+    return { nombre, vals, ini, act, delta: Math.round((act - ini) * 10) / 10,
+             sufijo: sufijoDe(info.w1), enRutina: hoy.has(nombre) };
+  }).sort((a, b) => b.delta - a.delta).slice(0, 12);
+
+  const subieron = lifts.filter(l => l.delta > 0).length;
+  const sumado = Math.round(lifts.reduce((a, l) => a + Math.max(0, l.delta), 0));
+  const semanas = _historialFuerza.length;
+
+  el.innerHTML = `
+    <div class="group fz-hero">
+      <div class="fz-hero-l">Lo que has sumado</div>
+      <div class="fz-hero-n">+${sumado}<span> lbs</span></div>
+      <div class="fz-hero-s">Sumando lo que subiste en ${subieron} de ${lifts.length}
+        ejercicios, en ${semanas} semana${semanas === 1 ? '' : 's'}.</div>
+    </div>
+    <h2 class="h-sec sec-title">Tus levantamientos</h2>
+    ${lifts.map(l => {
+      const chip = l.delta > 0 ? `<span class="fz-delta">↑ ${l.delta}</span>`
+                 : l.delta < 0 ? `<span class="fz-delta baja">↓ ${Math.abs(l.delta)}</span>`
+                 : `<span class="fz-delta igual">= igual</span>`;
+      const estancado = l.delta === 0 && l.vals.length >= 3;
+      return `<div class="group fz-lift">
+        <div class="fz-top">
+          <span class="fz-nom">${l.nombre}</span>
+          <span class="fz-val">${l.act}<em>${l.sufijo}</em>${chip}</span>
+        </div>
+        ${barrasHtml(l.vals)}
+        <div class="fz-pie">
+          <span>hace ${l.vals.length - 1} sem · ${l.ini}</span>
+          <span>hoy · ${l.act}</span>
+        </div>
+        ${estancado ? `<div class="fz-nota">Sin subir desde hace ${l.vals.length - 1} semanas · entra a rotación</div>` : ''}
+      </div>`;
+    }).join('')}`;
+}
 
 function renderResumenContent(data, navId, contentId, isTrainer) {
   if (!isTrainer) _lastResumenData = data;
