@@ -59,7 +59,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="/landing/img/app/hoy-720.webp" fetchpriority="high" type="image/webp">
 
 <!-- Google Analytics 4 -->
@@ -73,20 +73,19 @@
 
 <style>
 /* ═══════════════ Mi Rutina · landing ═══════════════
-   Gimnasio y bienestar: noche con violeta para la energía, marfil cálido
-   para respirar. Letra condensada de póster en los titulares. El motivo es
-   el del logo: tres barras que suben, como la carga semana a semana.
-   Movimiento propio del tema: la semana que se arma, los discos que se
-   cargan en la barra, la franja que corre, el chat dentro del iPhone. */
+   Gimnasio y bienestar con la letra de la app (SF Pro, la de Apple):
+   noche con violeta para la energía, marfil cálido para respirar. El motivo
+   es el del logo: barras que suben, como la carga semana a semana.
+   Lo esencial y nada más: el plan, cómo sube, el asistente, las pantallas
+   clave, el entrenador, planes y preguntas. */
 :root {
-  --night: #0B0A10; --night-2: #15131D; --night-3: #1F1C2A;
+  --night: #0B0A10; --night-2: #16141E;
   --ivory: #F4F1EC; --paper: #FBFAF7; --sand: #E9E4DB;
   --ink: #15131A; --ink-2: #4A4652; --ink-3: #7A7582; --line: rgba(21,19,26,.1); --line-d: rgba(255,255,255,.1);
   --violet: #6E4BFF; --violet-tx: #5232D6; --violet-hi: #A68BFF; --lilac: #C9BCFF; --violet-soft: rgba(110,75,255,.12);
-  --ok: #1E9E52; --ok-hi: #30D158; --ok-soft: rgba(48,209,88,.15); --err: #D7263D; --err-hi: #FF6961; --err-soft: rgba(255,105,97,.14);
-  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
-  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif;
-  --round: ui-rounded, "SF Pro Rounded", -apple-system, Inter, system-ui, sans-serif;
+  --ok: #1E9E52; --ok-hi: #30D158; --err: #D7263D; --err-hi: #FF6961;
+  --sans: -apple-system, BlinkMacSystemFont, Inter, "SF Pro Display", system-ui, sans-serif;
+  --round: ui-rounded, -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif;
   --ease: cubic-bezier(.22,1,.36,1); --spring: cubic-bezier(.34,1.45,.64,1);
 }
 * { box-sizing: border-box; }
@@ -98,24 +97,22 @@ button { font: inherit; }
 .wrap { width: min(1160px, 100% - 80px); margin: 0 auto; }
 @media (max-width: 760px) { .wrap { width: calc(100% - 40px); } }
 
-/* Titulares de póster */
-.d { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: -.005em; line-height: .9; margin: 0; }
-.d .v { color: var(--violet); } .night .d .v, .hero .d .v { color: var(--violet-hi); }
-.d .o { color: transparent; -webkit-text-stroke: 1.5px currentColor; }
-.h2 { font-size: clamp(46px, 7.4vw, 104px); }
-.kick { display: inline-flex; align-items: center; gap: 10px; font: 700 13px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--violet-tx); }
+/* Titulares: SF Pro muy gruesa y apretada */
+.d { font-weight: 800; letter-spacing: -.045em; line-height: .95; margin: 0; }
+.d .v { color: var(--violet); } .night .d .v, .hero .d .v, .coach .d .v, .poster .d .v { color: var(--violet-hi); }
+.h2 { font-size: clamp(40px, 5.6vw, 72px); }
+.kick { display: inline-flex; align-items: center; gap: 10px; font: 700 13px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--violet-tx); }
 .kick::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: currentColor; }
-.night .kick { color: var(--lilac); }
-.sub { margin: 22px 0 0; font-size: clamp(18px, 1.8vw, 21px); line-height: 1.5; color: var(--ink-2); max-width: 560px; }
+.night .kick, .coach .kick { color: var(--lilac); }
+.sub { margin: 20px 0 0; font-size: clamp(17px, 1.7vw, 20px); line-height: 1.5; color: var(--ink-2); max-width: 540px; }
 .sub b { color: var(--ink); font-weight: 600; }
 .night { background: var(--night); color: #F4F2F8; }
 .night .sub { color: #ADA8BA; } .night .sub b { color: #fff; }
-.sec { padding: clamp(90px, 13vh, 140px) 0; position: relative; }
+.sec { padding: clamp(72px, 10vh, 110px) 0; position: relative; }
 
 /* Botones */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 28px; border-radius: 16px; border: 0; cursor: pointer;
-  font: 700 17px/1 var(--sans); letter-spacing: -.1px; background: var(--violet); color: #fff; transition: transform .25s var(--spring), background .2s, box-shadow .3s;
-  box-shadow: 0 14px 30px -12px rgba(110,75,255,.7); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 26px; border-radius: 16px; border: 0; cursor: pointer;
+  font: 600 17px/1 var(--sans); background: var(--violet); color: #fff; transition: transform .25s var(--spring), background .2s; box-shadow: 0 14px 30px -12px rgba(110,75,255,.7); }
 .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .3s var(--spring); }
 .btn:hover { background: #5d3cf0; } .btn:hover svg { transform: translateX(3px); }
 .btn:active { transform: scale(.96); }
@@ -123,17 +120,17 @@ button { font: inherit; }
 .btn-line:hover { background: rgba(255,255,255,.08); }
 .btn-soft { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
 .btn-soft:hover { background: var(--paper); }
-.btn-sm { height: 38px; padding: 0 16px; border-radius: 12px; font-size: 14px; box-shadow: none; }
+.btn-sm { height: 38px; padding: 0 16px; border-radius: 12px; font-size: 15px; box-shadow: none; }
 
 /* ─── Navegación ─── */
-.nav { position: fixed; inset: 0 0 auto; z-index: 50; height: 60px; display: flex; align-items: center; color: #fff;
+.nav { position: fixed; inset: 0 0 auto; z-index: 50; height: 58px; display: flex; align-items: center; color: #fff;
   background: rgba(11,10,16,.66); -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px); transition: background .3s, color .3s; }
-.nav.claro { background: rgba(244,241,236,.8); color: var(--ink); box-shadow: 0 .5px 0 var(--line); }
+.nav.claro { background: rgba(244,241,236,.82); color: var(--ink); box-shadow: 0 .5px 0 var(--line); }
 .nav .wrap { display: flex; align-items: center; gap: 28px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 19px/1 var(--display); text-transform: uppercase; letter-spacing: .01em; }
-.brand svg { width: 30px; height: 30px; display: block; }
-.nav-links { display: flex; gap: 26px; margin-left: auto; font-size: 14px; font-weight: 500; opacity: .82; }
-.nav-links a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+.brand { display: inline-flex; align-items: center; gap: 9px; font: 600 17px/1 var(--sans); letter-spacing: -.2px; }
+.brand svg { width: 28px; height: 28px; display: block; }
+.nav-links { display: flex; gap: 26px; margin-left: auto; font-size: 14px; opacity: .82; }
+.nav-links a:hover { opacity: 1; }
 @media (max-width: 860px) { .nav-links { display: none; } .nav .btn-sm { margin-left: auto; } }
 
 /* ─── iPhone realista ─── */
@@ -162,329 +159,260 @@ button { font: inherit; }
 .layers img.fuera { opacity: 0; transform: translateX(-8%); }
 
 /* ─── Hero ─── */
-.hero { position: relative; min-height: 100svh; padding: 110px 0 0; overflow: hidden; display: flex; flex-direction: column;
+.hero { position: relative; min-height: min(100svh, 920px); padding: 100px 0 0; overflow: hidden; display: flex; flex-direction: column;
   background: radial-gradient(70% 60% at 85% 30%, rgba(110,75,255,.32), transparent 65%), radial-gradient(50% 50% at 10% 100%, rgba(110,75,255,.16), transparent 70%), var(--night); color: #F4F2F8; }
 .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
   background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px;
   -webkit-mask-image: radial-gradient(70% 70% at 70% 40%, #000, transparent); mask-image: radial-gradient(70% 70% at 70% 40%, #000, transparent); }
-.hero .wrap { position: relative; z-index: 1; flex: 1; display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: center; }
-.tag-ia { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 99px; background: rgba(166,139,255,.14); color: var(--lilac); font: 600 14px var(--sans); }
-.tag-ia i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok-hi); box-shadow: 0 0 0 0 rgba(48,209,88,.6); animation: pulso 2s infinite; }
-@keyframes pulso { 80%, 100% { box-shadow: 0 0 0 9px transparent; } }
-.hero h1 { margin-top: 26px; font-size: clamp(76px, 12.4vw, 178px); line-height: .84; }
-.hero h1 .ln { display: block; overflow: hidden; padding-bottom: .04em; }
+.hero .wrap { position: relative; z-index: 1; flex: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 30px; align-items: center; }
+.hero h1 { font-size: clamp(72px, 10.4vw, 148px); line-height: .9; letter-spacing: -.05em; }
+.hero h1 .ln { display: block; overflow: hidden; padding: 0 .06em .06em 0; }
 .hero h1 .ln > span { display: inline-block; transform: translateY(105%); transition: transform 1s var(--ease); transition-delay: calc(var(--i) * 120ms + 150ms); }
 .hero.in h1 .ln > span { transform: none; }
-.hero .lede { margin: 28px 0 0; max-width: 520px; font-size: clamp(18px, 1.7vw, 21px); line-height: 1.5; color: #B9B4C6; }
+.hero .lede { margin: 28px 0 0; max-width: 500px; font-size: clamp(18px, 1.7vw, 21px); line-height: 1.5; color: #B9B4C6; }
 .hero .lede b { color: #fff; font-weight: 600; }
-.hero .ctas { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; }
+.hero .ctas { margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap; }
 .sube { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform 1s var(--ease); transition-delay: var(--d, 0ms); }
 .hero.in .sube { opacity: 1; transform: none; }
-/* Las barras del logo, en grande, detrás del iPhone */
-.hero-vis { position: relative; height: min(78svh, 700px); align-self: end; }
+.hero-vis { position: relative; height: min(76svh, 680px); align-self: end; }
 .barras { position: absolute; inset: 8% -4% 0 -2%; display: flex; align-items: flex-end; justify-content: space-between; gap: 5%; }
 .barras i { width: 29%; border-radius: 999px 999px 0 0; transform-origin: bottom; transform: scaleY(0); transition: transform 1.4s var(--ease); }
 .barras i:nth-child(1) { height: 42%; background: linear-gradient(180deg, rgba(166,139,255,.55), rgba(110,75,255,.1)); transition-delay: .35s; }
 .barras i:nth-child(2) { height: 66%; background: linear-gradient(180deg, rgba(166,139,255,.8), rgba(110,75,255,.14)); transition-delay: .5s; }
 .barras i:nth-child(3) { height: 92%; background: linear-gradient(180deg, #8B6BFF, rgba(110,75,255,.12)); transition-delay: .65s; }
-.hero.in .barras i { transform: scaleY(1); }
+.hero.in .barras i, .barras.in i { transform: scaleY(1); }
 .hero-ph { position: absolute; left: 60%; bottom: -14%; --w: min(300px, 70%); transform: translateX(-50%) translateY(90px) rotate(-7deg); opacity: 0; transition: transform 1.3s var(--ease) .6s, opacity .9s ease .6s; }
 .hero.in .hero-ph { transform: translateX(-50%) rotate(-7deg); opacity: 1; }
-.chip-f { position: absolute; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 18px; background: rgba(28,25,38,.78); color: #fff;
+.chip-f { position: absolute; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 18px; background: rgba(28,25,38,.8); color: #fff;
   -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 24px 50px -20px rgba(0,0,0,.6);
   opacity: 0; transform: translateY(16px) scale(.92); transition: opacity .45s ease, transform .7s var(--spring); white-space: nowrap; }
 .chip-f.show { opacity: 1; transform: none; }
 .chip-f small { display: block; font-size: 12px; color: #A9A3B8; font-weight: 500; }
 .chip-f b { display: block; margin-top: 2px; font-size: 15px; }
-.chip-f .num { font: 800 30px/1 var(--round); letter-spacing: -.02em; }
+.chip-f .num { font: 700 30px/1 var(--round); letter-spacing: -.02em; }
 .chip-f .num s { font-size: 17px; color: #8A8497; font-weight: 600; margin-right: 6px; text-decoration-color: rgba(255,255,255,.4); }
 .chip-f .mas { padding: 5px 10px; border-radius: 10px; background: rgba(48,209,88,.18); color: var(--ok-hi); font: 700 14px var(--sans); }
 .chip-f .dots { display: flex; gap: 5px; margin-top: 6px; } .chip-f .dots i { width: 22px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.16); transition: background .3s; } .chip-f .dots i.on { background: var(--violet-hi); }
 .cf-a { left: -8%; top: 46%; } .cf-b { right: -6%; top: 66%; }
 @media (max-width: 900px) {
-  .hero { padding-top: 96px; }
+  .hero { padding-top: 92px; min-height: 0; }
   .hero .wrap { grid-template-columns: 1fr; gap: 0; }
-  .hero h1 { font-size: clamp(64px, 21vw, 120px); }
-  .hero-vis { height: 520px; margin-top: 30px; }
-  .hero-ph { --w: 236px; bottom: -22%; }
-  .cf-a { left: 0; top: 44%; } .cf-b { right: 0; top: 66%; }
+  .hero h1 { font-size: clamp(64px, 19vw, 110px); }
+  .hero-vis { height: 470px; margin-top: 24px; }
+  .hero-ph { --w: 230px; bottom: -24%; left: 55%; }
+  .cf-a { left: 0; top: 40%; } .cf-b { right: 0; top: 62%; }
   .chip-f { padding: 10px 13px; } .chip-f .num { font-size: 24px; }
 }
 
 /* ─── Franja que corre ─── */
-.cinta { position: relative; z-index: 3; background: var(--violet); color: #fff; transform: rotate(-2deg) scale(1.04); margin: -26px 0 0; padding: 18px 0; overflow: hidden; box-shadow: 0 20px 40px -20px rgba(110,75,255,.6); }
-.cinta-t { display: flex; width: max-content; gap: 0; animation: corre 32s linear infinite; }
-.cinta-t span { display: inline-flex; align-items: center; gap: 28px; padding-right: 28px; font: 800 clamp(22px, 2.6vw, 32px)/1 var(--display); text-transform: uppercase; white-space: nowrap; }
-.cinta-t span i { width: 12px; height: 12px; border-radius: 3px; background: #fff; transform: rotate(45deg); opacity: .7; }
+.cinta { position: relative; z-index: 3; background: var(--violet); color: #fff; transform: rotate(-2deg) scale(1.04); margin: -24px 0 0; padding: 16px 0; overflow: hidden; box-shadow: 0 20px 40px -20px rgba(110,75,255,.6); }
+.cinta-t { display: flex; width: max-content; animation: corre 34s linear infinite; }
+.cinta-t span { display: inline-flex; align-items: center; gap: 26px; padding-right: 26px; font: 700 clamp(18px, 2vw, 24px)/1 var(--sans); letter-spacing: -.02em; white-space: nowrap; }
+.cinta-t span i { width: 9px; height: 9px; border-radius: 2px; background: #fff; transform: rotate(45deg); opacity: .7; }
 @keyframes corre { to { transform: translateX(-50%); } }
 
 /* ─── La semana que se arma ─── */
-.plan-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 70px; align-items: center; margin-top: 60px; }
-.plan-grid .stage { --w: min(300px, 74vw); margin: 0 auto; }
-.wk { padding: clamp(22px, 3vw, 34px); border-radius: 30px; background: var(--paper); box-shadow: 0 30px 70px -40px rgba(40,20,60,.35); }
-.wk-q { display: flex; flex-wrap: wrap; gap: 8px; min-height: 84px; align-content: flex-start; }
-.wk-q span { padding: 9px 14px; border-radius: 12px; background: var(--ivory); font-size: 15px; font-weight: 600; color: var(--ink-2);
+.plan-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 64px; align-items: center; }
+.plan-grid .stage { --w: min(290px, 70vw); margin: 0 auto; }
+.wk { margin-top: 30px; padding: clamp(20px, 3vw, 30px); border-radius: 28px; background: var(--paper); box-shadow: 0 30px 70px -40px rgba(40,20,60,.35); }
+.wk-q { display: flex; flex-wrap: wrap; gap: 8px; min-height: 80px; align-content: flex-start; }
+.wk-q span { padding: 8px 13px; border-radius: 12px; background: var(--ivory); font-size: 15px; font-weight: 500; color: var(--ink-2);
   opacity: 0; transform: translateY(14px) scale(.9); transition: opacity .35s ease, transform .55s var(--spring); }
 .wk-q span.on { opacity: 1; transform: none; }
-.wk-q span b { color: var(--violet-tx); }
-.wk-cols { margin-top: 22px; display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(5px, 1vw, 10px); height: 250px; }
-.wk-col { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 8px; }
-.wk-col > b { text-align: center; font: 700 13px var(--sans); color: var(--ink-3); }
-.wk-bar { position: relative; height: 26px; border-radius: 12px; background: var(--ivory); overflow: hidden; transition: height .8s var(--spring), background .4s; transition-delay: calc(var(--i) * 90ms); }
-.wk-bar span { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%) rotate(-90deg); transform-origin: center; white-space: nowrap;
-  font: 800 clamp(13px, 1.4vw, 16px)/1 var(--display); text-transform: uppercase; letter-spacing: .02em; color: #fff; opacity: 0; transition: opacity .4s; transition-delay: calc(var(--i) * 90ms + .4s); }
-.wk-bar span { bottom: auto; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); }
+.wk-q span b { color: var(--violet-tx); font-weight: 600; }
+.wk-cols { margin-top: 18px; display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(5px, 1vw, 10px); height: 220px; }
+.wk-col { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.wk-col > b { text-align: center; font: 600 13px var(--sans); color: var(--ink-3); }
+.wk-bar { position: relative; height: 24px; border-radius: 12px; background: var(--ivory); overflow: hidden; transition: height .8s var(--spring), background .4s; transition-delay: calc(var(--i) * 90ms); }
+.wk-bar span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font: 700 clamp(12px, 1.2vw, 14px)/1 var(--sans); color: #fff; opacity: 0; transition: opacity .4s; transition-delay: calc(var(--i) * 90ms + .4s); }
 .wk.s2 .wk-col.t .wk-bar { height: 100%; background: linear-gradient(180deg, #8B6BFF, var(--violet)); }
-.wk.s2 .wk-col.p .wk-bar { height: 88%; background: linear-gradient(180deg, #2a2340, #15131A); }
+.wk.s2 .wk-col.p .wk-bar { height: 86%; background: linear-gradient(180deg, #2a2340, #15131A); }
 .wk.s2 .wk-col.t .wk-bar span, .wk.s2 .wk-col.p .wk-bar span { opacity: 1; }
-.wk.s2 .wk-col.r .wk-bar { height: 26px; background: repeating-linear-gradient(-45deg, var(--ivory) 0 6px, var(--sand) 6px 12px); }
-.wk-done { margin-top: 20px; display: flex; align-items: center; gap: 12px; font-size: 16px; color: var(--ink-2); opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .6s var(--spring); }
-.wk-done i { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: #fff; }
-.wk-done i svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.wk.s2 .wk-col.r .wk-bar { background: repeating-linear-gradient(-45deg, var(--ivory) 0 6px, var(--sand) 6px 12px); }
+.wk-done { margin-top: 18px; display: flex; align-items: center; gap: 12px; font-size: 15px; line-height: 1.4; color: var(--ink-2); opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .6s var(--spring); }
+.wk-done i { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: #fff; }
+.wk-done i svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .wk-done b { color: var(--ink); }
 .wk.s3 .wk-done { opacity: 1; transform: none; }
-.pasos4 { margin-top: 26px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.pasos4 div { padding: 14px 14px 16px; border-radius: 16px; border: 1px solid var(--line); transition: background .35s, border-color .35s, color .35s; }
-.pasos4 div b { display: block; font: 800 28px/1 var(--display); color: var(--ink-3); transition: color .35s; }
-.pasos4 div span { display: block; margin-top: 6px; font-size: 14px; font-weight: 600; line-height: 1.3; }
-.pasos4 div.on { background: var(--night); border-color: var(--night); color: #fff; } .pasos4 div.on b { color: var(--violet-hi); }
-@media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; gap: 40px; } .plan-grid .ph-col { order: 2; } .wk-cols { height: 210px; } .pasos4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; gap: 36px; } .plan-grid .ph-col { order: 2; } .plan-grid .stage { --w: 230px; } .wk-cols { height: 190px; } .wk-q { min-height: 0; } }
 
-/* ─── Objetivos (noche) ─── */
-.goals { margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.goal { position: relative; overflow: hidden; min-height: 420px; padding: 30px; border-radius: 28px; background: var(--night-2); border: 1px solid var(--line-d);
-  display: flex; flex-direction: column; justify-content: flex-end; transition: transform .5s var(--spring), border-color .3s; }
-.goal:hover { transform: translateY(-6px); border-color: rgba(166,139,255,.4); }
-.goal .fondo { position: absolute; top: 18px; left: 22px; right: -40px; font: 900 clamp(84px, 9vw, 130px)/.82 var(--display); text-transform: uppercase;
-  color: transparent; -webkit-text-stroke: 1.2px rgba(166,139,255,.32); pointer-events: none; }
-.goal .bar3 { position: absolute; right: 26px; top: 26px; display: flex; align-items: flex-end; gap: 5px; height: 44px; }
-.goal .bar3 i { width: 9px; border-radius: 5px; background: rgba(166,139,255,.25); }
-.goal .bar3 i.on { background: var(--violet-hi); }
-.goal h3 { margin: 0; font: 800 40px/.95 var(--display); text-transform: uppercase; }
-.goal p { margin: 12px 0 0; font-size: 16px; line-height: 1.5; color: #ADA8BA; }
-.goal .tagr { margin-top: 18px; display: flex; gap: 8px; flex-wrap: wrap; }
-.goal .tagr span { padding: 6px 12px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: 13px; font-weight: 600; color: #DDD8EA; }
-@media (max-width: 900px) { .goals { grid-template-columns: 1fr; } .goal { min-height: 330px; } }
-
-/* ─── La barra que se carga ─── */
-.prog-top { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: end; }
-.gym-stage { margin-top: 50px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
-.barbell-box { position: relative; border-radius: 30px; background: var(--night); color: #fff; padding: 30px; min-height: 380px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
-.barbell-box .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px 12px; flex-wrap: wrap; }
-.barbell-box .ex { flex: 1 1 200px; }
-.barbell-box .ex b { display: block; font: 800 24px/1.05 var(--display); text-transform: uppercase; }
-.barbell-box .ex small { display: block; margin-top: 6px; font-size: 13px; color: #A9A3B8; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-.sat { padding: 8px 12px; border-radius: 12px; background: rgba(166,139,255,.16); color: var(--lilac); font-size: 13px; font-weight: 700; opacity: 0; transform: translateY(-10px); transition: opacity .35s, transform .5s var(--spring); white-space: nowrap; }
-.gym-stage.s2 .sat, .gym-stage.s3 .sat { opacity: 1; transform: none; }
-.barbell { position: relative; height: 150px; margin: 10px 0; }
-.barbell svg { width: 100%; height: 100%; overflow: visible; }
-.barbell .pl { transform-box: fill-box; transform-origin: center; transition: transform .6s var(--spring), opacity .3s; }
-.barbell .pl.nuevo { transform: scaleY(0); opacity: 0; }
-.barbell .pl.nuevo.on { transform: none; opacity: 1; }
-.peso-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
-.peso-big { font: 800 clamp(64px, 7vw, 92px)/.9 var(--round); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.peso-big s { font-size: .4em; color: #8A8497; margin-right: 10px; text-decoration-color: rgba(255,255,255,.4); display: none; }
-.gym-stage.s3 .peso-big s.vis { display: inline; }
-.peso-u { padding-bottom: 10px; font-size: 15px; color: #A9A3B8; font-weight: 600; }
-.reps { margin-left: auto; padding-bottom: 8px; }
-.reps small { display: block; font-size: 12px; color: #A9A3B8; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; text-align: right; }
-.reps .rd { margin-top: 7px; display: grid; grid-template-columns: repeat(12, 8px); gap: 4px; }
-.reps .rd i { height: 18px; border-radius: 3px; background: rgba(255,255,255,.13); transition: background .3s, transform .4s var(--spring); }
-.reps .rd i.on { background: #fff; } .reps .rd i.nuevo { background: var(--violet-hi); transform: scaleY(1.15); }
-.estampa { position: absolute; right: 26px; bottom: 96px; padding: 8px 14px; border: 2.5px solid var(--err-hi); color: var(--err-hi); border-radius: 10px; font: 800 22px/1 var(--display); text-transform: uppercase;
-  transform: rotate(-8deg) scale(1.6); opacity: 0; transition: transform .45s var(--spring), opacity .25s; }
-.gym-stage.s3.fallo .estampa { transform: rotate(-8deg); opacity: 1; }
-.mark-box { border-radius: 30px; background: var(--paper); padding: 26px; display: flex; flex-direction: column; justify-content: center; gap: 16px; position: relative; }
-.mark-box .q { font: 800 26px/1 var(--display); text-transform: uppercase; }
-.seg3 { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: 14px; background: var(--ivory); }
-.seg3 span { position: relative; z-index: 1; padding: 13px 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--ink-2); transition: color .3s; }
-.seg3 .th { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 11px; background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.12);
-  opacity: 0; transform: translateX(calc(var(--k, 0) * 100%)); transition: transform .45s var(--spring), opacity .25s; }
-.gym-stage.s1 .seg3 .th, .gym-stage.s2 .seg3 .th, .gym-stage.s3 .seg3 .th { opacity: 1; }
-.seg3 span.on[data-r="facil"] { color: var(--ok); } .seg3 span.on[data-r="justo"] { color: var(--violet-tx); } .seg3 span.on[data-r="fallo"] { color: var(--err); }
-.mark-box .res { min-height: 48px; font-size: 16px; line-height: 1.45; color: var(--ink-2); opacity: 0; transition: opacity .4s; }
-.gym-stage.s3 .mark-box .res { opacity: 1; }
-.tap { position: absolute; z-index: 9; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(110,75,255,.25); border: 2px solid var(--violet); opacity: 0; pointer-events: none; transition: left .5s var(--ease), top .5s var(--ease), opacity .3s; }
-.tap.on { opacity: 1; animation: tap 1s ease-in-out infinite; }
-@keyframes tap { 0%, 100% { transform: scale(.75); } 50% { transform: scale(1.05); } }
-.reglas { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.regla { padding: 26px; border-radius: 26px; background: var(--paper); border: 1px solid transparent; transition: border-color .35s, transform .45s var(--spring); }
-.regla.on { border-color: currentColor; transform: translateY(-4px); }
-.regla small { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.regla b { display: block; margin-top: 10px; font: 800 46px/.9 var(--display); text-transform: uppercase; color: var(--ink); }
-.regla p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
-.regla.facil { color: var(--ok); } .regla.justo { color: var(--violet-tx); } .regla.fallo { color: var(--err); }
-.ia-linea { margin-top: 18px; display: flex; gap: 14px; align-items: center; padding: 18px 22px; border-radius: 22px; background: var(--sand); font-size: 16px; line-height: 1.5; color: var(--ink-2); }
-.ia-linea svg { flex: none; width: 26px; height: 26px; color: var(--violet); }
+/* ─── Cómo sube: seis semanas de un ejercicio ─── */
+.semanas { margin-top: 44px; padding: clamp(22px, 3.4vw, 40px); border-radius: 30px; background: var(--night); color: #fff; position: relative; overflow: hidden; }
+.semanas::before { content: ""; position: absolute; inset: auto -10% -60% 30%; height: 120%; background: radial-gradient(50% 50% at 50% 50%, rgba(110,75,255,.35), transparent 70%); pointer-events: none; }
+.sm-top { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; }
+.sm-top b { display: block; font-size: clamp(20px, 2.2vw, 26px); letter-spacing: -.02em; }
+.sm-top small { display: block; margin-top: 4px; font-size: 14px; color: #A9A3B8; }
+.sm-ley { display: flex; gap: 8px; flex-wrap: wrap; }
+.sm-ley span { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: 13px; color: #DDD8EA; }
+.sm-ley i { width: 8px; height: 8px; border-radius: 50%; }
+.sm-cols { position: relative; margin-top: 30px; display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(8px, 1.6vw, 22px); height: 300px; align-items: end; }
+.sm-col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 10px; }
+.sm-marca { padding: 5px 9px; border-radius: 9px; font-size: 13px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translateY(8px) scale(.85); transition: opacity .3s, transform .5s var(--spring); }
+.m-facil { background: rgba(48,209,88,.16); color: var(--ok-hi); } .m-justo { background: rgba(166,139,255,.18); color: var(--lilac); } .m-fallo { background: rgba(255,105,97,.16); color: var(--err-hi); }
+.sm-bar { position: relative; width: 100%; max-width: 92px; height: var(--h); border-radius: 16px 16px 6px 6px; background: linear-gradient(180deg, #8B6BFF, rgba(110,75,255,.35));
+  transform-origin: bottom; transform: scaleY(0); transition: transform .9s var(--spring); }
+.sm-col.sube5 .sm-bar { background: linear-gradient(180deg, #B9A6FF, #6E4BFF); box-shadow: 0 0 30px -4px rgba(166,139,255,.6); }
+.sm-val { position: absolute; left: 0; right: 0; top: 12px; text-align: center; font: 700 clamp(15px, 1.7vw, 20px)/1.1 var(--round); opacity: 0; transition: opacity .4s .3s; }
+.sm-val small { display: block; margin-top: 3px; font: 600 12px var(--sans); color: rgba(255,255,255,.75); }
+.sm-sem { font-size: 13px; color: #A9A3B8; font-weight: 600; }
+.sm-col.on .sm-bar { transform: scaleY(1); } .sm-col.on .sm-val { opacity: 1; }
+.sm-col.on .sm-marca { opacity: 1; transform: none; transition-delay: .5s; }
+.sm-sube { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 8px; background: var(--ok-hi); color: #062b12; font: 800 12px var(--sans); white-space: nowrap; transform: scale(.6); opacity: 0; transition: opacity .3s, transform .5s var(--spring); }
+.sm-col.on .sm-sube { opacity: 1; transform: none; transition-delay: .9s; }
+.ia-linea { margin-top: 16px; display: flex; gap: 14px; align-items: center; padding: 16px 20px; border-radius: 20px; background: var(--sand); font-size: 16px; line-height: 1.5; color: var(--ink-2); }
+.ia-linea svg { flex: none; width: 24px; height: 24px; color: var(--violet); }
 .ia-linea b { color: var(--ink); }
-@media (max-width: 900px) { .prog-top, .gym-stage { grid-template-columns: 1fr; } .reglas { grid-template-columns: 1fr; } .barbell { height: 110px; } }
+@media (max-width: 700px) {
+  .sm-cols { height: 260px; gap: 6px; }
+  .sm-marca { font-size: 12px; padding: 4px 6px; }
+  .sm-val { font-size: 14px; top: 8px; } .sm-val small { font-size: 12px; }
+  .sm-bar { border-radius: 12px 12px 5px 5px; }
+}
+@media (max-width: 520px) { .sm-marca { white-space: normal; text-align: center; line-height: 1.1; max-width: 100%; padding: 4px 3px; } }
 
-/* ─── Números (noche) ─── */
-.stats-band { position: relative; overflow: hidden; }
-.stats { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line-d); }
-.stat { padding: 28px 22px 0 0; }
-.stat b { display: block; font: 800 clamp(64px, 8vw, 120px)/.85 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.stat b em { font-style: normal; color: var(--violet-hi); }
-.stat .lab { display: block; margin-top: 12px; font-size: 15px; color: #ADA8BA; line-height: 1.4; }
-.chart { position: relative; margin-top: 56px; height: 200px; }
-.chart svg { width: 100%; height: 100%; overflow: visible; }
-.c-line { fill: none; stroke: var(--violet-hi); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 2.2s var(--ease) .2s; filter: drop-shadow(0 0 12px rgba(166,139,255,.6)); }
-.c-area { opacity: 0; transition: opacity 1s ease 1.4s; }
-.chart.in .c-line { stroke-dashoffset: 0; } .chart.in .c-area { opacity: 1; }
-.c-pts circle { fill: var(--night); stroke: var(--violet-hi); stroke-width: 3; opacity: 0; transition: opacity .3s; }
-.chart.in .c-pts circle { opacity: 1; }
-.c-lab { position: absolute; display: flex; justify-content: space-between; left: 0; right: 0; bottom: -30px; font-size: 13px; color: #8A8497; font-weight: 600; }
-.ej-note { margin-top: 56px; font-size: 14px; color: #8A8497; }
-.stats-ph { position: absolute; right: max(40px, calc(50% - 580px)); top: 34%; --w: 230px; transform: rotate(6deg); }
-@media (min-width: 1101px) { .stats-band .stats, .stats-band .chart, .stats-band .ej-note { margin-right: 270px; } }
-@media (max-width: 1100px) { .stats-ph { display: none; } }
-@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); row-gap: 20px; } }
-
-/* ─── Asistente: el chat vive dentro del iPhone ─── */
+/* ─── Asistente: el chat de la app, dentro del iPhone ─── */
 .chat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
-.chat-grid .stage { --w: min(320px, 78vw); margin: 0 auto; }
-.ui-chat { position: absolute; inset: 0; background: #F2F2F7; display: flex; flex-direction: column; font-family: var(--sans); }
-.ui-chat .cab { padding: 15cqw 5cqw 3.5cqw; display: flex; gap: 3cqw; align-items: center; background: #fff; border-bottom: .3cqw solid #E5E5EA; }
-.ui-chat .cab i { width: 10cqw; height: 10cqw; border-radius: 50%; background: rgba(110,75,255,.12); display: grid; place-items: center; color: var(--violet); }
-.ui-chat .cab i svg { width: 5cqw; height: 5cqw; stroke: currentColor; fill: none; stroke-width: 2.2; }
-.ui-chat .cab b { display: block; font-size: 4.4cqw; } .ui-chat .cab small { display: block; font-size: 3.4cqw; color: #8E8E93; }
-.ui-chat .msgs { flex: 1; padding: 4cqw; display: flex; flex-direction: column; gap: 2.6cqw; justify-content: flex-end; }
-.cm { max-width: 82%; padding: 2.8cqw 3.6cqw; border-radius: 4.6cqw; font-size: 3.9cqw; line-height: 1.38; opacity: 0; transform: translateY(3cqw) scale(.96); transition: opacity .35s, transform .5s var(--spring); }
-.cm.show { opacity: 1; transform: none; }
-.cm.yo { align-self: flex-end; background: var(--violet); color: #fff; border-bottom-right-radius: 1.4cqw; }
-.cm.ia { align-self: flex-start; background: #fff; color: #1d1d1f; border-bottom-left-radius: 1.4cqw; box-shadow: 0 .4cqw 1.2cqw rgba(0,0,0,.05); }
-.cm.ia b { color: var(--violet-tx); }
+.chat-grid .stage { --w: min(310px, 76vw); margin: 0 auto; }
+.ui-chat { position: absolute; inset: 0; background: #F2F2F7; color: #1d1d1f; display: flex; flex-direction: column; font-family: var(--sans); }
+.ui-chat .cab { padding: 15cqw 4.5cqw 3.4cqw; display: flex; gap: 3cqw; align-items: center; background: #fff; border-bottom: .3cqw solid #E5E5EA; }
+.ui-chat .cab .av { flex: none; width: 10cqw; height: 10cqw; border-radius: 50%; background: rgba(110,75,255,.12); display: grid; place-items: center; color: var(--violet); }
+.ui-chat .cab .av svg { width: 5cqw; height: 5cqw; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.ui-chat .cab b { display: block; font-size: 4.3cqw; } .ui-chat .cab small { display: block; margin-top: .4cqw; font-size: 3.3cqw; color: #8E8E93; }
+.ui-chat .cab .x { margin-left: auto; width: 8cqw; height: 8cqw; border-radius: 50%; background: #F2F2F7; display: grid; place-items: center; color: #3c3c43; }
+.ui-chat .cab .x svg { width: 3.6cqw; height: 3.6cqw; stroke: currentColor; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+.ui-chat .msgs { flex: 1; min-height: 0; overflow: hidden; padding: 4cqw; display: flex; flex-direction: column; justify-content: flex-end; gap: 2.6cqw; }
+.cm { flex: none; max-width: 84%; padding: 2.8cqw 3.6cqw; border-radius: 4.6cqw; font-size: 3.9cqw; line-height: 1.38; animation: entra .45s var(--spring) both; }
+@keyframes entra { from { opacity: 0; transform: translateY(4cqw) scale(.94); } }
+.cm.yo { align-self: flex-end; background: var(--violet); color: #fff; border-bottom-right-radius: 1.4cqw; transform-origin: right bottom; }
+.cm.ia { align-self: flex-start; background: #fff; color: #1d1d1f; border-bottom-left-radius: 1.4cqw; box-shadow: 0 .4cqw 1.2cqw rgba(0,0,0,.05); transform-origin: left bottom; }
+.cm.ia b { color: var(--violet-tx); font-weight: 600; }
 .cm.ok { align-self: flex-start; display: inline-flex; gap: 2cqw; align-items: center; background: rgba(48,209,88,.14); color: var(--ok); font-weight: 600; font-size: 3.4cqw; }
 .cm.ok svg { width: 3.8cqw; height: 3.8cqw; stroke: currentColor; stroke-width: 3; fill: none; }
-.cm.dots { display: none; gap: 1.2cqw; align-self: flex-start; background: #fff; padding: 3.6cqw 4cqw; } .cm.dots.show { display: inline-flex; }
+.cm.dots { display: inline-flex; gap: 1.2cqw; align-self: flex-start; background: #fff; padding: 3.6cqw 4cqw; }
 .cm.dots i { width: 1.8cqw; height: 1.8cqw; border-radius: 50%; background: #AEAEB2; animation: dot 1.2s infinite; } .cm.dots i:nth-child(2) { animation-delay: .15s; } .cm.dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes dot { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-1cqw); opacity: 1; } }
-.ui-chat .inp { margin: 0 4cqw 9cqw; height: 10cqw; border-radius: 5cqw; background: #fff; border: .3cqw solid #E5E5EA; display: flex; align-items: center; padding: 0 4cqw; font-size: 3.6cqw; color: #AEAEB2; }
-.temas { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.temas div { padding: 16px; border-radius: 18px; background: var(--paper); font-size: 15px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.ui-chat .bar { display: flex; gap: 2.4cqw; align-items: center; padding: 2.6cqw 4cqw 9cqw; background: #F2F2F7; }
+.ui-chat .inp { flex: 1; min-height: 10.4cqw; border-radius: 5.2cqw; background: #fff; border: .3cqw solid #E5E5EA; display: flex; align-items: center; padding: 2cqw 4cqw; font-size: 3.8cqw; line-height: 1.3; color: #1d1d1f; }
+.ui-chat .inp.vacio { color: #AEAEB2; }
+.ui-chat .inp .cur { display: inline-block; width: .4cqw; height: 4.4cqw; margin-left: .3cqw; background: var(--violet); animation: parpadea 1s steps(2) infinite; vertical-align: middle; }
+@keyframes parpadea { 50% { opacity: 0; } }
+.ui-chat .env { flex: none; width: 10.4cqw; height: 10.4cqw; border-radius: 50%; background: var(--violet); display: grid; place-items: center; color: #fff; opacity: .35; transition: opacity .2s, transform .25s var(--spring); }
+.ui-chat .env.listo { opacity: 1; } .ui-chat .env.toca { transform: scale(.82); }
+.ui-chat .env svg { width: 5cqw; height: 5cqw; stroke: currentColor; stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.temas { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.temas div { padding: 15px; border-radius: 16px; background: var(--paper); font-size: 15px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
 .temas svg { flex: none; width: 22px; height: 22px; color: var(--violet); stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-@media (max-width: 900px) { .chat-grid { grid-template-columns: 1fr; gap: 50px; } }
+@media (max-width: 900px) { .chat-grid { grid-template-columns: 1fr; gap: 40px; } .chat-grid .stage { --w: 260px; } }
 
-/* ─── Funciones en mosaico ─── */
-.bento { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 300px; gap: 16px;
-  grid-template-areas: "tec tec des cir" "tec tec des not" "aju con osc per"; }
-.bx { position: relative; overflow: hidden; border-radius: 28px; background: var(--paper); padding: 24px 24px 0; display: flex; flex-direction: column; }
-.bx h3 { margin: 0; font: 800 26px/.95 var(--display); text-transform: uppercase; }
-.bx p { margin: 8px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); max-width: 300px; }
-.bx .peek { position: relative; margin: 18px auto 0; width: min(78%, 240px); flex: 1; border-radius: 28px 28px 0 0; background: #111; padding: 7px 7px 0; overflow: hidden;
-  box-shadow: 0 -10px 40px -20px rgba(0,0,0,.4); transform: translateY(24px); transition: transform .7s var(--spring); }
-.bx .peek img { width: 100%; height: 100%; object-fit: cover; object-position: 50% var(--y, 0%); border-radius: 22px 22px 0 0; }
-.bx:hover .peek { transform: translateY(6px); }
-.bx.dark { background: var(--night); color: #fff; } .bx.dark p { color: #ADA8BA; }
-.bx.vio { background: var(--violet); color: #fff; } .bx.vio p { color: rgba(255,255,255,.82); }
-.b-tec { grid-area: tec; } .b-tec .peek { width: min(62%, 330px); }
-.b-des { grid-area: des; } .b-cir { grid-area: cir; } .b-not { grid-area: not; } .b-aju { grid-area: aju; } .b-con { grid-area: con; } .b-osc { grid-area: osc; } .b-per { grid-area: per; }
-.bento .bx { opacity: 0; transform: translateY(40px) scale(.97); transition: opacity .7s ease, transform .9s var(--ease); }
-.bento.in .bx { opacity: 1; transform: none; }
-.bento.in .bx:nth-child(2) { transition-delay: .06s; } .bento.in .bx:nth-child(3) { transition-delay: .12s; } .bento.in .bx:nth-child(4) { transition-delay: .18s; }
-.bento.in .bx:nth-child(5) { transition-delay: .24s; } .bento.in .bx:nth-child(6) { transition-delay: .3s; } .bento.in .bx:nth-child(7) { transition-delay: .36s; } .bento.in .bx:nth-child(8) { transition-delay: .42s; }
-@media (max-width: 1000px) { .bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 320px; grid-template-areas: "tec tec" "tec tec" "des cir" "des not" "aju con" "osc per"; } }
-@media (max-width: 600px) { .bento { grid-template-columns: 1fr; grid-auto-rows: 340px; grid-template-areas: "tec" "des" "cir" "not" "aju" "con" "osc" "per"; } .b-tec .peek { width: min(78%, 260px); } }
+/* ─── Pantallas clave (fila; en el celular se desliza de lado) ─── */
+.pantallas { margin-top: 44px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.pant .stage { --w: 100%; }
+.pant h3 { margin: 22px 0 0; font-size: 19px; letter-spacing: -.3px; }
+.pant p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.pant { opacity: 0; transform: translateY(40px); transition: opacity .7s ease, transform 1s var(--ease); }
+.pantallas.in .pant { opacity: 1; transform: none; }
+.pantallas.in .pant:nth-child(2) { transition-delay: .08s; } .pantallas.in .pant:nth-child(3) { transition-delay: .16s; } .pantallas.in .pant:nth-child(4) { transition-delay: .24s; }
+@media (max-width: 900px) {
+  .pantallas { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; margin: 36px -20px 0; padding: 0 20px 14px; scrollbar-width: none; }
+  .pantallas::-webkit-scrollbar { display: none; }
+  .pant { flex: none; width: 210px; scroll-snap-align: center; }
+}
 
-/* ─── Con entrenador ─── */
-.coach { position: relative; overflow: hidden; border-radius: 40px; padding: clamp(36px, 5vw, 70px);
+/* ─── Con entrenador (y gimnasios) ─── */
+.coach { position: relative; overflow: hidden; border-radius: 36px; padding: clamp(32px, 5vw, 64px);
   background: radial-gradient(70% 80% at 100% 100%, rgba(110,75,255,.5), transparent 60%), linear-gradient(150deg, #1d1636, #0B0A10 70%); color: #F4F2F8;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
 .coach .sub { color: #B9B4C6; }
-.ticks { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 12px; }
+.ticks { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 11px; }
 .ticks li { display: flex; gap: 12px; font-size: 16px; line-height: 1.45; color: #E6E2F0; }
 .ticks li i { flex: none; width: 24px; height: 24px; border-radius: 8px; background: rgba(166,139,255,.2); display: grid; place-items: center; color: var(--lilac); }
 .ticks li i svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.coach .ctas { margin-top: 30px; display: flex; gap: 12px; flex-wrap: wrap; }
-.abanico { position: relative; height: 560px; }
-.abanico .stage { position: absolute; left: 50%; top: 50%; --w: 230px; transition: transform 1.1s var(--spring); }
-.abanico .stage:nth-child(1) { transform: translate(-50%, -50%) rotate(0); z-index: 1; }
-.abanico .stage:nth-child(2) { transform: translate(-50%, -50%) rotate(0); z-index: 3; }
-.abanico .stage:nth-child(3) { transform: translate(-50%, -50%) rotate(0); z-index: 2; }
-.abanico.in .stage:nth-child(1) { transform: translate(-112%, -46%) rotate(-10deg); }
-.abanico.in .stage:nth-child(2) { transform: translate(-50%, -53%) rotate(0); }
-.abanico.in .stage:nth-child(3) { transform: translate(12%, -46%) rotate(10deg); }
-@media (max-width: 1000px) { .coach { grid-template-columns: 1fr; } .abanico { height: 470px; } .abanico .stage { --w: 190px; } }
-@media (max-width: 480px) { .abanico { height: 400px; } .abanico .stage { --w: 158px; } }
-
-/* ─── Gimnasio ─── */
-.gym { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
-.gym-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.gym-list div { padding: 18px; border-radius: 18px; background: var(--paper); font-size: 15px; font-weight: 600; line-height: 1.35; }
-.gym-list div b { display: block; font: 800 30px/1 var(--display); color: var(--violet-tx); margin-bottom: 8px; }
-@media (max-width: 900px) { .gym { grid-template-columns: 1fr; } }
+.coach .ctas { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+.gym-nota { margin-top: 26px; padding: 16px 18px; border-radius: 18px; background: rgba(255,255,255,.06); border: 1px solid var(--line-d); font-size: 15px; line-height: 1.5; color: #CFCADB; }
+.gym-nota b { color: #fff; }
+.gym-nota a { color: var(--lilac); font-weight: 600; }
+.abanico { position: relative; height: 520px; }
+.abanico .stage { position: absolute; left: 50%; top: 50%; --w: 220px; transition: transform 1.1s var(--spring); }
+.abanico .stage:nth-child(1) { transform: translate(-50%, -50%); z-index: 1; }
+.abanico .stage:nth-child(2) { transform: translate(-50%, -50%); z-index: 3; }
+.abanico .stage:nth-child(3) { transform: translate(-50%, -50%); z-index: 2; }
+.abanico.in .stage:nth-child(1) { transform: translate(-108%, -46%) rotate(-9deg); }
+.abanico.in .stage:nth-child(2) { transform: translate(-50%, -52%); }
+.abanico.in .stage:nth-child(3) { transform: translate(8%, -46%) rotate(9deg); }
+@media (max-width: 1000px) { .coach { grid-template-columns: 1fr; } .abanico { height: 430px; } .abanico .stage { --w: 180px; } }
+@media (max-width: 480px) { .abanico { height: 360px; } .abanico .stage { --w: 150px; } }
 
 /* ─── Planes ─── */
-.plans { margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.plan { display: flex; flex-direction: column; padding: 30px; border-radius: 28px; background: var(--paper); }
+.plans { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.plan { display: flex; flex-direction: column; padding: 28px; border-radius: 28px; background: var(--paper); }
 .plan.hl { background: var(--night); color: #fff; box-shadow: 0 30px 70px -36px rgba(110,75,255,.7); }
-.plan-name { font: 800 30px/1 var(--display); text-transform: uppercase; }
-.plan-for { margin-top: 6px; font-size: 15px; color: var(--ink-3); } .plan.hl .plan-for, .plan.hl .plan-note { color: #ADA8BA; }
-.plan-price { margin-top: 22px; font: 800 54px/1 var(--display); }
+.plan-name { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.plan-for { margin-top: 4px; font-size: 15px; color: var(--ink-3); } .plan.hl .plan-for, .plan.hl .plan-note { color: #ADA8BA; }
+.plan-price { margin-top: 20px; font: 800 44px/1 var(--sans); letter-spacing: -.04em; }
 .plan.hl .plan-price { color: var(--violet-hi); }
-.plan-price s { font-size: 24px; color: var(--ink-3); margin-right: 8px; font-weight: 600; }
-.plan-price .per { display: block; margin-top: 6px; font: 600 14px var(--sans); color: var(--ink-3); }
+.plan-price s { font-size: 20px; color: var(--ink-3); margin-right: 8px; font-weight: 600; letter-spacing: 0; }
+.plan-price .per { display: block; margin-top: 6px; font: 600 14px var(--sans); color: var(--ink-3); letter-spacing: 0; }
 .plan-note { margin: 10px 0 0; font-size: 14px; color: var(--ink-3); line-height: 1.45; }
-.plan ul { list-style: none; padding: 0; margin: 22px 0 26px; display: grid; gap: 10px; }
+.plan ul { list-style: none; padding: 0; margin: 20px 0 24px; display: grid; gap: 9px; }
 .plan li { display: flex; gap: 10px; font-size: 15px; line-height: 1.4; color: var(--ink-2); } .plan.hl li { color: #E6E2F0; }
 .plan li svg { flex: none; width: 18px; height: 18px; margin-top: 1px; stroke: var(--violet); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .plan.hl li svg { stroke: var(--violet-hi); }
 .plan .btn { margin-top: auto; width: 100%; }
-@media (max-width: 900px) { .plans { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .plans { grid-template-columns: 1fr; } .plan ul { display: none; } .plan.hl ul { display: grid; } }
 
 /* ─── Preguntas ─── */
 .faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 60px; align-items: start; }
 .faq details { border-bottom: 1px solid var(--line); }
-.faq summary { list-style: none; cursor: pointer; padding: 22px 44px 22px 0; position: relative; font-size: 19px; font-weight: 600; letter-spacing: -.3px; }
+.faq summary { list-style: none; cursor: pointer; padding: 20px 44px 20px 0; position: relative; font-size: 18px; font-weight: 600; letter-spacing: -.3px; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq summary::after { content: "+"; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
   background: var(--paper); font: 500 22px/1 var(--sans); color: var(--violet-tx); transition: transform .35s var(--spring), background .3s, color .3s; }
 .faq details[open] summary::after { transform: translateY(-50%) rotate(45deg); background: var(--violet); color: #fff; }
 .faq .ans { overflow: hidden; transition: height .4s var(--ease); }
-.faq .ans p { margin: 0 0 22px; font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 620px; }
-@media (max-width: 900px) { .faq-grid { grid-template-columns: 1fr; gap: 20px; } }
+.faq .ans p { margin: 0 0 20px; font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 620px; }
+@media (max-width: 900px) { .faq-grid { grid-template-columns: 1fr; gap: 16px; } }
 
-/* ─── Cierre de póster ─── */
-.poster { position: relative; overflow: hidden; padding: clamp(110px, 16vh, 170px) 0 0; text-align: center;
-  background: radial-gradient(60% 60% at 50% 100%, rgba(110,75,255,.5), transparent 70%), var(--night); color: #fff; }
-.poster .d { font-size: clamp(62px, 11vw, 168px); line-height: .85; }
-.poster .sub { margin: 26px auto 0; color: #B9B4C6; }
-.poster .ctas { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.poster .barras { position: relative; inset: auto; height: 240px; margin: 70px auto 0; width: min(520px, 86%); }
-
-/* ─── Contacto ─── */
-.lead { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
-.lead-alt { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; }
-.lead-form { display: grid; gap: 14px; padding: 28px; border-radius: 28px; background: var(--paper); }
-.field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.field .muted { color: var(--ink-3); font-weight: 400; }
-.field input, .field select { width: 100%; height: 50px; padding: 0 14px; border-radius: 14px; border: 1.5px solid transparent; background: var(--ivory); font: 17px var(--sans); color: var(--ink); outline: none; transition: border-color .2s; -webkit-appearance: none; appearance: none; }
-.field input:focus, .field select:focus { border-color: var(--violet); }
-.field input.invalid { border-color: var(--err); }
+/* ─── Cierre con contacto ─── */
+.poster { position: relative; overflow: hidden; padding: clamp(80px, 12vh, 120px) 0 0; background: radial-gradient(60% 60% at 50% 100%, rgba(110,75,255,.45), transparent 70%), var(--night); color: #fff; }
+.poster-top { text-align: center; }
+.poster .d { font-size: clamp(52px, 8vw, 112px); letter-spacing: -.05em; }
+.poster .sub { margin: 22px auto 0; color: #B9B4C6; }
+.poster .ctas { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.poster .barras { position: relative; inset: auto; height: 150px; margin: 60px auto 0; width: min(420px, 80%); }
+.lead { margin-top: 70px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; padding: clamp(26px, 4vw, 44px); border-radius: 30px; background: var(--night-2); border: 1px solid var(--line-d); }
+.lead h3 { margin: 0; font-size: 28px; letter-spacing: -.03em; }
+.lead p { margin: 12px 0 0; font-size: 16px; line-height: 1.5; color: #ADA8BA; }
+.lead-alt { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+.lead-alt .btn { background: rgba(255,255,255,.08); box-shadow: none; }
+.lead-form { display: grid; gap: 12px; }
+.field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #CFCADB; }
+.field .muted { color: #8A8497; font-weight: 400; }
+.field input, .field select { width: 100%; height: 50px; padding: 0 14px; border-radius: 14px; border: 1.5px solid transparent; background: rgba(255,255,255,.07); font: 17px var(--sans); color: #fff; outline: none; transition: border-color .2s; -webkit-appearance: none; appearance: none; }
+.field input::placeholder { color: #8A8497; }
+.field select option { color: #000; }
+.field input:focus, .field select:focus { border-color: var(--violet-hi); }
+.field input.invalid { border-color: var(--err-hi); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.lead-success { padding: 36px 28px; border-radius: 28px; background: var(--paper); text-align: center; }
-.lead-success .ok { width: 56px; height: 56px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--violet); color: #fff; }
-.lead-success .ok svg { width: 26px; height: 26px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.lead-success h3 { margin: 18px 0 0; font-size: 24px; }
-.lead-success p { color: var(--ink-3); font-size: 16px; line-height: 1.5; }
-@media (max-width: 900px) { .lead { grid-template-columns: 1fr; gap: 32px; } }
+.lead-success { padding: 28px; border-radius: 22px; background: rgba(255,255,255,.06); text-align: center; }
+.lead-success .ok { width: 52px; height: 52px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--violet); color: #fff; }
+.lead-success .ok svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.lead-success h3 { margin-top: 16px; font-size: 22px; }
+@media (max-width: 900px) { .lead { grid-template-columns: 1fr; gap: 26px; } }
 @media (max-width: 420px) { .row2 { grid-template-columns: 1fr; } }
-
-.foot { padding: 36px 0 52px; background: var(--night); color: #8A8497; font-size: 14px; }
-.foot .wrap { display: flex; gap: 18px 32px; flex-wrap: wrap; align-items: center; }
+.foot { padding: 34px 0 48px; background: var(--night); color: #8A8497; font-size: 14px; border-top: 1px solid var(--line-d); margin-top: 80px; }
+.foot .wrap { display: flex; gap: 16px 32px; flex-wrap: wrap; align-items: center; }
 .foot .brand { color: #fff; }
 .foot nav { display: flex; gap: 20px; flex-wrap: wrap; margin-left: auto; }
 .foot a:hover { color: #fff; }
 
-/* Entrar en pantalla */
-.reveal { opacity: 0; transform: translateY(46px); transition: opacity .9s ease, transform 1.1s var(--ease); }
+.reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s ease, transform 1.1s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
 .rv-d { transition-delay: .12s; }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .sube, .hero h1 .ln > span, .hero-ph, .barras i, .bento .bx, .abanico .stage { transition: none !important; opacity: 1 !important; transform: none !important; }
-  .hero-ph { transform: translateX(-50%) rotate(-7deg) !important; }
-  .cinta-t, .tag-ia i { animation: none; }
+  .reveal, .sube, .hero h1 .ln > span, .barras i, .pant, .abanico .stage, .sm-bar, .sm-marca, .sm-val, .sm-sube { transition: none !important; opacity: 1 !important; transform: none !important; }
+  .hero-ph { transition: none !important; opacity: 1 !important; transform: translateX(-50%) rotate(-7deg) !important; }
+  .cinta-t { animation: none; }
 }
 </style>
 </head>
@@ -505,7 +433,7 @@ button { font: inherit; }
     <nav class="nav-links" aria-label="Secciones">
       <a href="#plan">Tu plan</a>
       <a href="#progresion">Cómo sube</a>
-      <a href="#funciones">Funciones</a>
+      <a href="#asistente">Asistente</a>
       <a href="#entrenador">Entrenadores</a>
       <a href="#preguntas">Preguntas</a>
     </nav>
@@ -518,22 +446,21 @@ button { font: inherit; }
 <section class="hero" id="inicio">
   <div class="wrap">
     <div>
-      <span class="tag-ia sube" style="--d:0ms"><i></i>Plan con IA · gratis</span>
       <h1 class="d"><span class="ln"><span style="--i:0">Entrena.</span></span><span class="ln"><span style="--i:1">Marca.</span></span><span class="ln"><span class="v" style="--i:2">Sube.</span></span></h1>
-      <p class="lede sube" style="--d:650ms">Respondes ocho preguntas y Mi Rutina arma tu plan de gimnasio. Marcas cómo te fue en cada ejercicio y <b>cada sábado tu rutina se ajusta sola.</b></p>
-      <div class="ctas sube" style="--d:800ms">
+      <p class="lede sube" style="--d:600ms">Respondes ocho preguntas y Mi Rutina arma tu plan de gimnasio. Marcas cómo te fue en cada ejercicio y <b>cada sábado tu rutina se ajusta sola.</b></p>
+      <div class="ctas sube" style="--d:750ms">
         <a href="/?crear=1" class="btn" data-cta="hero">Crear mi plan gratis <svg><use href="#i-flecha"/></svg></a>
         <a href="#entrenador" class="btn btn-line">Tengo entrenador</a>
       </div>
     </div>
-    <div class="hero-vis" aria-hidden="false">
+    <div class="hero-vis">
       <div class="barras" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="hero-ph stage"><div class="phone"><div class="scr"><img src="/landing/img/app/hoy-720.webp" srcset="/landing/img/app/hoy-420.webp 420w, /landing/img/app/hoy-720.webp 720w" sizes="300px" alt="Pantalla Hoy de Mi Rutina: la sesión de piernas lista para empezar" width="720" height="1561"></div></div></div>
       <div class="chip-f cf-a" id="cfA" aria-hidden="true">
-        <div><small id="cfAt">Hip thrust con barra</small><b>Vuelta <span id="cfAn">3</span> de 4</b><div class="dots" id="cfAd"><i></i><i></i><i></i><i></i></div></div>
+        <div><small id="cfAt">Hip thrust con barra</small><b>Vuelta <span id="cfAn">1</span> de 4</b><div class="dots" id="cfAd"><i></i><i></i><i></i><i></i></div></div>
       </div>
       <div class="chip-f cf-b" id="cfB" aria-hidden="true">
-        <div><small>Sábado · se ajustó</small><div class="num" id="cfBn"><s>15</s>20</div></div><span class="mas" id="cfBm">+5 lbs</span>
+        <div><small>Sábado · se ajustó</small><div class="num" id="cfBn"><s>15</s>15</div></div><span class="mas" id="cfBm">+5 lbs</span>
       </div>
     </div>
   </div>
@@ -546,220 +473,106 @@ button { font: inherit; }
   </div>
 </div>
 
-<!-- ═══════════ LA SEMANA QUE SE ARMA ═══════════ -->
+<!-- ═══════════ TU PLAN ═══════════ -->
 <section class="sec" id="plan">
-  <div class="wrap">
-    <div class="reveal">
+  <div class="wrap plan-grid">
+    <div class="ph-col reveal">
+      <div class="stage"><div class="phone"><div class="scr"><div class="layers" id="planLayers">
+        <img class="on" src="/landing/img/app/reg-objetivo-720.webp" alt="Encuesta: qué quieres lograr" loading="lazy" width="720" height="1561">
+        <img src="/landing/img/app/reg-dias-720.webp" alt="Encuesta: qué días entrenas" loading="lazy" width="720" height="1561">
+        <img src="/landing/img/app/reg-tiempo-720.webp" alt="Encuesta: cuánto tiempo y dónde" loading="lazy" width="720" height="1561">
+        <img src="/landing/img/app/reg-molestias-720.webp" alt="Encuesta: qué te molesta" loading="lazy" width="720" height="1561">
+        <img src="/landing/img/app/reg-plan-720.webp" alt="Tu plan está listo" loading="lazy" width="720" height="1561">
+      </div></div></div></div>
+    </div>
+    <div class="reveal rv-d">
       <span class="kick">Tu plan con IA</span>
-      <h2 class="d h2" style="margin-top:18px">Tu semana,<br><span class="v">armada en un minuto.</span></h2>
-      <p class="sub">Le cuentas qué buscas, qué días vas y qué te molesta. Sale tu semana con sesiones, ejercicios, series y pesos de partida. <b>La pierna siempre va sola</b>, y no todos los días cargan dos grupos.</p>
-    </div>
-    <div class="plan-grid">
-      <div class="ph-col reveal">
-        <div class="stage"><div class="phone"><div class="scr"><div class="layers" id="planLayers">
-          <img class="on" src="/landing/img/app/reg-objetivo-720.webp" alt="Encuesta: qué quieres lograr" loading="lazy" width="720" height="1561">
-          <img src="/landing/img/app/reg-dias-720.webp" alt="Encuesta: qué días entrenas" loading="lazy" width="720" height="1561">
-          <img src="/landing/img/app/reg-tiempo-720.webp" alt="Encuesta: cuánto tiempo y dónde" loading="lazy" width="720" height="1561">
-          <img src="/landing/img/app/reg-molestias-720.webp" alt="Encuesta: qué te molesta" loading="lazy" width="720" height="1561">
-          <img src="/landing/img/app/reg-plan-720.webp" alt="Tu plan está listo" loading="lazy" width="720" height="1561">
-        </div></div></div></div>
-      </div>
-      <div class="reveal rv-d">
-        <div class="wk" id="wk">
-          <div class="wk-q" id="wkQ">
-            <span data-p="0">Objetivo: <b>ganar músculo</b></span><span data-p="0">Nivel: <b>intermedio</b></span>
-            <span data-p="1"><b>4 días</b> · lun, mar, jue, vie</span>
-            <span data-p="2"><b>1 hora</b> · gimnasio</span>
-            <span data-p="3">Cuidando <b>la rodilla</b></span>
-          </div>
-          <div class="wk-cols">
-            <div class="wk-col t" style="--i:0"><div class="wk-bar"><span>Hombros + pecho</span></div><b>L</b></div>
-            <div class="wk-col p" style="--i:1"><div class="wk-bar"><span>Pierna</span></div><b>M</b></div>
-            <div class="wk-col r" style="--i:2"><div class="wk-bar"></div><b>X</b></div>
-            <div class="wk-col t" style="--i:3"><div class="wk-bar"><span>Espalda + pecho</span></div><b>J</b></div>
-            <div class="wk-col p" style="--i:4"><div class="wk-bar"><span>Pierna</span></div><b>V</b></div>
-            <div class="wk-col r" style="--i:5"><div class="wk-bar"></div><b>S</b></div>
-            <div class="wk-col r" style="--i:6"><div class="wk-bar"></div><b>D</b></div>
-          </div>
-          <div class="wk-done"><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i><span><b>Tu plan está listo.</b> 4 sesiones de 9 ejercicios, con pesos que se calibran la primera semana.</span></div>
+      <h2 class="d h2" style="margin-top:16px">Tu semana,<br><span class="v">armada en un minuto.</span></h2>
+      <p class="sub">Le cuentas qué buscas (ganar músculo, fuerza o recomposición), qué días vas y qué te molesta. <b>La pierna siempre va sola</b> y no todos los días cargan dos grupos.</p>
+      <div class="wk" id="wk">
+        <div class="wk-q" id="wkQ">
+          <span data-p="0">Objetivo: <b>ganar músculo</b></span>
+          <span data-p="1"><b>4 días</b> · lun, mar, jue, vie</span>
+          <span data-p="2"><b>1 hora</b> · gimnasio</span>
+          <span data-p="3">Cuidando <b>la rodilla</b></span>
         </div>
-        <div class="pasos4" id="pasos4">
-          <div><b>01</b><span>Qué quieres lograr</span></div>
-          <div><b>02</b><span>Qué días vas</span></div>
-          <div><b>03</b><span>Cuánto tiempo y dónde</span></div>
-          <div><b>04</b><span>Qué te molesta</span></div>
+        <div class="wk-cols">
+          <div class="wk-col t" style="--i:0"><div class="wk-bar"><span>Hombros + pecho</span></div><b>L</b></div>
+          <div class="wk-col p" style="--i:1"><div class="wk-bar"><span>Pierna</span></div><b>M</b></div>
+          <div class="wk-col r" style="--i:2"><div class="wk-bar"></div><b>X</b></div>
+          <div class="wk-col t" style="--i:3"><div class="wk-bar"><span>Espalda + pecho</span></div><b>J</b></div>
+          <div class="wk-col p" style="--i:4"><div class="wk-bar"><span>Pierna</span></div><b>V</b></div>
+          <div class="wk-col r" style="--i:5"><div class="wk-bar"></div><b>S</b></div>
+          <div class="wk-col r" style="--i:6"><div class="wk-bar"></div><b>D</b></div>
         </div>
+        <div class="wk-done"><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i><span><b>Tu plan está listo.</b> Con ejercicios, series y pesos de partida.</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ OBJETIVOS ═══════════ -->
-<section class="sec night" id="objetivos">
+<!-- ═══════════ CÓMO SUBE ═══════════ -->
+<section class="sec" id="progresion" style="padding-top:0">
   <div class="wrap">
     <div class="reveal">
-      <span class="kick">Tres objetivos</span>
-      <h2 class="d h2" style="margin-top:18px">Elige qué buscas.<br><span class="o">Explicado, sin adivinar.</span></h2>
+      <span class="kick">Se ajusta sola</span>
+      <h2 class="d h2" style="margin-top:16px">Tú marcas.<br><span class="v">La semana siguiente, sube.</span></h2>
+      <p class="sub">Al terminar cada ejercicio tocas <b>Fácil</b>, <b>Justo</b> o <b>No llegué</b>. Primero suben las repeticiones y, cuando llegas al tope, sube el peso.</p>
     </div>
-    <div class="goals">
-      <article class="goal reveal">
-        <div class="fondo" aria-hidden="true">Mús<br>culo</div>
-        <div class="bar3" aria-hidden="true"><i class="on" style="height:45%"></i><i class="on" style="height:70%"></i><i style="height:100%"></i></div>
-        <h3>Ganar músculo</h3>
-        <p>Que se note más volumen. Series de 8 a 12 repeticiones con descansos cortos. Es el objetivo más común.</p>
-        <div class="tagr"><span>8 a 12 reps</span><span>Descansos cortos</span></div>
-      </article>
-      <article class="goal reveal rv-d">
-        <div class="fondo" aria-hidden="true">Fuer<br>za</div>
-        <div class="bar3" aria-hidden="true"><i style="height:45%"></i><i class="on" style="height:70%"></i><i class="on" style="height:100%"></i></div>
-        <h3>Ganar fuerza</h3>
-        <p>Levantar más en los básicos: banca, sentadilla, remo. Menos repeticiones, más carga y más descanso.</p>
-        <div class="tagr"><span>Más carga</span><span>Más descanso</span></div>
-      </article>
-      <article class="goal reveal" style="transition-delay:.24s">
-        <div class="fondo" aria-hidden="true">Re<br>comp</div>
-        <div class="bar3" aria-hidden="true"><i class="on" style="height:45%"></i><i class="on" style="height:70%"></i><i class="on" style="height:100%"></i></div>
-        <h3>Recomposición</h3>
-        <p>Ganar músculo y perder grasa a la vez. Descansos más cortos y cardio suave al final. Funciona mejor si cuidas lo que comes.</p>
-        <div class="tagr"><span>Músculo</span><span>Cardio suave</span></div>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ LA PROGRESIÓN ═══════════ -->
-<section class="sec" id="progresion">
-  <div class="wrap">
-    <div class="prog-top reveal">
-      <div>
-        <span class="kick">Se ajusta sola</span>
-        <h2 class="d h2" style="margin-top:18px">Tú marcas.<br><span class="v">La barra sube.</span></h2>
+    <div class="semanas reveal" id="semanas">
+      <div class="sm-top">
+        <div><b>Hip thrust con barra</b><small>Seis semanas de Catalina · rango de 8 a 12 repeticiones</small></div>
+        <div class="sm-ley"><span><i style="background:var(--ok-hi)"></i>Fácil: +2 reps</span><span><i style="background:var(--violet-hi)"></i>Justo: +1 rep</span><span><i style="background:var(--err-hi)"></i>No llegué: repites</span></div>
       </div>
-      <p class="sub">Al terminar cada ejercicio tocas una de tres opciones. El sábado en la noche tu rutina se recalcula con eso: sin hojas de cálculo, sin adivinar cuánto ponerle.</p>
-    </div>
-    <div class="gym-stage reveal" id="gymStage">
-      <div class="barbell-box">
-        <div class="top">
-          <div class="ex"><b id="exNom">Hip thrust con barra</b><small id="exMus">Glúteo · 3 series</small></div>
-          <span class="sat">Sábado · tu rutina se ajustó</span>
-        </div>
-        <div class="barbell" aria-hidden="true">
-          <svg viewBox="0 0 600 150" preserveAspectRatio="xMidYMid meet">
-            <rect x="10" y="68" width="580" height="14" rx="7" fill="#8A8497"/>
-            <rect x="150" y="62" width="14" height="26" rx="4" fill="#B9B4C6"/><rect x="436" y="62" width="14" height="26" rx="4" fill="#B9B4C6"/>
-            <g id="platesL"></g><g id="platesR"></g>
-          </svg>
-        </div>
-        <div class="peso-row">
-          <div class="peso-big"><s id="pOld">15</s><span id="pNum">15</span></div>
-          <div class="peso-u" id="pU">lbs por lado</div>
-          <div class="reps"><small id="rTxt">12 reps</small><div class="rd" id="rDots"></div></div>
-        </div>
-        <div class="estampa">Otra semana</div>
-      </div>
-      <div class="mark-box">
-        <div class="q">¿Cómo te fue?</div>
-        <div class="seg3" id="seg3"><i class="th"></i><span data-r="facil">Fácil</span><span data-r="justo">Justo</span><span data-r="fallo">No llegué</span></div>
-        <div class="res" id="res"></div>
-        <div class="tap" id="tap"></div>
-      </div>
-    </div>
-    <div class="reglas reveal">
-      <div class="regla facil" data-r="facil"><small>Fácil</small><b>+2 reps</b><p>En el tope del rango, sube el peso y vuelves a empezar el rango.</p></div>
-      <div class="regla justo" data-r="justo"><small>Justo</small><b>+1 rep</b><p>Mismo peso, una repetición más. Así se avanza sin forzar.</p></div>
-      <div class="regla fallo" data-r="fallo"><small>No llegué</small><b>Repites</b><p>La misma carga una semana más. Dos semanas seguidas, baja un poco.</p></div>
+      <div class="sm-cols" id="smCols"></div>
     </div>
     <div class="ia-linea reveal">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
-      <span><b>La IA no inventa tus pesos.</b> Los números salen de estas reglas. La IA cambia un ejercicio que lleva semanas sin avanzar o que te molesta, y te explica la semana en dos líneas.</span>
+      <span><b>La IA no inventa tus pesos.</b> Salen de estas reglas. La IA cambia un ejercicio que lleva semanas sin avanzar o que te molesta, y te explica la semana en dos líneas.</span>
     </div>
   </div>
-</section>
-
-<!-- ═══════════ NÚMEROS ═══════════ -->
-<section class="sec night stats-band" id="progreso">
-  <div class="wrap">
-    <div class="reveal" style="max-width:640px">
-      <span class="kick">Tu progreso</span>
-      <h2 class="d h2" style="margin-top:18px">Ves cuánto<br><span class="v">has subido.</span></h2>
-      <p class="sub">Cada ejercicio guarda su historia. Abres Progreso y ves qué subió, cuánto y desde cuándo, sin anotar nada en una libreta.</p>
-    </div>
-    <div class="stats" id="stats">
-      <div class="stat"><b><em>+</em><span data-n="113">0</span></b><span class="lab">libras sumadas entre todos sus ejercicios</span></div>
-      <div class="stat"><b><span data-n="22">0</span></b><span class="lab">sesiones completadas</span></div>
-      <div class="stat"><b><span data-n="6">0</span></b><span class="lab">semanas seguidas</span></div>
-      <div class="stat"><b><span data-n="12">0</span><em>/12</em></b><span class="lab">ejercicios subieron de peso</span></div>
-    </div>
-    <div class="chart" id="chart" aria-hidden="true">
-      <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
-        <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A68BFF" stop-opacity=".35"/><stop offset="1" stop-color="#A68BFF" stop-opacity="0"/></linearGradient></defs>
-        <path class="c-area" d="M0 180 L200 160 L400 132 L600 108 L800 70 L1000 22 L1000 200 L0 200 Z" fill="url(#cg)"/>
-        <path class="c-line" pathLength="1" vector-effect="non-scaling-stroke" d="M0 180 L200 160 L400 132 L600 108 L800 70 L1000 22"/>
-      </svg>
-      <div class="c-lab"><span>Semana 1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>Semana 6</span></div>
-    </div>
-    <p class="ej-note">Así le fue a Catalina, una usuaria de ejemplo, en sus primeras seis semanas.</p>
-  </div>
-  <div class="stats-ph stage reveal"><div class="phone dark"><div class="scr"><img src="/landing/img/app/oscuro-fuerza-420.webp" alt="Pantalla de progreso en modo oscuro" loading="lazy" width="420" height="911"></div></div></div>
 </section>
 
 <!-- ═══════════ ASISTENTE ═══════════ -->
-<section class="sec" id="asistente">
+<section class="sec night" id="asistente">
   <div class="wrap chat-grid">
     <div class="reveal">
       <span class="kick">Asistente</span>
-      <h2 class="d h2" style="margin-top:18px">¿La máquina<br>está ocupada?<br><span class="v">Pregúntale.</span></h2>
-      <p class="sub">Le escribes en plena sesión, como a un amigo que sabe de gimnasio. Conoce tu rutina de hoy y <b>puede cambiarte un ejercicio o ajustar el peso</b> ahí mismo.</p>
-      <div class="temas">
-        <div><svg viewBox="0 0 24 24"><path d="M4 7h11M4 7l3-3M4 7l3 3M20 17H9M20 17l-3-3M20 17l-3 3"/></svg>Cambiar un ejercicio</div>
-        <div><svg viewBox="0 0 24 24"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>Ajustar el peso</div>
-        <div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Descansos</div>
-        <div><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>Molestias</div>
-      </div>
+      <h2 class="d h2" style="margin-top:16px">¿La máquina está ocupada? <span class="v">Pregúntale.</span></h2>
+      <p class="sub">Le escribes en plena sesión. Conoce tu rutina de hoy y <b>puede cambiarte un ejercicio o ajustar el peso</b> ahí mismo.</p>
     </div>
     <div class="reveal rv-d">
       <div class="stage"><div class="phone"><div class="scr">
         <div class="ui-chat" id="uiChat">
-          <div class="cab"><i><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i><div><b>Asistente de entrenamiento</b><small>Pregunta sobre tu rutina</small></div></div>
-          <div class="msgs">
-            <div class="cm yo">La prensa está ocupada, ¿qué hago?</div>
-            <div class="cm ia">Haz <b>sentadilla búlgara con mancuernas de 20 lbs</b>. Trabaja lo mismo y no necesitas la máquina. 10 por pierna.</div>
-            <div class="cm ok"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Cambiado en tu rutina de hoy</div>
-            <div class="cm yo">¿Y cuánto descanso entre vueltas?</div>
-            <div class="cm ia">60 segundos. Cuando marcas la vuelta, <b>el descanso arranca solo</b>.</div>
-            <div class="cm dots" id="cmDots"><i></i><i></i><i></i></div>
+          <div class="cab">
+            <span class="av"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span>
+            <div><b>Asistente de entrenamiento</b><small>Pregunta sobre tu rutina</small></div>
+            <span class="x"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
           </div>
-          <div class="inp">Escribe tu pregunta…</div>
+          <div class="msgs" id="msgs"></div>
+          <div class="bar"><div class="inp vacio" id="inp">Escribe tu pregunta…</div><span class="env" id="env"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span></div>
         </div>
       </div></div></div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ FUNCIONES ═══════════ -->
-<section class="sec" id="funciones" style="padding-top:0">
+<!-- ═══════════ PANTALLAS CLAVE ═══════════ -->
+<section class="sec" id="funciones">
   <div class="wrap">
     <div class="reveal">
       <span class="kick">En el gimnasio</span>
-      <h2 class="d h2" style="margin-top:18px">Abres y sabes<br><span class="v">qué hacer.</span></h2>
+      <h2 class="d h2" style="margin-top:16px">Abres y sabes <span class="v">qué hacer.</span></h2>
     </div>
-    <div class="bento" id="bento">
-      <article class="bx dark b-tec" style="--y:42%"><h3>El movimiento, en grande</h3><p>Más de 170 ejercicios con GIF y el músculo que trabaja marcado en color.</p>
-        <div class="peek"><img src="/landing/img/app/tecnica-720.webp" alt="Técnica con GIF de la sentadilla en multipower" loading="lazy" width="720" height="1561"></div></article>
-      <article class="bx vio b-des" style="--y:50%"><h3>Descanso cronometrado</h3><p>Marcas la vuelta y arranca solo. ¿Más tiempo? Le sumas 30 segundos.</p>
-        <div class="peek"><img src="/landing/img/app/descanso-420.webp" alt="Descanso cronometrado" loading="lazy" width="420" height="911"></div></article>
-      <article class="bx b-cir" style="--y:42%"><h3>Vuelta por vuelta</h3>
-        <div class="peek"><img src="/landing/img/app/circuito-420.webp" alt="Circuito con vueltas" loading="lazy" width="420" height="911"></div></article>
-      <article class="bx b-not" style="--y:22%"><h3>Notas por ejercicio</h3>
-        <div class="peek"><img src="/landing/img/app/nota-420.webp" alt="Nota de un ejercicio" loading="lazy" width="420" height="911"></div></article>
-      <article class="bx b-aju" style="--y:6%"><h3>Qué cambió y por qué</h3>
-        <div class="peek"><img src="/landing/img/app/ajuste-420.webp" alt="Ajuste de la semana" loading="lazy" width="420" height="911"></div></article>
-      <article class="bx b-con" style="--y:22%"><h3>Tu constancia</h3>
-        <div class="peek"><img src="/landing/img/app/constancia-420.webp" alt="Constancia semanal" loading="lazy" width="420" height="911"></div></article>
-      <article class="bx dark b-osc" style="--y:44%"><h3>Claro u oscuro</h3>
-        <div class="peek"><img src="/landing/img/app/oscuro-circuito-420.webp" alt="Modo oscuro" loading="lazy" width="420" height="911"></div></article>
-      <article class="bx b-per" style="--y:16%"><h3>Tu plan y medidas</h3>
-        <div class="peek"><img src="/landing/img/app/perfil-420.webp" alt="Perfil con el plan y las métricas" loading="lazy" width="420" height="911"></div></article>
+    <div class="pantallas" id="pantallas">
+      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/tecnica-720.webp" srcset="/landing/img/app/tecnica-420.webp 420w, /landing/img/app/tecnica-720.webp 720w" sizes="260px" alt="Técnica con GIF" loading="lazy" width="720" height="1561"></div></div></div>
+        <h3>Cada ejercicio, con GIF</h3><p>Más de 170, con el músculo que trabaja marcado.</p></div>
+      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/descanso-720.webp" srcset="/landing/img/app/descanso-420.webp 420w, /landing/img/app/descanso-720.webp 720w" sizes="260px" alt="Descanso cronometrado" loading="lazy" width="720" height="1561"></div></div></div>
+        <h3>El descanso arranca solo</h3><p>Marcas la vuelta y empieza la cuenta.</p></div>
+      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/fuerza-720.webp" srcset="/landing/img/app/fuerza-420.webp 420w, /landing/img/app/fuerza-720.webp 720w" sizes="260px" alt="Tu progreso" loading="lazy" width="720" height="1561"></div></div></div>
+        <h3>Ves cuánto has subido</h3><p>Cada ejercicio, semana a semana.</p></div>
+      <div class="pant"><div class="stage"><div class="phone dark"><div class="scr"><img src="/landing/img/app/oscuro-circuito-720.webp" srcset="/landing/img/app/oscuro-circuito-420.webp 420w, /landing/img/app/oscuro-circuito-720.webp 720w" sizes="260px" alt="Modo oscuro" loading="lazy" width="720" height="1561"></div></div></div>
+        <h3>Claro u oscuro</h3><p>Sigue a tu iPhone o eliges tú.</p></div>
     </div>
   </div>
 </section>
@@ -769,16 +582,16 @@ button { font: inherit; }
   <div class="wrap">
     <div class="coach reveal">
       <div>
-        <span class="kick" style="color:var(--lilac)">Con entrenador</span>
-        <h2 class="d h2" style="margin-top:18px; font-size:clamp(46px, 6.2vw, 88px)">¿Entrenas<br>con alguien?<br><span class="v" style="color:var(--violet-hi)">Él lo ve todo.</span></h2>
-        <p class="sub">Tu entrenador arma la rutina en su portal y tú entrenas en la app. Lo que marcas y lo que anotas en cada ejercicio le llega a él, en el portal y por correo.</p>
+        <span class="kick">Con entrenador</span>
+        <h2 class="d h2" style="margin-top:16px; font-size:clamp(40px, 4.8vw, 64px)">¿Entrenas con alguien? <span class="v">Él lo ve todo.</span></h2>
+        <p class="sub">Tu entrenador arma la rutina en su portal y tú entrenas en la app. Lo que marcas y anotas en cada ejercicio le llega a él, en el portal y por correo.</p>
         <ul class="ticks">
-          <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Todos sus atletas en una pantalla, con filtros por objetivo</li>
+          <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Todos sus atletas en una pantalla</li>
           <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Editor de rutinas con más de 170 ejercicios</li>
-          <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Fácil, justo o no llegué en cada ejercicio, con tus notas</li>
-          <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Un correo con el detalle de cada sesión terminada</li>
+          <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Tus marcas y notas de cada sesión</li>
         </ul>
         <div class="ctas"><a href="#cta" class="btn" data-cta="entrenador">Quiero usarla con mis atletas</a><a href="/" class="btn btn-line">Ya tengo usuario</a></div>
+        <div class="gym-nota" id="gimnasio"><b>¿Tienes un gimnasio?</b> Un panel para varios entrenadores y sus atletas, con los datos de cada uno separados. <a href="#cta">Agenda una demo ›</a></div>
       </div>
       <div class="abanico" id="abanico">
         <div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/ent-atletas-420.webp" alt="Portal del entrenador: lista de clientes" loading="lazy" width="420" height="911"></div></div></div>
@@ -789,30 +602,12 @@ button { font: inherit; }
   </div>
 </section>
 
-<!-- ═══════════ GIMNASIOS ═══════════ -->
-<section class="sec" id="gimnasio" style="padding-top:0">
-  <div class="wrap gym">
-    <div class="reveal">
-      <span class="kick">Para gimnasios</span>
-      <h2 class="d h2" style="margin-top:18px; font-size:clamp(44px, 5.6vw, 80px)">Varios entrenadores.<br><span class="v">Un solo tablero.</span></h2>
-      <p class="sub">Panel de administración para tu equipo y sus atletas, desde un mismo lugar.</p>
-      <div style="margin-top:28px"><a href="#cta" class="btn btn-soft" data-cta="gimnasio">Agendar una demo</a></div>
-    </div>
-    <div class="gym-list reveal rv-d">
-      <div><b>01</b>Crea, edita y elimina entrenadores</div>
-      <div><b>02</b>Los atletas asignados a cada uno</div>
-      <div><b>03</b>Buzón de soporte centralizado</div>
-      <div><b>04</b>Los datos de cada entrenador, separados</div>
-    </div>
-  </div>
-</section>
-
 <!-- ═══════════ PLANES ═══════════ -->
 <section class="sec" id="planes" style="padding-top:0">
   <div class="wrap">
     <div class="reveal">
       <span class="kick">Planes</span>
-      <h2 class="d h2" style="margin-top:18px">Empiezas gratis.<br><span class="v">Sin letra pequeña.</span></h2>
+      <h2 class="d h2" style="margin-top:16px">Empiezas gratis.</h2>
     </div>
     <div class="plans">
       <div class="plan hl reveal">
@@ -825,21 +620,17 @@ button { font: inherit; }
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Ajuste automático cada semana</li>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>GIF y técnica de cada ejercicio</li>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Asistente en plena sesión</li>
-          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Registro de fuerza y constancia</li>
         </ul>
         <a href="/?crear=1" class="btn" data-cta="plan-ia">Crear mi plan</a>
       </div>
       <div class="plan reveal rv-d">
         <div class="plan-name">Entrenador</div>
         <div class="plan-for">Para entrenadores independientes.</div>
-        <div class="plan-price"><s>$49.900</s>$24.900<span class="per">COP al mes</span></div>
-        <p class="plan-note">Precio de lanzamiento. Atletas ilimitados, y para ellos la app es gratis.</p>
+        <div class="plan-price"><s>$49.900</s>$24.900<span class="per">COP al mes · atletas ilimitados</span></div>
         <ul>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Portal con todos tus atletas</li>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Editor de rutinas con 170 ejercicios</li>
-          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Marcas y notas de cada sesión</li>
-          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Reportes por correo</li>
-          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Chat con tus atletas</li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Marcas, notas y reportes por correo</li>
         </ul>
         <a href="#cta" class="btn btn-soft" data-cta="plan-entrenador">Empezar 14 días gratis</a>
       </div>
@@ -847,13 +638,10 @@ button { font: inherit; }
         <div class="plan-name">Gimnasio</div>
         <div class="plan-for">Para gimnasios con varios entrenadores.</div>
         <div class="plan-price">Hablemos</div>
-        <p class="plan-note">Según el número de entrenadores.</p>
         <ul>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Todo lo del plan Entrenador</li>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Panel de administración</li>
           <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Acompañamiento para empezar</li>
-          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Soporte prioritario</li>
-          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Tu marca, opcional</li>
         </ul>
         <a href="#cta" class="btn btn-soft" data-cta="plan-gimnasio">Agendar una demo</a>
       </div>
@@ -866,7 +654,7 @@ button { font: inherit; }
   <div class="wrap faq-grid">
     <div class="reveal">
       <span class="kick">Preguntas</span>
-      <h2 class="d h2" style="margin-top:18px">Lo que<br><span class="v">suelen preguntar.</span></h2>
+      <h2 class="d h2" style="margin-top:16px">Lo que <span class="v">suelen preguntar.</span></h2>
     </div>
     <div class="faq reveal rv-d">
       <details><summary>¿Necesito descargar algo?</summary><div class="ans"><p>No. Mi Rutina funciona en el navegador del celular. Si quieres, la agregas a la pantalla de inicio y se comporta como cualquier app.</p></div></details>
@@ -874,62 +662,57 @@ button { font: inherit; }
       <details><summary>¿La IA cambia mi rutina cuando quiere?</summary><div class="ans"><p>No. Los pesos y las repeticiones cambian con reglas fijas según lo que marcaste. La IA solo cambia un ejercicio que lleva semanas sin avanzar o que te molesta, y te resume la semana.</p></div></details>
       <details><summary>¿Y si algo me duele?</summary><div class="ans"><p>Lo dices en la encuesta y esos ejercicios quedan fuera. Si algo te molesta en una sesión, escríbelo en la nota del ejercicio y se tiene en cuenta en el ajuste. La app no reemplaza a un profesional de la salud.</p></div></details>
       <details><summary>¿La IA reemplaza al entrenador?</summary><div class="ans"><p>No. Si entrenas con alguien, tu rutina la arma tu entrenador y la app no la toca; lo que marcas y anotas le llega a él. El plan con IA es para quien entrena por su cuenta.</p></div></details>
-      <details><summary>¿Qué pasa si no tengo internet en el gimnasio?</summary><div class="ans"><p>La rutina que ya cargaste se queda en el teléfono y puedes seguir entrenando.</p></div></details>
       <details><summary>¿Sirve para un gimnasio con varios entrenadores?</summary><div class="ans"><p>Sí. El panel de administración crea entrenadores, muestra los atletas de cada uno y mantiene sus datos separados.</p></div></details>
-      <details><summary>¿Mis datos son privados?</summary><div class="ans"><p>Sí. Cada atleta ve solo lo suyo y cada entrenador ve solo a sus atletas. Una cuenta con IA no la ve ningún entrenador.</p></div></details>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ CIERRE ═══════════ -->
+<!-- ═══════════ CIERRE Y CONTACTO ═══════════ -->
 <section class="poster" id="cierre">
-  <div class="wrap reveal">
-    <h2 class="d">Tu primera semana<br><span class="v">empieza hoy.</span></h2>
-    <p class="sub">Dos minutos de preguntas y tienes tu plan. Gratis.</p>
-    <div class="ctas"><a href="/?crear=1" class="btn" data-cta="cierre">Crear mi plan gratis <svg><use href="#i-flecha"/></svg></a><a href="#cta" class="btn btn-line">Soy entrenador</a></div>
+  <div class="wrap">
+    <div class="poster-top reveal">
+      <h2 class="d">Tu primera semana<br><span class="v">empieza hoy.</span></h2>
+      <p class="sub">Dos minutos de preguntas y tienes tu plan.</p>
+      <div class="ctas"><a href="/?crear=1" class="btn" data-cta="cierre">Crear mi plan gratis <svg><use href="#i-flecha"/></svg></a></div>
+    </div>
+    <div class="lead reveal" id="cta">
+      <div>
+        <h3>¿Eres entrenador o tienes un gimnasio?</h3>
+        <p>Déjanos tus datos y te escribimos en menos de una hora para mostrarte la app en 15 minutos.</p>
+        <div class="lead-alt">
+          <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn">WhatsApp</a>
+          <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn">Correo</a>
+        </div>
+      </div>
+      <div>
+        <form id="leadForm" class="lead-form" novalidate>
+          <div class="field"><label for="lead-name">Nombre</label><input id="lead-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" required></div>
+          <div class="field"><label for="lead-email">Correo</label><input id="lead-email" name="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com" required></div>
+          <div class="row2">
+            <div class="field"><label for="lead-wa">WhatsApp <span class="muted">(opcional)</span></label><input id="lead-wa" name="whatsapp" type="tel" autocomplete="tel" placeholder="300 000 0000"></div>
+            <div class="field"><label for="lead-type">Soy</label>
+              <select id="lead-type" name="type">
+                <option value="entrenador">Entrenador independiente</option>
+                <option value="gimnasio">Dueño de gimnasio</option>
+                <option value="atleta">Atleta</option>
+                <option value="otro">Otro</option>
+              </select></div>
+          </div>
+          <button type="submit" class="btn lead-submit"><span class="lead-submit-text">Quiero la demo</span></button>
+        </form>
+        <div id="leadSuccess" class="lead-success" hidden>
+          <div class="ok"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
+          <h3>Listo. Te escribimos ya.</h3>
+          <p>Revisa tu correo en la próxima hora. Si tienes prisa, escríbenos por WhatsApp.</p>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="barras" id="barrasCierre" aria-hidden="true"><i></i><i></i><i></i></div>
 </section>
-
-<!-- ═══════════ CONTACTO ═══════════ -->
-<section class="sec" id="cta">
-  <div class="wrap lead">
-    <div class="reveal">
-      <span class="kick">Entrenadores y gimnasios</span>
-      <h2 class="d h2" style="margin-top:18px; font-size:clamp(44px, 5.6vw, 80px)">Te la mostramos<br><span class="v">en 15 minutos.</span></h2>
-      <p class="sub">Déjanos tus datos y te escribimos en menos de una hora para una demo en vivo. Si tienes prisa, escríbenos directo.</p>
-      <div class="lead-alt">
-        <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn btn-soft">WhatsApp</a>
-        <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn btn-soft">Correo</a>
-      </div>
-    </div>
-    <div class="reveal rv-d">
-      <form id="leadForm" class="lead-form" novalidate>
-        <div class="field"><label for="lead-name">Nombre</label><input id="lead-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" required></div>
-        <div class="field"><label for="lead-email">Correo</label><input id="lead-email" name="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com" required></div>
-        <div class="row2">
-          <div class="field"><label for="lead-wa">WhatsApp <span class="muted">(opcional)</span></label><input id="lead-wa" name="whatsapp" type="tel" autocomplete="tel" placeholder="300 000 0000"></div>
-          <div class="field"><label for="lead-type">Soy</label>
-            <select id="lead-type" name="type">
-              <option value="entrenador">Entrenador independiente</option>
-              <option value="gimnasio">Dueño de gimnasio</option>
-              <option value="atleta">Atleta</option>
-              <option value="otro">Otro</option>
-            </select></div>
-        </div>
-        <button type="submit" class="btn lead-submit"><span class="lead-submit-text">Quiero la demo</span></button>
-      </form>
-      <div id="leadSuccess" class="lead-success" hidden>
-        <div class="ok"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
-        <h3>Listo. Te escribimos ya.</h3>
-        <p>Revisa tu correo en la próxima hora. Si tienes prisa, escríbenos por WhatsApp.</p>
-      </div>
-    </div>
-  </div>
-</section>
 </main>
 
-<footer class="foot">
+<footer class="foot" style="margin-top:0">
   <div class="wrap">
     <a href="#" class="brand"><svg><use href="#logo"/></svg>Mi Rutina</a>
     <span>Hecho en Bogotá · © 2026</span>
@@ -937,7 +720,6 @@ button { font: inherit; }
       <a href="/?crear=1">Crear mi plan</a>
       <a href="/">Entrar</a>
       <a href="#entrenador">Entrenadores</a>
-      <a href="#gimnasio">Gimnasios</a>
       <a href="mailto:juansaravia2002@gmail.com">Contacto</a>
     </nav>
   </div>
@@ -962,143 +744,116 @@ button { font: inherit; }
   // ─── Hero: el titular sube línea por línea, las barras crecen, entra el iPhone
   const hero = $('.hero');
   requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add('in')));
-
-  // Junto al iPhone: la vuelta que avanza y el ajuste del sábado
   const cfA = $('#cfA'), cfB = $('#cfB'), dotsA = [...document.querySelectorAll('#cfAd i')];
   const HERO = [['Hip thrust con barra', 15, 20, '+5 lbs'], ['Press inclinado con mancuernas', 12, 15, '+3 lbs'], ['Sentadilla en multipower', 30, 35, '+5 lbs']];
   let hk = 0;
   const heroCiclo = async () => {
     const [n, a, b, m] = HERO[hk++ % HERO.length];
     $('#cfAt').textContent = n; $('#cfBn').innerHTML = `<s>${a}</s>${a}`; $('#cfBm').textContent = m;
-    dotsA.forEach(d => d.classList.remove('on')); $('#cfAn').textContent = 1;
+    dotsA.forEach(d => d.classList.remove('on'));
     cfA.classList.add('show');
     for (let v = 1; v <= 4; v++) { $('#cfAn').textContent = v; dotsA[v - 1].classList.add('on'); await espera(520); }
     cfB.classList.add('show'); await espera(500);
-    const el = $('#cfBn'); const t0 = performance.now();
+    const el = $('#cfBn'), t0 = performance.now();
     const paso = now => { const k = Math.min(1, (now - t0) / 600); el.innerHTML = `<s>${a}</s>${Math.round(a + (b - a) * (1 - Math.pow(1 - k, 3)))}`; if (k < 1) requestAnimationFrame(paso); };
     requestAnimationFrame(paso);
     await espera(2600); cfA.classList.remove('show'); cfB.classList.remove('show');
   };
-  if (reduce) { dotsA.forEach(d => d.classList.add('on')); cfA.classList.add('show'); cfB.classList.add('show'); $('#cfBn').innerHTML = '<s>15</s>20'; }
-  else { setTimeout(function bucle() { heroCiclo().then(() => setTimeout(bucle, 900)); }, 2000); }
+  if (reduce) { dotsA.forEach(d => d.classList.add('on')); $('#cfAn').textContent = 4; $('#cfBn').innerHTML = '<s>15</s>20'; cfA.classList.add('show'); cfB.classList.add('show'); }
+  else setTimeout(function bucle() { heroCiclo().then(() => setTimeout(bucle, 900)); }, 2000);
 
   // ─── Aparecer al entrar en pantalla
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .16 });
-  document.querySelectorAll('.reveal, #bento, #abanico, #chart, #barrasCierre').forEach(el => io.observe(el));
-  // Las barras del cierre usan las mismas reglas que las del hero
-  const bc = $('#barrasCierre'); new MutationObserver(() => { if (bc.classList.contains('in')) bc.querySelectorAll('i').forEach(i => i.style.transform = 'scaleY(1)'); }).observe(bc, { attributes: true });
+  document.querySelectorAll('.reveal, #pantallas, #abanico, #barrasCierre').forEach(el => io.observe(el));
 
   // ─── La semana que se arma (se repite mientras se ve)
-  const wk = $('#wk'), qs = [...document.querySelectorAll('#wkQ span')], pasos = [...document.querySelectorAll('#pasos4 div')], capas = [...document.querySelectorAll('#planLayers img')];
+  const wk = $('#wk'), qs = [...document.querySelectorAll('#wkQ span')], capas = [...document.querySelectorAll('#planLayers img')];
   let wkVivo = false, wkVuelta = 0;
   const capa = i => capas.forEach((c, j) => { c.classList.toggle('on', j === i); c.classList.toggle('fuera', j < i); });
-  const wkCiclo = async (v) => {
-    wk.className = 'wk'; qs.forEach(q => q.classList.remove('on')); pasos.forEach(p => p.classList.remove('on')); capa(0);
-    await espera(500);
-    for (let p = 0; p < 4; p++) {
-      if (!wkVivo || v !== wkVuelta) return;
-      capa(p); pasos.forEach((x, j) => x.classList.toggle('on', j === p));
-      for (const q of qs.filter(q => +q.dataset.p === p)) { q.classList.add('on'); await espera(260); }
-      await espera(1150);
-    }
-    if (!wkVivo || v !== wkVuelta) return;
-    pasos.forEach(x => x.classList.remove('on'));
+  const wkCiclo = async v => {
+    const sigue = () => wkVivo && v === wkVuelta;
+    wk.className = 'wk'; qs.forEach(q => q.classList.remove('on')); capa(0);
+    await espera(600);
+    for (let p = 0; p < 4; p++) { if (!sigue()) return; capa(p); qs[p].classList.add('on'); await espera(1500); }
+    if (!sigue()) return;
     wk.classList.add('s2'); await espera(1300); capa(4);
-    wk.classList.add('s3'); await espera(4200);
-    if (wkVivo && v === wkVuelta) wkCiclo(++wkVuelta);
+    wk.classList.add('s3'); await espera(4500);
+    if (sigue()) wkCiclo(++wkVuelta);
   };
   new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting && !wkVivo) { wkVivo = true; if (reduce) { qs.forEach(q => q.classList.add('on')); wk.className = 'wk s2 s3'; capa(4); } else wkCiclo(++wkVuelta); }
     else if (!e.isIntersecting) { wkVivo = false; wkVuelta++; }
   }), { threshold: .35 }).observe(wk);
 
-  // ─── La barra que se carga: marcar → sábado → el peso cambia
-  const gs = $('#gymStage'), seg = $('#seg3'), tap = $('#tap'), reglas = [...document.querySelectorAll('.regla')];
-  const NS = 'http://www.w3.org/2000/svg';
-  // Discos por lado según el peso (de los grandes a los chicos), dibujados hacia afuera del collarín
-  const DISCOS = [[45, 140, 34, '#6E4BFF'], [25, 118, 28, '#A68BFF'], [10, 94, 22, '#C9BCFF'], [5, 74, 18, '#E6E2F0'], [2.5, 58, 14, '#8A8497']];
-  const descomponer = lbs => { const out = []; let r = lbs; for (const d of DISCOS) while (r >= d[0] - .01) { out.push(d); r -= d[0]; } return out; };
-  const pintaDiscos = (lbs, nuevos) => {
-    for (const lado of ['L', 'R']) {
-      const g = document.getElementById('plates' + lado); g.innerHTML = '';
-      let x = lado === 'L' ? 148 : 452;
-      descomponer(lbs).forEach((d, i, arr) => {
-        const [, h, w, c] = d;
-        const r = document.createElementNS(NS, 'rect');
-        const px = lado === 'L' ? x - w : x;
-        r.setAttribute('x', px); r.setAttribute('y', 75 - h / 2); r.setAttribute('width', w - 3); r.setAttribute('height', h); r.setAttribute('rx', 4); r.setAttribute('fill', c);
-        r.setAttribute('class', 'pl' + (i >= arr.length - nuevos ? ' nuevo' : ''));
-        g.appendChild(r);
-        x = lado === 'L' ? x - w : x + w;
-      });
-    }
-  };
-  const ESC = [
-    { nom: 'Hip thrust con barra', mus: 'Glúteo · 3 series', r: 'facil', k: 0, peso: 15, u: 'lbs por lado', reps: 12, a: { peso: 20, reps: 8 }, txt: 'Llegaste al tope del rango sobrado: <b>sube el peso</b> y vuelves a 8 repeticiones.' },
-    { nom: 'Press de banca con barra', mus: 'Pecho · 4 series', r: 'justo', k: 1, peso: 25, u: 'lbs por lado', reps: 9, a: { peso: 25, reps: 10 }, txt: 'Mismo peso, <b>una repetición más</b>. La semana que llegues a 12, sube.' },
-    { nom: 'Sentadilla con barra', mus: 'Cuádriceps · 4 series', r: 'fallo', k: 2, peso: 45, u: 'lbs por lado', reps: 8, a: { peso: 45, reps: 8 }, txt: 'Repites la carga una semana más. <b>Si vuelve a pasar, baja un poco.</b>' },
+  // ─── Cómo sube: seis semanas del mismo ejercicio, con las reglas reales
+  // Fácil +2 reps; en el tope (12) sube el peso y vuelve a 8. Justo +1. No llegué repite.
+  const SEM = [
+    { p: 15, r: 8, m: 'facil' }, { p: 15, r: 10, m: 'facil' }, { p: 15, r: 12, m: 'facil' },
+    { p: 20, r: 8, m: 'justo', sube: true }, { p: 20, r: 9, m: 'fallo' }, { p: 20, r: 9, m: 'facil' },
   ];
-  const pintaReps = (n, nuevo) => { $('#rDots').innerHTML = Array.from({ length: 12 }, (_, i) => `<i class="${i < n ? 'on' : ''}${nuevo && i >= nuevo && i < n ? ' nuevo' : ''}"></i>`).join(''); $('#rTxt').textContent = n + ' reps'; };
-  const rueda = (el, de, a, ms) => { if (de === a || reduce) { el.textContent = a; return; } const t0 = performance.now(); const f = now => { const k = Math.min(1, (now - t0) / ms); el.textContent = Math.round(de + (a - de) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); };
-  let gsT = [], gsI = 0;
-  const gsPinta = x => {
-    $('#exNom').textContent = x.nom; $('#exMus').textContent = x.mus; $('#pNum').textContent = x.peso; $('#pOld').textContent = x.peso; $('#pU').textContent = x.u;
-    $('#pOld').classList.remove('vis'); pintaDiscos(x.peso, 0); pintaReps(x.reps);
-    $('#res').innerHTML = x.txt; seg.querySelectorAll('span').forEach(s => s.classList.remove('on')); seg.querySelector('.th').style.setProperty('--k', x.k);
-    gs.classList.toggle('fallo', x.r === 'fallo');
-    reglas.forEach(r => r.classList.toggle('on', r.dataset.r === x.r));
+  const TXT = { facil: 'Fácil', justo: 'Justo', fallo: 'No llegué' };
+  const altura = s => Math.round(((s.p - 10) / 10) * 70 + (s.r - 8) * 3.2 + 12);  // % del alto: el peso manda, las reps suman poco
+  $('#smCols').innerHTML = SEM.map((s, i) => `
+    <div class="sm-col${s.sube ? ' sube5' : ''}">
+      <span class="sm-marca m-${s.m}">${TXT[s.m]}</span>
+      <div class="sm-bar" style="--h:${altura(s)}%"><div class="sm-val">${s.p}<small>× ${s.r}</small>${s.sube ? '<span class="sm-sube">+5 lbs</span>' : ''}</div></div>
+      <span class="sm-sem">Sem ${i + 1}</span>
+    </div>`).join('');
+  const cols = [...document.querySelectorAll('.sm-col')];
+  let smT = [];
+  const smCorre = () => {
+    smT.forEach(clearTimeout); cols.forEach(c => c.classList.remove('on'));
+    smT = cols.map((c, i) => setTimeout(() => c.classList.add('on'), 250 + i * 650));
+    smT.push(setTimeout(smCorre, 250 + cols.length * 650 + 5200));
   };
-  const gsUno = () => {
-    gsT.forEach(clearTimeout);
-    const x = ESC[gsI++ % ESC.length];
-    gs.classList.remove('s1', 's2', 's3'); gsPinta(x);
-    const sp = seg.querySelectorAll('span')[x.k], mb = $('.mark-box').getBoundingClientRect(), sr = sp.getBoundingClientRect();
-    tap.style.left = (sr.left - mb.left + sr.width / 2) + 'px'; tap.style.top = (sr.top - mb.top + sr.height / 2) + 'px';
-    gsT = [
-      setTimeout(() => tap.classList.add('on'), 450),
-      setTimeout(() => { tap.classList.remove('on'); gs.classList.add('s1'); sp.classList.add('on'); }, 1700),
-      setTimeout(() => { gs.classList.replace('s1', 's2'); }, 2700),
-      setTimeout(() => {
-        gs.classList.replace('s2', 's3');
-        if (x.a.peso !== x.peso) {
-          $('#pOld').classList.add('vis'); rueda($('#pNum'), x.peso, x.a.peso, 700);
-          const antes = descomponer(x.peso).length, despues = descomponer(x.a.peso);
-          pintaDiscos(x.a.peso, Math.max(1, despues.length - antes));
-          requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('.pl.nuevo').forEach(p => p.classList.add('on'))));
-        }
-        if (x.a.reps !== x.reps) pintaReps(x.a.reps, x.a.reps > x.reps ? x.reps : 0);
-      }, 3400),
-      setTimeout(gsUno, 7600),
-    ];
-  };
-  gsPinta(ESC[0]);
   new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) { if (reduce) { gs.classList.add('s3'); } else gsUno(); }
-    else gsT.forEach(clearTimeout);
-  }), { threshold: .35 }).observe(gs);
+    if (e.isIntersecting) { if (reduce) cols.forEach(c => c.classList.add('on')); else smCorre(); }
+    else smT.forEach(clearTimeout);
+  }), { threshold: .4 }).observe($('#semanas'));
 
-  // ─── Números que cuentan
-  const stats = $('#stats');
-  new IntersectionObserver((es, o) => es.forEach(e => {
-    if (!e.isIntersecting) return; o.disconnect();
-    stats.querySelectorAll('[data-n]').forEach((el, i) => {
-      const T = +el.dataset.n, t0 = performance.now() + i * 120, D = reduce ? 0 : 1500;
-      const f = now => { const k = D ? Math.max(0, Math.min(1, (now - t0) / D)) : 1; el.textContent = Math.round(T * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); };
-      requestAnimationFrame(f);
-    });
-  }), { threshold: .4 }).observe(stats);
-
-  // ─── El chat se escribe dentro del iPhone
-  const chat = $('#uiChat'), cms = [...chat.querySelectorAll('.cm:not(.dots)')], dots = $('#cmDots');
-  let chatHecho = false;
-  new IntersectionObserver((es, o) => es.forEach(async e => {
-    if (!e.isIntersecting || chatHecho) return; chatHecho = true; o.disconnect();
-    if (reduce) { cms.forEach(m => m.classList.add('show')); return; }
-    for (const m of cms) {
-      if (m.classList.contains('ia')) { m.before(dots); dots.classList.add('show'); await espera(1300); dots.classList.remove('show'); }
-      m.classList.add('show'); await espera(m.classList.contains('yo') ? 900 : 700);
+  // ─── El chat: se escribe la pregunta, se envía, el asistente responde
+  const msgs = $('#msgs'), inp = $('#inp'), env = $('#env');
+  const GUION = [
+    { yo: 'La prensa está ocupada, ¿qué hago?' },
+    { ia: 'Haz <b>sentadilla búlgara con mancuernas de 20 lbs</b>. Trabaja lo mismo y no necesitas la máquina. 10 por pierna.', ok: 'Cambiado en tu rutina de hoy' },
+    { yo: '¿Cuánto descanso entre vueltas?' },
+    { ia: '60 segundos. Cuando marcas la vuelta, <b>el descanso arranca solo</b>.' },
+  ];
+  const SALUDO = 'Hola, Catalina. Soy tu asistente de entrenamiento. Pregúntame lo que quieras sobre tu rutina.';
+  const burbuja = (cls, html) => { const d = document.createElement('div'); d.className = 'cm ' + cls; d.innerHTML = html; msgs.appendChild(d); return d; };
+  const vaciaInp = () => { inp.classList.add('vacio'); inp.textContent = 'Escribe tu pregunta…'; env.classList.remove('listo'); };
+  let chatVivo = false, chatVuelta = 0;
+  const chatCorre = async v => {
+    const sigue = () => chatVivo && v === chatVuelta;
+    msgs.innerHTML = ''; vaciaInp(); burbuja('ia', SALUDO);
+    await espera(900);
+    for (const g of GUION) {
+      if (!sigue()) return;
+      if (g.yo) {
+        inp.classList.remove('vacio'); inp.innerHTML = '<span></span><i class="cur"></i>';
+        const t = inp.firstChild;
+        for (let k = 1; k <= g.yo.length; k++) { if (!sigue()) return; t.textContent = g.yo.slice(0, k); if (k === 1) env.classList.add('listo'); await espera(38); }
+        await espera(350);
+        env.classList.add('toca'); await espera(160); env.classList.remove('toca');
+        burbuja('yo', g.yo); vaciaInp();
+        await espera(500);
+      } else {
+        const d = burbuja('dots', '<i></i><i></i><i></i>');
+        await espera(1300); if (!sigue()) return;
+        d.remove(); burbuja('ia', g.ia);
+        if (g.ok) { await espera(600); burbuja('ok', '<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>' + g.ok); }
+        await espera(1300);
+      }
     }
-  }), { threshold: .45 }).observe(chat);
+    await espera(5000);
+    if (sigue()) chatCorre(++chatVuelta);
+  };
+  const muestraTodo = () => { msgs.innerHTML = ''; burbuja('ia', SALUDO); GUION.forEach(g => { if (g.yo) burbuja('yo', g.yo); else { burbuja('ia', g.ia); if (g.ok) burbuja('ok', '<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>' + g.ok); } }); };
+  burbuja('ia', SALUDO);
+  new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting && !chatVivo) { chatVivo = true; if (reduce) muestraTodo(); else chatCorre(++chatVuelta); }
+    else if (!e.isIntersecting && chatVivo) { chatVivo = false; chatVuelta++; }
+  }), { threshold: .45 }).observe($('#uiChat'));
 
   // ─── Preguntas: abren y cierran suave
   document.querySelectorAll('.faq details').forEach(d => {
@@ -1114,7 +869,7 @@ button { font: inherit; }
 
   // ─── Navegación: oscura sobre las secciones de noche, clara sobre el marfil
   const nav = $('#nav'), noches = [...document.querySelectorAll('.hero, .night, .poster, .foot')];
-  const navTono = () => { const y = 30; nav.classList.toggle('claro', !noches.some(s => { const r = s.getBoundingClientRect(); return r.top <= y && r.bottom > y; })); };
+  const navTono = () => nav.classList.toggle('claro', !noches.some(s => { const r = s.getBoundingClientRect(); return r.top <= 30 && r.bottom > 30; }));
   let tick = false;
   addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; navTono(); }); } }, { passive: true });
   navTono();
@@ -1125,7 +880,7 @@ button { font: inherit; }
   document.querySelectorAll('.btn').forEach(a => a.addEventListener('click', () => track('cta_click', { label: (a.textContent || '').trim().slice(0, 40), target: a.getAttribute('href') || '', where: a.dataset.cta || '' })));
   const vistas = new Set();
   const secObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !vistas.has(e.target.id)) { vistas.add(e.target.id); track('section_view', { section: e.target.id }); } }), { threshold: .3 });
-  ['plan', 'objetivos', 'progresion', 'progreso', 'asistente', 'funciones', 'entrenador', 'gimnasio', 'planes', 'preguntas', 'cta'].forEach(id => { const el = document.getElementById(id); if (el) secObs.observe(el); });
+  ['plan', 'progresion', 'asistente', 'funciones', 'entrenador', 'planes', 'preguntas', 'cierre'].forEach(id => { const el = document.getElementById(id); if (el) secObs.observe(el); });
   (function () {
     const sent = new Set(); let max = 0;
     addEventListener('scroll', () => {
