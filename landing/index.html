@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="theme-color" content="#F7F7F4" />
+<meta name="theme-color" content="#F2F2F7" />
 
 <!-- ═══════════ SEO · meta tags ═══════════ -->
 <title>Mi Rutina · App para entrenadores y atletas | Rutinas, GIFs e IA</title>
@@ -137,29 +137,29 @@
 <style>
 /* ══════════════════════════════════════════════════════════════════
    Mi Rutina · landing
-   Mismo sistema visual que la app: marfil #F7F7F4, blanco, #1C1C1E,
-   naranja #F47735 y la tipografía nativa (SF Pro en iOS, Inter fuera).
+   Mismo sistema visual que la app: gris del sistema, blanco, #1C1C1E,
+   violeta #6E4BFF y la tipografía nativa (SF Pro).
    Los tamaños de display se llevan a escala editorial, pero los tokens,
    los radios y los pills son los mismos que se ven al entrar.
    ══════════════════════════════════════════════════════════════════ */
 :root {
-  --bg:      #F7F7F4;
+  --bg:      #F2F2F7;
   --s1:      #FFFFFF;
-  --s2:      #F0F0EC;
-  --b:       #E6E6E1;
-  --b2:      #EFEFEA;
+  --s2:      #E9E9EE;
+  --b:       #E1E1E6;
+  --b2:      #ECECF0;
   --t1:      #1C1C1E;
-  --t2:      #6E6E73;
+  --t2:      #6C6C70;
   --t3:      #8E8E93;
-  --ac:      #F47735;
-  --ac-soft: #FDECE2;
-  --ac-deep: #C2591C;
+  --ac:      #6E4BFF;
+  --ac-soft: #EEEAFF;
+  --ac-deep: #5232D6;
   --ok:      #2FA84F;
-  --tag-mus-bg: #EFEAFB; --tag-mus-tx: #6D51B5;
+  --tag-mus-bg: #EEEAFF; --tag-mus-tx: #5232D6;
   --tag-tri-bg: #FCEFD4; --tag-tri-tx: #9A6B12;
 
-  --font-d: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
-  --font-b: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+  --font-d: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --font-b: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
 
   --pad: clamp(20px, 4vw, 48px);
   --r: 20px;
@@ -223,7 +223,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── El indicador de sesión de la app, como marcador de sección ── */
 .steps { display: flex; gap: 7px; align-items: center; width: 168px; margin-bottom: 20px; }
-.steps i { flex: 1; height: 7px; border-radius: 100px; background: #E2E2DD; display: block; }
+.steps i { flex: 1; height: 7px; border-radius: 100px; background: #DCDCE1; display: block; }
 .steps i.done { background: var(--ok); }
 .steps i.now  { background: var(--ac); }
 
@@ -236,11 +236,11 @@ a { color: inherit; text-decoration: none; }
   white-space: nowrap;
 }
 .btn-primary { background: var(--ac); color: #fff; }
-.btn-primary:hover { background: #E06A2C; }
+.btn-primary:hover { background: #5A38EB; }
 .btn-ghost { background: transparent; border-color: var(--b); color: var(--t1); }
 .btn-ghost:hover { background: var(--s2); }
 .btn-white { background: #fff; color: var(--t1); }
-.btn-white:hover { background: #F0F0EC; }
+.btn-white:hover { background: #E9E9EE; }
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--ac); outline-offset: 3px;
@@ -249,17 +249,14 @@ a { color: inherit; text-decoration: none; }
 /* ── Cabecera ───────────────────────────────────────────────── */
 header {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(247,247,244,.86);
+  background: rgba(242,242,247,.86);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--b);
 }
 .hd { display: flex; align-items: center; gap: 22px; height: 72px; }
 .logo { display: flex; align-items: center; gap: 11px; font-family: var(--font-d); font-weight: 800; font-size: 18px; letter-spacing: -.5px; }
-.logo-mark {
-  width: 34px; height: 34px; border-radius: 10px; background: var(--ac);
-  display: flex; align-items: center; justify-content: center; color: #fff; flex: none;
-}
-.logo-mark svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.logo-mark { width: 34px; height: 34px; flex: none; display: block; }
+.logo-mark svg { width: 100%; height: 100%; display: block; }
 .nav { display: flex; gap: 26px; margin-left: auto; font-size: 15.5px; color: var(--t2); font-weight: 500; }
 .nav a:hover { color: var(--t1); }
 .hd .btn { padding: 12px 20px; font-size: 15px; }
@@ -339,7 +336,7 @@ header {
 .hero-art { display: flex; justify-content: center; position: relative; }
 .hero-art::before {
   content: ''; position: absolute; inset: -6% -14%;
-  background: radial-gradient(60% 55% at 50% 45%, rgba(244,119,53,.16), transparent 70%);
+  background: radial-gradient(60% 55% at 50% 45%, rgba(110,75,255,.16), transparent 70%);
   pointer-events: none;
 }
 .hero-art .phone { position: relative; }
@@ -425,8 +422,8 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 /* ── Sección oscura (gimnasios) ─────────────────────────────── */
 .dark { background: var(--t1); color: #fff; }
 .dark .lead, .dark .muted { color: #A8A8A4; }
-.dark .eyebrow { background: rgba(244,119,53,.16); color: #F9A87A; }
-.dark .ticks li { color: #EDEDE9; }
+.dark .eyebrow { background: rgba(110,75,255,.16); color: #A68BFF; }
+.dark .ticks li { color: #E5E5EA; }
 .dark .steps i { background: #35353A; }
 .gym-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
 @media (max-width: 880px) { .gym-grid { grid-template-columns: 1fr; } }
@@ -437,7 +434,7 @@ section { padding: clamp(56px, 8vw, 108px) 0; }
 /* ── Precios ────────────────────────────────────────────────── */
 .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr)); gap: 16px; align-items: start; }
 .plan { background: var(--s1); border-radius: 24px; padding: 32px; display: flex; flex-direction: column; border: 1px solid transparent; }
-.plan.destacado { border-color: var(--ac); box-shadow: 0 24px 54px -30px rgba(244,119,53,.5); }
+.plan.destacado { border-color: var(--ac); box-shadow: 0 24px 54px -30px rgba(110,75,255,.5); }
 .plan-name { font-family: var(--font-d); font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
 .plan-for { font-size: 14.5px; color: var(--t2); margin: 6px 0 22px; }
 .plan-price { font-family: var(--font-d); font-size: 38px; font-weight: 800; letter-spacing: -1.6px; line-height: 1; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -534,7 +531,7 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
 <header>
   <div class="wrap hd">
     <a href="#" class="logo" aria-label="Mi Rutina">
-      <span class="logo-mark"><svg><use href="#i-pesa"/></svg></span>
+      <span class="logo-mark"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="lgL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A68BFF"/><stop offset=".62" stop-color="#6E4BFF"/><stop offset="1" stop-color="#5532E0"/></linearGradient></defs><rect width="100" height="100" rx="22.5" fill="url(#lgL)"/><rect x="23" y="55" width="15" height="22" rx="7.5" fill="#fff" fill-opacity=".62"/><rect x="42.5" y="41" width="15" height="36" rx="7.5" fill="#fff" fill-opacity=".82"/><rect x="62" y="25" width="15" height="52" rx="7.5" fill="#fff"/></svg></span>
       Mi Rutina
     </a>
     <nav class="nav">
@@ -1119,7 +1116,7 @@ footer { border-top: 1px solid var(--b); padding: 56px 0 40px; }
     <div class="ft-grid">
       <div>
         <a href="#" class="logo" style="margin-bottom:14px">
-          <span class="logo-mark"><svg><use href="#i-pesa"/></svg></span>
+          <span class="logo-mark"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="lgL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A68BFF"/><stop offset=".62" stop-color="#6E4BFF"/><stop offset="1" stop-color="#5532E0"/></linearGradient></defs><rect width="100" height="100" rx="22.5" fill="url(#lgL)"/><rect x="23" y="55" width="15" height="22" rx="7.5" fill="#fff" fill-opacity=".62"/><rect x="42.5" y="41" width="15" height="36" rx="7.5" fill="#fff" fill-opacity=".82"/><rect x="62" y="25" width="15" height="52" rx="7.5" fill="#fff"/></svg></span>
           Mi Rutina
         </a>
         <p class="muted" style="font-size:15px;margin:0;max-width:34ch">La app que conecta entrenadores y atletas. Hecha en Colombia 🇨🇴 para LATAM.</p>

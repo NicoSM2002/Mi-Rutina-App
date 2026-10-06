@@ -1909,19 +1909,19 @@ Devolvé SOLO un JSON así, sin texto extra:
 <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f1117" style="background:#0f1117;font-family:-apple-system,Helvetica,sans-serif">
   <tr><td align="center" style="padding:24px 16px">
     <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
-      <tr><td style="background:linear-gradient(135deg,#FF6B2C,#FFB547);border-radius:16px;padding:24px">
+      <tr><td style="background:linear-gradient(135deg,#A68BFF,#6E4BFF);border-radius:16px;padding:24px">
         <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.9);text-transform:uppercase;margin-bottom:6px">Bienvenido a Mi Rutina</div>
         <div style="font-size:28px;font-weight:800;color:#fff">👋 Hola ${name}</div>
       </td></tr>
       <tr><td height="16"></td></tr>
       <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
-        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Tu entrenador creó tu perfil. Ya podés entrar a la app para ver tu rutina y registrar tus sesiones.</p>
+        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Tu entrenador creó tu perfil. Ya puedes entrar a la app para ver tu rutina y registrar tus sesiones.</p>
         <div style="margin:14px 0;padding:14px;background:#0f1117;border:1px solid #2d3148;border-radius:10px">
           <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Tu usuario</div>
-          <div style="font-size:20px;font-weight:800;color:#FFB547;font-family:ui-monospace,Menlo,monospace">${username}</div>
+          <div style="font-size:20px;font-weight:800;color:#A996FF;font-family:ui-monospace,Menlo,monospace">${username}</div>
         </div>
-        <p style="margin:0 0 14px;font-size:13px;color:#94a3b8;line-height:1.5">Entrá con este usuario desde la pantalla "Atleta" la primera vez. Podés agregar la app a la pantalla de inicio de tu celular para abrirla como app.</p>
-        <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#FF6B2C,#FFB547);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
+        <p style="margin:0 0 14px;font-size:13px;color:#94a3b8;line-height:1.5">Entra con este usuario desde la pantalla "Atleta" la primera vez. Puedes agregar la app a la pantalla de inicio de tu celular para abrirla como app.</p>
+        <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#A68BFF,#6E4BFF);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
       </td></tr>
     </table>
   </td></tr>
@@ -2267,12 +2267,12 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       </td></tr>
       <tr><td height="16"></td></tr>
       <tr><td bgcolor="#1e2130" style="background:#1e2130;border:1px solid #2d3148;border-radius:12px;padding:20px">
-        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Se creó tu perfil de entrenador en Mi Rutina. Ya podés entrar al portal con tu usuario.</p>
+        <p style="margin:0 0 14px;font-size:15px;color:#e2e8f0;line-height:1.6">Se creó tu perfil de entrenador en Mi Rutina. Ya puedes entrar al portal con tu usuario.</p>
         <div style="margin:14px 0;padding:14px;background:#0f1117;border:1px solid #2d3148;border-radius:10px">
           <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Tu usuario</div>
           <div style="font-size:20px;font-weight:800;color:#818cf8;font-family:ui-monospace,Menlo,monospace">${username}</div>
         </div>
-        <p style="margin:0 0 14px;font-size:13px;color:#94a3b8;line-height:1.5">Desde el portal podés crear atletas, armar sus rutinas, ver comidas, pagos y resúmenes semanales.</p>
+        <p style="margin:0 0 14px;font-size:13px;color:#94a3b8;line-height:1.5">Desde el portal puedes crear atletas, armar sus rutinas, ver comidas, pagos y resúmenes semanales.</p>
         <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-weight:700;font-size:14px;text-decoration:none;padding:12px 20px;border-radius:10px">Abrir Mi Rutina</a>
       </td></tr>
     </table>
@@ -2398,12 +2398,12 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
         const typeLabel = { entrenador: 'Entrenador', gimnasio: 'Dueño de gimnasio', atleta: 'Atleta' }[type] || 'Otro';
         const html = `
           <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111">
-            <h2 style="margin:0 0 16px;color:#FF6B2C">🎯 Nuevo lead desde la landing</h2>
+            <h2 style="margin:0 0 16px;color:#6E4BFF">🎯 Nuevo lead desde la landing</h2>
             <table style="width:100%;border-collapse:collapse">
               <tr><td style="padding:8px 0;color:#666;width:120px">Nombre</td><td style="font-weight:600">${escapeHtml(name)}</td></tr>
-              <tr><td style="padding:8px 0;color:#666">Email</td><td><a href="mailto:${escapeHtml(email)}" style="color:#FF6B2C">${escapeHtml(email)}</a></td></tr>
+              <tr><td style="padding:8px 0;color:#666">Email</td><td><a href="mailto:${escapeHtml(email)}" style="color:#6E4BFF">${escapeHtml(email)}</a></td></tr>
               <tr><td style="padding:8px 0;color:#666">Tipo</td><td>${typeLabel}</td></tr>
-              ${whatsapp ? `<tr><td style="padding:8px 0;color:#666">WhatsApp</td><td><a href="https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}" style="color:#FF6B2C">${escapeHtml(whatsapp)}</a></td></tr>` : ''}
+              ${whatsapp ? `<tr><td style="padding:8px 0;color:#666">WhatsApp</td><td><a href="https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}" style="color:#6E4BFF">${escapeHtml(whatsapp)}</a></td></tr>` : ''}
               ${message ? `<tr><td style="padding:8px 0;color:#666;vertical-align:top">Mensaje</td><td style="white-space:pre-wrap">${escapeHtml(message)}</td></tr>` : ''}
             </table>
             <p style="margin-top:24px;color:#888;font-size:13px">Recibido en ${new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' })} (Colombia)</p>

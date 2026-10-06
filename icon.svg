@@ -1,16 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Progresión: tres barras que suben, como tus pesos semana a semana -->
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF6B2C"/>
-      <stop offset="100%" stop-color="#FFB547"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A68BFF"/>
+      <stop offset=".62" stop-color="#6E4BFF"/>
+      <stop offset="1" stop-color="#5532E0"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="110" fill="url(#g)"/>
-  <g fill="#fff">
-    <rect x="60" y="220" width="60" height="72" rx="12"/>
-    <rect x="392" y="220" width="60" height="72" rx="12"/>
-    <rect x="100" y="200" width="48" height="112" rx="10"/>
-    <rect x="364" y="200" width="48" height="112" rx="10"/>
-    <rect x="140" y="236" width="232" height="40" rx="8"/>
-  </g>
+  <rect width="512" height="512" rx="115" fill="url(#g)"/>
+  <rect x="118" y="282" width="77" height="113" rx="38.5" fill="#fff" fill-opacity=".62"/>
+  <rect x="218" y="210" width="77" height="185" rx="38.5" fill="#fff" fill-opacity=".82"/>
+  <rect x="317" y="128" width="77" height="267" rx="38.5" fill="#fff"/>
 </svg>

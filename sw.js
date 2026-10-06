@@ -1,4 +1,4 @@
-const CACHE = 'rutina-v4-r1';
+const CACHE = 'rutina-v5-rediseno';
 
 /* El index.html se pide siempre con mode:'navigate', y la versión anterior
    solo guardaba lo que NO fuera navigate — así que nunca llegaba al caché y
