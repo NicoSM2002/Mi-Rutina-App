@@ -1376,6 +1376,51 @@ export default {
     }
 
     // ── GET ROUTINE ──
+    // ── AJUSTAR CARGA DE UN EJERCICIO ──
+    // El chat propone; esto lo confirma. Va aparte porque la rama del chat
+    // no tiene credencial y aquí sí se escribe la rutina.
+    if (body.action === 'ajustar-peso') {
+      const esElMismo = body.selfToken && await verifySelfToken(env, client, body.selfToken);
+      if (!esElMismo) {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      }
+      const nombre = String(body.ejercicio || '').slice(0, 120);
+      const peso = Number(body.peso);
+      if (!nombre || !isFinite(peso) || peso <= 0 || peso > 2000) {
+        return new Response(JSON.stringify({ ok: false, error: 'Datos inválidos' }), { headers: cors, status: 400 });
+      }
+      const rutina = await env.DB.get(`routine:${client}`, 'json');
+      if (!rutina) return new Response(JSON.stringify({ ok: false, error: 'Sin rutina' }), { headers: cors });
+
+      let tocado = null;
+      for (const k of Object.keys(rutina)) {
+        for (const c of (rutina[k].circuits || [])) {
+          for (const ex of (c.exercises || [])) {
+            if (ex.name !== nombre) continue;
+            const actual = numeroDePeso(ex.w1);
+            // Un salto fuera de la cuarta parte o el cuádruple es un error,
+            // no una decisión de entrenamiento.
+            if (actual && (peso < actual * 0.25 || peso > actual * 4)) {
+              tocado = { rechazado: true, actual };
+              continue;
+            }
+            ex.w1 = escribePeso(peso, ex.unit);
+            tocado = { name: ex.name, w1: ex.w1 };
+          }
+        }
+      }
+      if (!tocado) {
+        return new Response(JSON.stringify({ ok: false, error: 'Ese ejercicio no está en tu rutina' }), { headers: cors });
+      }
+      if (tocado.rechazado) {
+        console.log(`[PESO] descartado ${nombre}: ${peso} contra ${tocado.actual}`);
+        return new Response(JSON.stringify({ ok: false, error: 'Ese salto no cuadra con tu carga actual' }), { headers: cors });
+      }
+      await env.DB.put(`routine:${client}`, JSON.stringify(rutina));
+      console.log(`[PESO] ${client}: ${nombre} → ${tocado.w1}`);
+      return new Response(JSON.stringify({ ok: true, w1: tocado.w1 }), { headers: cors });
+    }
+
     // Último ajuste semanal, para que el atleta vea qué cambió y por qué
     if (body.action === 'get-progresion') {
       const authErr = await authorizeReadForClient(env, body, client, cors);
@@ -2155,7 +2200,8 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
           .filter(x => !yaEstan.has(x.name))
           .slice(0, 14)
           .map(x => x.name);
-        return { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso', alternativas: alt };
+        return { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso',
+                 saltoDelAparato: cat.step || null, alternativas: alt };
       }).filter(Boolean);
 
       if (fichas.length) {
@@ -2171,6 +2217,17 @@ Reglas: el nombre nuevo tiene que ser uno de los de su lista de alternativas, co
 letra. Un cambio por respuesta. Si no te está pidiendo cambiar nada, no escribas esa línea.
 Avísale en el texto que el cambio es sólo para hoy y que la próxima semana vuelve el original.
 
+TAMBIÉN PUEDES AJUSTARLE LA CARGA.
+Si te dice que un ejercicio le quedó fácil o muy pesado y quiere otro peso, propón uno y termina
+con una línea sola al final:
+@@PESO: <nombre exacto> >> <número>
+
+El número tiene que ser cargable en ese aparato: muévete en múltiplos de "saltoDelAparato" desde
+la carga actual. Un salto de uno o dos escalones es lo normal; si te pide más, dilo pero no te
+pases de ahí. A diferencia del cambio de ejercicio, ESTE SÍ SE QUEDA: avísale que a partir de
+ahora esa es su carga y que de ahí sigue la progresión.
+Una sola línea por respuesta, @@CAMBIAR o @@PESO, nunca las dos.
+
 Ejercicios de hoy y sus alternativas:
 ${JSON.stringify(fichas, null, 1)}`;
       }
@@ -2185,7 +2242,7 @@ ${JSON.stringify(fichas, null, 1)}`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
+        max_tokens: 900,   // con 500 la respuesta se cortaba antes de la línea final
         system: sistema,
         messages: body.messages || []
       })
@@ -2200,7 +2257,25 @@ ${JSON.stringify(fichas, null, 1)}`;
 
     // El modelo propone el cambio; aquí se comprueba antes de devolverlo
     let accion = null;
-    const m = content.match(/@@CAMBIAR:\s*(.+?)\s*>>\s*(.+?)\s*$/m);
+
+    const mp = content.match(/@@PESO:\s*(.+?)\s*>>\s*([\d.,]+)\s*.*$/m);
+    if (mp) {
+      content = content.replace(mp[0], '').trim();
+      const nombre = mp[1].trim();
+      const peso = parseFloat(mp[2].replace(',', '.'));
+      const enHoy = sesionHoy.find(e => e.name === nombre);
+      const actual = enHoy ? numeroDePeso(enHoy.w1) : null;
+      if (!enHoy)                     console.log(`[CHAT] "${nombre}" no está en la sesión de hoy`);
+      else if (!isFinite(peso) || peso <= 0) console.log(`[CHAT] peso inválido para "${nombre}"`);
+      else if (actual && (peso < actual * 0.25 || peso > actual * 4))
+                                      console.log(`[CHAT] salto raro en "${nombre}": ${peso} contra ${actual}`);
+      else {
+        accion = { tipo: 'peso', ci: enHoy.ci, ei: enHoy.ei, name: nombre, peso };
+        console.log(`[CHAT] propone carga: ${nombre} ${enHoy.w1} → ${peso}`);
+      }
+    }
+
+    const m = !accion && content.match(/@@CAMBIAR:\s*(.+?)\s*>>\s*(.+?)\s*$/m);
     if (m) {
       content = content.replace(m[0], '').trim();
       const de = m[1].trim(), a = m[2].trim();

@@ -320,8 +320,29 @@ html, body {
 .today-row-link { font-size:14px; color:var(--t2); flex:none; letter-spacing:-.2px; }
 
 /* ── SCREENS ── */
-.screen { position:fixed; inset:0; opacity:0; pointer-events:none; transition:opacity .4s ease; }
-.screen.active { opacity:1; pointer-events:all; }
+/* Sin fundido entre pantallas: con todas superpuestas, cruzar opacidades
+   durante 400 ms dejaba ver la nueva a través de la vieja y parecía que
+   cargaba a trozos. Se cambia al instante y lo que se anima es la entrada,
+   que es lo que da sensación de respuesta sin añadir espera. */
+.screen { position:fixed; inset:0; opacity:0; pointer-events:none; visibility:hidden; }
+.screen.active {
+  opacity:1; pointer-events:all; visibility:visible;
+  animation: pantallaEntra .2s cubic-bezier(.22,.9,.3,1);
+}
+@keyframes pantallaEntra {
+  from { opacity:0; transform:translate3d(0,7px,0); }
+  to   { opacity:1; transform:none; }
+}
+
+/* Lo que llega después de pintar — una tarjeta que esperaba al servidor —
+   aparece con un apagado muy corto, para que no dé un salto seco. */
+.entra-tarde { animation: apareceSuave .22s ease both; }
+@keyframes apareceSuave { from { opacity:0; } to { opacity:1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen.active, .entra-tarde { animation:none; }
+  * { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
 
 /* ── PORTRAIT LOCK ── Overlay para celulares en horizontal */
 #rotate-overlay {
@@ -2447,6 +2468,9 @@ select.na-input {
   justify-content:space-around;
   align-items:center;
 }
+/* Una pestaña oculta tiene que desaparecer: su display:flex le gana al
+   display:none que el navegador aplica a [hidden]. */
+.bnav-item[hidden], .prog-tab[hidden] { display:none !important; }
 .bnav-item {
   flex:1;
   display:flex; flex-direction:column; align-items:center; gap:5px;
@@ -3714,6 +3738,22 @@ function warmUpBackend() {
 async function showRoutine() {
   show('routine');
 
+  // Si ya hay rutina en memoria se pinta YA y se refresca después: esperar
+  // dos respuestas del servidor dejaba la pantalla en blanco ~300 ms.
+  if (data && Object.keys(data).length) {
+    try {
+      const st = getSessionState(currentAthlete);
+      currentDay = st.sessionKey;
+      currentWeek = st.week;
+      const _g = leerPaso();
+      routineStep = (_g && _g.dia === currentDay) ? _g.paso : 0;
+      const _f = leerFeedback();
+      feedbackSesion = _f.marcas; notasEjercicio = _f.notas;
+      cambiosHoy = leerCambiosHoy();
+      render();
+    } catch (e) {}
+  }
+
   // Re-fetch latest routine from server (in case trainer made changes)
   await loadRoutine();
 
@@ -3861,6 +3901,12 @@ let routineStep  = 0;
 /* Atletas cuya sesión la decide el día de la semana y no un contador.
    Lista explícita: para el resto no cambia nada. */
 const ATLETAS_RUTINA_FIJA = ['nicolassaravia'];
+
+/* Se autogestiona: ni entrenador en el perfil ni sección de comidas.
+   Oculta lo que no usa; no borra nada de lo que hay guardado. */
+function seAutogestiona(athlete) {
+  return ATLETAS_RUTINA_FIJA.includes(athlete || currentAthlete);
+}
 
 /* Lunes→sesión 1 … viernes→sesión 5. El fin de semana apunta al lunes, que
    es el próximo entrenamiento. */
@@ -5361,6 +5407,7 @@ async function athleteLogin() {
     currentAthleteRecord = dyn;
     data = {};
     loadRoutine();
+    ajustaNavAtleta();
     showGenericProfile(dyn);   // precarga los datos del perfil
     showToday(); activateNav('today');   // ...pero se entra por Hoy
     loadAthletePayment(currentAthlete);
@@ -5650,6 +5697,8 @@ async function setAvatarPhoto(el, url, initials) {
 
 async function loadAthleteTrainerCard(trainerId) {
   const wrap = document.getElementById('pg-trainer-wrap');
+  // Sin entrenador no hay tarjeta que mostrar
+  if (wrap && seAutogestiona()) { wrap.style.display = 'none'; return; }
   if (!trainerId) { wrap.style.display = 'none'; return; }
   try {
     const trainers = await fetchTrainersCached();
@@ -5852,6 +5901,7 @@ async function tryRestoreAthleteSession() {
     }
     currentAthleteRecord = json.athlete;
     data = {};
+    ajustaNavAtleta();
     loadRoutine();
     showGenericProfile(json.athlete);
     loadAthletePayment(saved);
@@ -6594,12 +6644,23 @@ function renderTrainerTab() {
 /* ── resumen semanal ── */
 let resumenWeekOf = null;
 
-/* La pestaña de fuerza sólo para quien tiene rutina autogestionada */
+/* La pestaña de fuerza sólo para quien tiene rutina autogestionada, y la
+   de alimentación sólo para quien sí registra comidas. */
 function ajustaPestanasProgreso() {
-  const b = document.getElementById('prog-tab-fuerza');
-  if (!b) return;
-  b.hidden = !(typeof ATLETAS_RUTINA_FIJA !== 'undefined'
-            && ATLETAS_RUTINA_FIJA.includes(currentAthlete));
+  const mio = seAutogestiona();
+  const f = document.getElementById('prog-tab-fuerza');
+  if (f) f.hidden = !mio;
+  const c = document.getElementById('prog-tab-comida');
+  if (c) c.hidden = mio;
+  // Si estaba en una pestaña que ya no existe, se vuelve a una que sí
+  if (mio && progressTab === 'comida') progressTab = 'fuerza';
+  if (!mio && progressTab === 'fuerza') progressTab = 'entreno';
+}
+
+/* La pestaña de Comidas se quita de la barra para quien no la usa */
+function ajustaNavAtleta() {
+  const b = document.getElementById('bnav-meals');
+  if (b) b.hidden = seAutogestiona();
 }
 
 async function showResumen(weekOf) {
@@ -7667,7 +7728,7 @@ function buildContext() {
 - Puedes responder cualquier pregunta de fitness, nutrición, lesiones o salud deportiva — no solo sobre la rutina.
 - Si alguien menciona dolor o lesión, da una respuesta breve y recomienda consultar a un profesional si es necesario.
 - Nunca respondas con listas largas a menos que el atleta lo pida explícitamente.
-- Responde siempre en español neutro latinoamericano, sin usar voseo ni modismos regionales.
+- Español de Colombia, tuteando: "subes", "pasas", "llegaste". NUNCA voseo rioplatense — nada de "subís", "pasate", "tenés", "vos". Tampoco "acá" ni "allá" por "aquí" y "allí".
 - ACCESO A RUTINAS: Solo tienes acceso completo a la sesión activa de hoy. De las otras sesiones solo conoces el grupo muscular general. Si alguien te pide los ejercicios, series o detalles de otra sesión, responde algo como: "Hoy solo tengo acceso a tu sesión de hoy — mañana cuando empieces esa sesión tendré todos los detalles listos para vos." Puedes mencionar el grupo muscular de otras sesiones pero nada más.\n\n`;
 
   const profile = getAthleteProfileContext();
@@ -7777,6 +7838,7 @@ async function sendChat() {
       typing.classList.remove('typing');
       chatHistory.push({ role:'assistant', content: data.content });
       if (data.accion && data.accion.tipo === 'sustituir') aplicarSustitucion(data.accion);
+      if (data.accion && data.accion.tipo === 'peso') aplicarPeso(data.accion);
     } else {
       typing.textContent = 'No pude obtener respuesta, intentá de nuevo.';
       typing.classList.remove('typing');
@@ -7803,7 +7865,9 @@ function sesionParaChat() {
   day.circuits.forEach((c, ci) => (c.exercises || []).forEach((e, ei) => {
     if (e && e.name) out.push({
       ci, ei, name: e.name, w1: e.w1 || '', reps: e.reps || '',
+      unit: e.unit || '', step: e.step || null,
       repMin: e.repMin, repMax: e.repMax, repNow: e.repNow,
+      sustituido: !!e.sustituido,
     });
   }));
   return out;
@@ -7825,6 +7889,48 @@ function aplicarSustitucion(acc) {
   render();
 
   appendMsg('assistant', `Listo: ${acc.de} → ${acc.nuevo.name}. Sólo por hoy.`, 'chat-cambio');
+}
+
+/* Cambia la carga de un ejercicio: al instante en pantalla y, si es un
+   ejercicio de la rutina, guardada para que la progresión siga desde ahí. */
+async function aplicarPeso(acc) {
+  const day = data && data[currentDay];
+  const c = day && day.circuits && day.circuits[acc.ci];
+  const ex = c && c.exercises && c.exercises[acc.ei];
+  if (!ex || ex.name !== acc.name) return;
+
+  const sufijo = String(ex.w1 || '').replace(/^\s*[\d.,]+\s*/, '').trim();
+  const nuevo = Math.round(acc.peso) + (sufijo ? ' ' + sufijo : ' lbs');
+  const esSustituto = !!cambiosHoy[acc.ci + '|' + acc.ei];
+
+  ex.w1 = nuevo;
+  if (esSustituto) cambiosHoy[acc.ci + '|' + acc.ei].w1 = nuevo;
+  render();
+
+  if (esSustituto) {
+    // Es un ejercicio de hoy, no está en la rutina: no hay dónde guardarlo
+    guardarCambiosHoy();
+    appendMsg('assistant', `Listo: ${acc.name} a ${nuevo}. Como es el cambio de hoy, vale sólo para esta sesión.`, 'chat-cambio');
+    return;
+  }
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ajustar-peso', client: currentAthlete,
+                             selfToken: getSelfToken(), ejercicio: acc.name, peso: acc.peso })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      ex.w1 = d.w1;
+      render();
+      appendMsg('assistant', `Listo: ${acc.name} queda en ${d.w1}. De ahí sigue tu progresión.`, 'chat-cambio');
+    } else {
+      appendMsg('assistant', `Lo cambié en pantalla pero no se pudo guardar: ${d.error || 'error'}. Anótalo en la nota del ejercicio.`, 'chat-cambio');
+    }
+  } catch (e) {
+    appendMsg('assistant', 'Lo cambié en pantalla pero no se pudo guardar. Anótalo en la nota del ejercicio.', 'chat-cambio');
+  }
 }
 
 function appendMsg(role, text, extra = '') {
@@ -9150,8 +9256,28 @@ function activateNav(tab) {
    Punto de entrada del atleta: qué toca entrenar, si falta registrar comidas,
    cómo va la semana y quién es su entrenador. Antes la app abría en el perfil,
    que no lleva a ninguna acción. */
+let _semanaGuardada = null;   // último resumen semanal, para repintar sin pedir
+let _ajusteGuardado = null;   // último ajuste de rutina, idem
+
+/* Repinta la tarjeta de ajuste con lo último que llegó */
+function pintaAjusteGuardado() {
+  const el = document.getElementById('today-ajuste');
+  if (el && _ajusteGuardado) el.innerHTML = _ajusteGuardado;
+}
+
+/* Repinta la fila de la semana con lo último que llegó */
+function pintaSemanaGuardada() {
+  if (!_semanaGuardada) return;
+  const nEl = document.getElementById('today-week-n');
+  const rEl = document.getElementById('today-week-range');
+  if (nEl) nEl.textContent = _semanaGuardada.n;
+  if (rEl) rEl.textContent = _semanaGuardada.rango;
+}
+
 async function showToday() {
   show('today');
+  // Una sola vez por entrada, en paralelo con la rutina
+  Promise.allSettled([loadTodayWeek(), loadAjusteSemanal()]);
   renderToday();               // pinta ya con lo que hay en memoria
   await loadRoutine();         // y refresca cuando lleguen los datos
   renderToday();
@@ -9219,7 +9345,7 @@ function renderToday() {
   const sent = typeof getSentSlots === 'function' ? getSentSlots() : {};
   const nSent = MEAL_SLOTS.filter(s => sent[s.key]).length;
   const pendiente = MEAL_SLOTS.find(s => !sent[s.key]);
-  const comidas = `<h2 class="today-sec">Alimentación</h2>
+  const comidas = seAutogestiona() ? '' : `<h2 class="today-sec">Alimentación</h2>
     <button class="today-row" onclick="showMeals();activateNav('meals')">
       <span class="today-row-ic"><svg class="ic"><use href="#i-comidas"/></svg></span>
       <span class="today-row-body">
@@ -9257,9 +9383,10 @@ function renderToday() {
     <div id="today-ajuste"></div>
     ${entrenamiento}${comidas}${semana}`;
 
-  // Los datos de la semana llegan aparte
-  loadTodayWeek();
-  loadAjusteSemanal();
+  // Pintar no pide nada: lo que llegó del servidor se vuelca desde la caché.
+  // Las peticiones las lanza showToday una sola vez por entrada.
+  pintaSemanaGuardada();
+  pintaAjusteGuardado();
 }
 
 /* ── Ajuste semanal de la rutina ──────────────────────────────────
@@ -9310,7 +9437,7 @@ async function loadAjusteSemanal() {
       <span class="aj-dato aj-nuevo">${r.heredaPeso ? 'mismo peso' : 'ajusta el peso'}</span>
     </div>`).join('');
 
-  el.innerHTML = `<div class="today-card aj-card">
+  const htmlAjuste = `<div class="today-card aj-card entra-tarde">
       <div class="aj-top">
         <div>
           <div class="today-eyebrow">Tu rutina se actualizó</div>
@@ -9325,10 +9452,13 @@ async function loadAjusteSemanal() {
         <div class="aj-lista">${filasRot}${filas}</div>
       </details>` : ''}
     </div>`;
+  _ajusteGuardado = htmlAjuste;
+  el.innerHTML = htmlAjuste;
 }
 
 function cerrarAjuste(semana) {
   try { localStorage.setItem('ajusteVisto_' + currentAthlete, semana); } catch (e) {}
+  _ajusteGuardado = null;
   const el = document.getElementById('today-ajuste');
   if (el) el.innerHTML = '';
 }
@@ -9345,8 +9475,10 @@ async function loadTodayWeek() {
     const d = await res.json();
     const n = (d.completions || []).length;
     // El plural de "sesión" pierde la tilde: sesiones, no sesiónes
-    nEl.textContent = `${n} ${n === 1 ? 'sesión' : 'sesiones'} completada${n === 1 ? '' : 's'}`;
-    if (rEl) rEl.textContent = d.weekLabel || '';
+    const txt = `${n} ${n === 1 ? 'sesión' : 'sesiones'} completada${n === 1 ? '' : 's'}`;
+    _semanaGuardada = { n: txt, rango: d.weekLabel || '' };   // para repintar sin volver a pedir
+    nEl.textContent = txt;
+    if (rEl) rEl.textContent = _semanaGuardada.rango;
   } catch { nEl.textContent = 'Sin datos esta semana'; }
 }
 
@@ -9944,6 +10076,7 @@ if ('serviceWorker' in navigator) {
   <button class="bnav-item" id="bnav-meals" onclick="showMeals();activateNav('meals')">
     <svg class="ic bnav-icon"><use href="#i-comidas"/></svg>Comidas
   </button>
+  <!-- bnav-meals se oculta para quien no usa comidas: ver ajustaNavAtleta -->
   <button class="bnav-item" id="bnav-resumen" onclick="showResumen();activateNav('resumen')">
     <svg class="ic bnav-icon"><use href="#i-resumen"/></svg>Progreso
   </button>
