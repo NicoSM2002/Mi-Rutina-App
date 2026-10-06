@@ -1586,6 +1586,54 @@ button.ex-presc:active { background:#FBDCC9; }
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
 }
 
+.ex-cambiado {
+  font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+  background:var(--ac-soft); color:var(--ac-tx); padding:2px 7px; border-radius:6px;
+}
+.chat-msg.chat-cambio {
+  background:var(--ac-soft); color:var(--ac-tx); font-weight:600;
+}
+
+/* Drop de la última serie: va bajo la carga porque es una instrucción
+   sobre ella, no una prescripción aparte. */
+.ex-drop {
+  margin-top:10px; padding:9px 11px; border-radius:11px; background:var(--ac-soft);
+  display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px;
+}
+.ex-drop-et {
+  font-size:11.5px; font-weight:800; color:var(--ac-tx); text-transform:uppercase;
+  letter-spacing:.6px; flex:none;
+}
+.ex-drop-pasos { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+.ex-drop-pasos b {
+  font-family:var(--font-d); font-size:16px; font-weight:700; color:var(--t1);
+  letter-spacing:-.4px; font-variant-numeric:tabular-nums;
+}
+.ex-drop-pasos b small { font-size:11.5px; font-weight:600; color:var(--t2); letter-spacing:0; margin-left:2px; }
+.ex-drop-pasos i { color:var(--ac-tx); font-style:normal; font-size:13px; }
+
+/* Nota opcional del ejercicio: plegada hasta que haya algo que contar */
+.nota-wrap { margin-top:9px; }
+.nota-btn {
+  display:inline-flex; align-items:center; gap:7px; max-width:100%;
+  background:none; border:none; cursor:pointer; padding:7px 2px; min-height:38px;
+  font-family:var(--font-b); font-size:13.5px; color:var(--t2); letter-spacing:-.1px;
+  text-align:left;
+}
+.nota-btn .ic { width:14px; height:14px; flex:none; }
+.nota-et { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nota-btn.con-nota { color:var(--t1); }
+.nota-btn.con-nota .ic { color:var(--ac-tx); }
+.nota-caja { display:none; margin-top:4px; }
+.nota-caja.show { display:block; }
+.nota-input {
+  width:100%; background:var(--bg); border:1px solid var(--b); border-radius:12px;
+  padding:11px 13px; color:var(--t1); font-family:var(--font-b); font-size:15px;
+  line-height:1.45; resize:none; outline:none; -webkit-appearance:none;
+}
+.nota-input::placeholder { color:var(--t3); }
+.nota-input:focus { border-color:var(--ac-tx); }
+
 /* Cómo te fue: tres opciones dentro de la tarjeta de su ejercicio */
 .fb-aviso {
   font-size:14px; color:var(--t2); letter-spacing:-.2px; line-height:1.45;
@@ -3714,7 +3762,10 @@ async function showRoutine() {
   // Si quedó una sesión a medias hoy, se retoma donde iba
   const guardado = leerPaso();
   routineStep = (guardado && guardado.dia === currentDay) ? guardado.paso : 0;
-  feedbackSesion = leerFeedback();   // lo marcado antes de cerrar la app
+  const _fb = leerFeedback();        // lo marcado antes de cerrar la app
+  feedbackSesion = _fb.marcas;
+  notasEjercicio = _fb.notas;
+  cambiosHoy = leerCambiosHoy();
   render();
 }
 
@@ -4499,28 +4550,104 @@ let data = JSON.parse(JSON.stringify(FALLBACK_DATA));
    para no restaurar algo de ayer. */
 function claveP()  { return 'rutinaPaso_' + (currentAthlete || ''); }
 function claveF()  { return 'rutinaFeedback_' + (currentAthlete || ''); }
+function claveS()  { return 'rutinaCambiosHoy_' + (currentAthlete || ''); }
+
+/* Ejercicios cambiados sólo por hoy, desde el chat: { "0|1": {ejercicio} }.
+   No tocan la rutina guardada: mañana vuelve el original. */
+let cambiosHoy = {};
+
+function guardarCambiosHoy() {
+  if (!currentAthlete) return;
+  try {
+    localStorage.setItem(claveS(), JSON.stringify({ fecha: hoyISO(), dia: currentDay, cambios: cambiosHoy }));
+  } catch (e) {}
+}
+function leerCambiosHoy() {
+  try {
+    const g = JSON.parse(localStorage.getItem(claveS()) || 'null');
+    if (!g || g.fecha !== hoyISO() || g.dia !== currentDay) return {};
+    return g.cambios || {};
+  } catch (e) { return {}; }
+}
+function olvidarCambiosHoy() {
+  cambiosHoy = {};
+  try { localStorage.removeItem(claveS()); } catch (e) {}
+}
+
+/* Mete las sustituciones de hoy en la sesión que se va a pintar.
+   Sobre una copia: si mutara `data`, el ejercicio original se perdería de
+   memoria y al quitar la sustitución no habría a qué volver. */
+function aplicaCambiosHoy(day) {
+  if (!day || !Array.isArray(day.circuits)) return day;
+  const claves = Object.keys(cambiosHoy);
+  if (!claves.length) return day;
+  const copia = { ...day, circuits: day.circuits.map(c => ({ ...c, exercises: (c.exercises || []).slice() })) };
+  for (const k of claves) {
+    const [ci, ei] = k.split('|').map(Number);
+    const c = copia.circuits[ci];
+    if (!c || !c.exercises[ei]) continue;
+    c.exercises[ei] = { ...c.exercises[ei], ...cambiosHoy[k], sustituido: true };
+  }
+  return copia;
+}
 
 /* Cómo fue cada ejercicio de la sesión de hoy: { "0|Press de banca": "facil" }.
    Vive en el teléfono hasta que se envía la sesión, para que cerrar la app a
    mitad de entrenamiento no borre lo ya marcado. */
 let feedbackSesion = {};
+/* Nota opcional por ejercicio: { "0|Peck deck": "le subí a 110" } */
+let notasEjercicio = {};
 
 function guardarFeedback() {
   if (!currentAthlete) return;
   try {
-    localStorage.setItem(claveF(), JSON.stringify({ fecha: hoyISO(), dia: currentDay, marcas: feedbackSesion }));
+    localStorage.setItem(claveF(), JSON.stringify({
+      fecha: hoyISO(), dia: currentDay, marcas: feedbackSesion, notas: notasEjercicio }));
   } catch (e) {}
 }
 function leerFeedback() {
   try {
     const g = JSON.parse(localStorage.getItem(claveF()) || 'null');
-    if (!g || g.fecha !== hoyISO() || g.dia !== currentDay) return {};
-    return g.marcas || {};
-  } catch (e) { return {}; }
+    if (!g || g.fecha !== hoyISO() || g.dia !== currentDay) return { marcas: {}, notas: {} };
+    return { marcas: g.marcas || {}, notas: g.notas || {} };
+  } catch (e) { return { marcas: {}, notas: {} }; }
 }
 function olvidarFeedback() {
   feedbackSesion = {};
+  notasEjercicio = {};
   try { localStorage.removeItem(claveF()); } catch (e) {}
+}
+
+/* Abrir y cerrar el campo de nota de un ejercicio */
+function toggleNotaEjercicio(ci, nombre, btn) {
+  const caja = btn.parentElement.querySelector('.nota-caja');
+  if (!caja) return;
+  const abierta = caja.classList.toggle('show');
+  btn.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+  const ta = caja.querySelector('textarea');
+  // Con la caja abierta el texto ya está en el campo: repetirlo arriba sobra
+  if (abierta) {
+    const et = btn.querySelector('.nota-et');
+    if (et) et.textContent = 'Nota del ejercicio';
+    if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  } else {
+    pintaBotonNota(btn, ta ? ta.value.trim() : '');
+  }
+}
+
+function guardarNotaEjercicio(ci, nombre, ta) {
+  const k = ci + '|' + nombre;
+  const txt = ta.value.trim();
+  if (txt) notasEjercicio[k] = txt.slice(0, 400); else delete notasEjercicio[k];
+  guardarFeedback();
+  const btn = ta.closest('.nota-wrap')?.querySelector('.nota-btn');
+  if (btn) btn.classList.toggle('con-nota', !!txt);   // el texto se repinta al cerrar
+}
+
+function pintaBotonNota(btn, txt) {
+  const et = btn.querySelector('.nota-et');
+  btn.classList.toggle('con-nota', !!txt);
+  if (et) et.textContent = txt ? txt : 'Agregar nota';
 }
 
 /* Una marca por ejercicio. Volver a tocar la misma la quita: marcarse por
@@ -4619,6 +4746,27 @@ function renderWuItem(item, uid, num, isLast) {
 }
 
 /* ── exercise card html (shared helper) ── */
+/* Los escalones del drop de la última serie, calculados de la carga actual.
+   No se guardan: si se guardaran, al subir el peso quedarían desfasados. */
+function escalonesDrop(ex) {
+  const d = ex.dropFinal;
+  if (!d) return null;
+  const base = parseFloat(parseWeight(ex.w1).num);
+  if (!base || !isFinite(base)) return null;
+  const paso = parseInt(ex.step) || 5;
+  const reps = Array.isArray(d.reps) ? d.reps : [];
+  const cuantos = parseInt(d.pasos) || reps.length || 2;
+  const sufijo = String(ex.w1 || '').replace(/^\s*[\d.,]+\s*/, '').trim();
+  const out = [];
+  let v = base;
+  for (let i = 0; i < cuantos; i++) {
+    const baja = Math.max(paso, Math.round((v * 0.15) / paso) * paso);
+    v = Math.max(paso, v - baja);
+    out.push({ peso: v, sufijo, reps: reps[i] || null });
+  }
+  return out;
+}
+
 function renderExCard(ex, ci, ei, w) {
   const currentName = ex.name;
   const currentTip  = ex.tip;
@@ -4720,6 +4868,13 @@ function renderExCard(ex, ci, ei, w) {
        </div>`
     : '';
 
+  const drops = escalonesDrop(ex);
+  const dropHtml = drops ? `<div class="ex-drop">
+      <span class="ex-drop-et">Última serie · drop</span>
+      <span class="ex-drop-pasos">${drops.map(d =>
+        `<b>${d.peso}<small>${d.sufijo}</small>${d.reps ? ` · ${d.reps}` : ''}</b>`).join('<i>→</i>')}</span>
+    </div>` : '';
+
   const yaMarcado = !!feedbackSesion[ci + '|' + currentName];
 
   return `<div class="ex-row${yaMarcado ? ' ex-hecho' : ''}">
@@ -4731,10 +4886,12 @@ function renderExCard(ex, ci, ei, w) {
       </div>
       <div class="ex-info">
         <div class="ex-name"><span class="ex-name-txt">${currentName}</span>${infoBtnHtml}</div>
-        ${muscleName ? `<div class="ex-musculo">${muscleName}${badgeHtml}</div>` : badgeHtml}
+        ${muscleName ? `<div class="ex-musculo">${muscleName}${ex.sustituido
+            ? '<span class="ex-cambiado">cambiado hoy</span>' : ''}${badgeHtml}</div>` : badgeHtml}
       </div>
     </div>
     ${cargaHtml}
+    ${dropHtml}
     ${isSpecial ? stepsHtml : ''}
     ${trainerNoteHtml}
     ${panelHtml}
@@ -4744,7 +4901,7 @@ function renderExCard(ex, ci, ei, w) {
 
 /* ── render ── */
 function render() {
-  const day = data[currentDay];
+  const day = aplicaCambiosHoy(data[currentDay]);
   const w = currentWeek;
   // Guard: sesión sin contenido todavía (warmup null, sin circuitos, sin cardio)
   if (!day || (!Array.isArray(day.warmup) && !Array.isArray(day.warmupHombro) && (!day.circuits || !day.circuits.length) && !day.cardio)) {
@@ -4906,7 +5063,23 @@ function renderFeedbackFila(nombre, ci) {
        onclick="event.stopPropagation();marcarEjercicio(${ci}, ${JSON.stringify(nombre).replace(/"/g, '&quot;')}, '${o.v}', this)">
        ${o.txt}
      </button>`).join('');
-  return `<div class="fb-row${marca ? ' respondida' : ''}">${botones}</div>`;
+  const k = ci + '|' + nombre;
+  const nota = notasEjercicio[k] || '';
+  const nomAttr = JSON.stringify(nombre).replace(/"/g, '&quot;');
+  return `<div class="fb-row${marca ? ' respondida' : ''}">${botones}</div>
+    <div class="nota-wrap">
+      <button class="nota-btn${nota ? ' con-nota' : ''}" aria-expanded="false"
+        onclick="event.stopPropagation();toggleNotaEjercicio(${ci}, ${nomAttr}, this)">
+        <svg class="ic ic-sm"><use href="#i-pencil"/></svg>
+        <span class="nota-et">${nota ? reEscAttr(nota) : 'Agregar nota'}</span>
+      </button>
+      <div class="nota-caja">
+        <textarea class="nota-input" rows="2" maxlength="400"
+          placeholder="Lo que no dicen los botones: &quot;lo hice con 110, el de 90 estaba fácil&quot;"
+          onclick="event.stopPropagation()"
+          oninput="guardarNotaEjercicio(${ci}, ${nomAttr}, this)">${nota ? reEscAttr(nota) : ''}</textarea>
+      </div>
+    </div>`;
 }
 
 /* El cardio se escribe libre ("Caminadora 20 min — Nivel 6"), así que la
@@ -7244,10 +7417,17 @@ async function confirmComplete() {
         week: 1,
         context: buildContext(),
         notes: notes,
-        feedback: Object.entries(feedbackSesion).map(([k, v]) => {
-          const corte = k.indexOf('|');
-          return { ci: parseInt(k.slice(0, corte)), name: k.slice(corte + 1), resp: v };
-        })
+        // Una entrada por ejercicio marcado o anotado — puede haber nota sin marca
+        feedback: [...new Set([...Object.keys(feedbackSesion), ...Object.keys(notasEjercicio)])]
+          .map(k => {
+            const corte = k.indexOf('|');
+            return {
+              ci: parseInt(k.slice(0, corte)),
+              name: k.slice(corte + 1),
+              resp: feedbackSesion[k] || null,
+              nota: notasEjercicio[k] || '',
+            };
+          })
       })
     });
     const data = await res.json();
@@ -7257,6 +7437,7 @@ async function confirmComplete() {
       advanceSession(currentAthlete);
       olvidarPaso();       // la sesion quedo cerrada: no hay nada que retomar
       olvidarFeedback();
+      olvidarCambiosHoy();
       setTimeout(() => {
         closeComplete();
         renderRestDay(getSessionState(currentAthlete));
@@ -7588,13 +7769,14 @@ async function sendChat() {
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ messages: chatHistory, context: buildContext() })
+      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat() })
     });
     const data = await res.json();
     if (data.content) {
       typing.textContent = data.content;
       typing.classList.remove('typing');
       chatHistory.push({ role:'assistant', content: data.content });
+      if (data.accion && data.accion.tipo === 'sustituir') aplicarSustitucion(data.accion);
     } else {
       typing.textContent = 'No pude obtener respuesta, intentá de nuevo.';
       typing.classList.remove('typing');
@@ -7608,6 +7790,41 @@ async function sendChat() {
 
   sendBtn.disabled = false;
   scrollChat();
+}
+
+/* Lo que el chat necesita saber para poder cambiar algo */
+function sesionParaChat() {
+  const esMio = typeof ATLETAS_RUTINA_FIJA !== 'undefined'
+             && ATLETAS_RUTINA_FIJA.includes(currentAthlete);
+  if (!esMio) return [];
+  const day = data && data[currentDay];
+  if (!day || !Array.isArray(day.circuits)) return [];
+  const out = [];
+  day.circuits.forEach((c, ci) => (c.exercises || []).forEach((e, ei) => {
+    if (e && e.name) out.push({
+      ci, ei, name: e.name, w1: e.w1 || '', reps: e.reps || '',
+      repMin: e.repMin, repMax: e.repMax, repNow: e.repNow,
+    });
+  }));
+  return out;
+}
+
+/* Cambia el ejercicio en la sesión de hoy y lo deja a la vista */
+function aplicarSustitucion(acc) {
+  const day = data && data[currentDay];
+  const c = day && day.circuits && day.circuits[acc.ci];
+  if (!c || !c.exercises || !c.exercises[acc.ei]) return;
+  if (c.exercises[acc.ei].name !== acc.de) return;   // la sesión cambió entretanto
+
+  cambiosHoy[acc.ci + '|' + acc.ei] = acc.nuevo;
+  guardarCambiosHoy();
+  // Lo marcado del ejercicio que se va deja de tener sentido
+  delete feedbackSesion[acc.ci + '|' + acc.de];
+  delete notasEjercicio[acc.ci + '|' + acc.de];
+  guardarFeedback();
+  render();
+
+  appendMsg('assistant', `Listo: ${acc.de} → ${acc.nuevo.name}. Sólo por hoy.`, 'chat-cambio');
 }
 
 function appendMsg(role, text, extra = '') {

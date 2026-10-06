@@ -186,9 +186,55 @@ function escribePeso(num, unidad) {
   return Math.round(num) + (SUFIJO_CARGA[unidad] !== undefined ? SUFIJO_CARGA[unidad] : ' lbs');
 }
 
+/* Un drop set no tiene una carga, tiene varias. Se mueve el primer escalón
+   y los demás lo siguen en proporción, redondeando al salto del aparato.
+   Devuelve el peso del primer escalón antes y después. */
+function progresarDropset(ex, delta) {
+  const pasos = Array.isArray(ex.steps1) ? ex.steps1 : [];
+  const paso = parseInt(ex.step) || 5;
+  const primero = numeroDePeso(pasos[0] && pasos[0].w);
+  if (!primero) return null;
+  const nuevoPrimero = Math.max(paso, primero + delta);
+  const factor = nuevoPrimero / primero;
+  for (const p of pasos) {
+    const v = numeroDePeso(p.w);
+    if (!v) continue;
+    p.w = escribePeso(Math.max(paso, Math.round((v * factor) / paso) * paso), ex.unit);
+  }
+  // w1 refleja el escalón más alto, que es con el que se arranca
+  ex.w1 = pasos[0].w;
+  return { antes: primero, despues: numeroDePeso(pasos[0].w) };
+}
+
 /* Aplica una respuesta a un ejercicio. Devuelve qué cambió, o null si no
    había nada que marcar. Muta el ejercicio. */
 function progresarEjercicio(ex, resp) {
+  // Los drop sets y las pirámides llevan su carga en los escalones
+  const esEscalonado = (ex.setType === 'dropset' || ex.setType === 'piramidal')
+                    && Array.isArray(ex.steps1) && ex.steps1.length > 1;
+  if (esEscalonado) {
+    const paso = parseInt(ex.step) || 5;
+    let fallos = parseInt(ex.fallos) || 0;
+    let delta = 0, motivo = '';
+    if (resp === 'facil')      { fallos = 0; delta = paso;  motivo = 'iba sobrado'; }
+    else if (resp === 'justo') { fallos = 0; delta = 0;     motivo = 'se repite para consolidar'; }
+    else if (resp === 'fallo') {
+      fallos += 1;
+      if (fallos >= 2) { fallos = 0; delta = -paso; motivo = 'dos semanas sin llegar'; }
+      else { motivo = 'se repite la misma carga una semana más'; }
+    } else return null;
+
+    const r = delta ? progresarDropset(ex, delta) : null;
+    ex.fallos = fallos;
+    return {
+      name: ex.name, resp, motivo,
+      pesoAntes: r ? escribePeso(r.antes, ex.unit) : (ex.w1 || ''),
+      pesoDespues: r ? escribePeso(r.despues, ex.unit) : (ex.w1 || ''),
+      repsAntes: 0, repsDespues: 0,
+      cambio: !r ? 'sin cambio' : (r.despues > r.antes ? 'sube carga' : 'baja carga'),
+    };
+  }
+
   const paso = parseInt(ex.step) || 0;
   const lo   = parseInt(ex.repMin) || 8;
   const hi   = parseInt(ex.repMax) || 12;
@@ -298,6 +344,23 @@ function marcasDeLaSemana(completions, desdeTs) {
     }
   }
   return marcas;
+}
+
+/* Las notas que escribió en cada ejercicio, la más reciente por ejercicio. */
+function notasPorEjercicio(completions, desdeTs) {
+  const out = [];
+  const vistos = new Map();
+  const orden = [...(completions || [])].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  for (const c of orden) {
+    if (desdeTs && (c.ts || 0) < desdeTs) continue;
+    for (const f of (Array.isArray(c.feedback) ? c.feedback : [])) {
+      if (!f || !f.name || !String(f.nota || '').trim()) continue;
+      vistos.set((c.sessionKey || '') + '|' + f.name,
+        { sesion: c.sessionKey || '', name: f.name, resp: f.resp || null, nota: String(f.nota).trim() });
+    }
+  }
+  for (const v of vistos.values()) out.push(v);
+  return out;
 }
 
 /* Las notas que escribió al cerrar cada sesión de la semana. */
@@ -511,6 +574,84 @@ function aplicarRotacion(rutina, propuestas) {
   return hechas;
 }
 
+/* Si la nota dice qué peso usó de verdad, ese manda sobre lo prescrito.
+   El modelo lo lee; el código comprueba que el ejercicio esté en la rutina
+   y que el número no sea un disparate antes de tocarlo. */
+async function pesosDeclaradosEnNotas(env, rutina, notasEj) {
+  if (!notasEj.length || !env.ANTHROPIC_API_KEY) return [];
+
+  const enRutina = new Map();
+  for (const k of Object.keys(rutina)) {
+    for (const c of (rutina[k].circuits || [])) {
+      for (const e of (c.exercises || [])) enRutina.set(e.name, e);
+    }
+  }
+  const candidatos = notasEj.filter(x => enRutina.has(x.name) && /\d/.test(x.nota));
+  if (!candidatos.length) return [];
+
+  const prompt = `Un atleta anota al terminar cada ejercicio. A veces dice qué carga usó en realidad,
+porque cambió la prescrita. Sácalo sólo cuando lo diga de forma clara.
+
+${candidatos.map(x => `- ${x.name} (prescrito: ${enRutina.get(x.name).w1 || 'sin peso'}): "${x.nota}"`).join('\n')}
+
+Devuelve SOLO un JSON array, vacío si ninguna nota declara una carga:
+[{"nombre":"nombre exacto","peso":110}]
+"peso" es el número que usó, en la misma unidad que el prescrito (si el prescrito dice "90 lbs",
+y él escribe "lo hice con 110", peso es 110). No inventes: si la nota habla de sensaciones,
+de la máquina ocupada o de repeticiones, no la incluyas.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 600,
+                             messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      console.log(`[NOTA-PESO] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
+      return [];
+    }
+    const txt = textoDeRespuesta(data);
+    const m = txt.match(/\[[\s\S]*\]/);
+    if (!m) return [];
+    return JSON.parse(m[0]).filter(p => {
+      if (!p || !p.nombre || typeof p.peso !== 'number' || !isFinite(p.peso) || p.peso <= 0) return false;
+      const ex = enRutina.get(p.nombre);
+      if (!ex) return false;
+      const actual = numeroDePeso(ex.w1);
+      // Sin peso prescrito no hay con qué contrastar; con él, un salto fuera
+      // de la cuarta parte o el cuádruple es un error de lectura, no un dato.
+      if (actual && (p.peso < actual * 0.25 || p.peso > actual * 4)) {
+        console.log(`[NOTA-PESO] descartado ${p.nombre}: ${p.peso} contra ${actual} prescrito`);
+        return false;
+      }
+      return true;
+    });
+  } catch (e) {
+    console.log('[NOTA-PESO] falló: ' + e.message);
+    return [];
+  }
+}
+
+function aplicarPesosDeclarados(rutina, declarados) {
+  const hechos = [];
+  for (const d of declarados) {
+    for (const k of Object.keys(rutina)) {
+      for (const c of (rutina[k].circuits || [])) {
+        for (const ex of (c.exercises || [])) {
+          if (ex.name !== d.nombre) continue;
+          const antes = ex.w1;
+          ex.w1 = escribePeso(d.peso, ex.unit);
+          hechos.push({ name: ex.name, de: antes, a: ex.w1 });
+        }
+      }
+    }
+  }
+  return hechos;
+}
+
 /* ── Resumen de la semana ─────────────────────────────────────────────
    Aquí la IA sí aporta: convierte una lista de cambios en algo que se lee.
    Con respaldo determinista, porque el resumen no puede depender de que
@@ -533,7 +674,7 @@ function resumenDeRespaldo(cambios, rotaciones) {
   return 'Para la semana que viene ' + partes.join(', ') + '.';
 }
 
-async function resumenSemana(env, cambios, rotaciones, notas, señalados) {
+async function resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos) {
   const respaldo = resumenDeRespaldo(cambios, rotaciones);
   if (!env.ANTHROPIC_API_KEY || (!cambios.length && !(notas || []).length)) return respaldo;
   const prompt = `Eres el entrenador de Nicolás (hipertrofia, avanzado). Estos son los ajustes que el
@@ -543,6 +684,7 @@ ${JSON.stringify(cambios.slice(0, 40), null, 1)}
 ${rotaciones && rotaciones.length ? 'Ejercicios cambiados:\n' + JSON.stringify(rotaciones, null, 1) : ''}
 ${(notas || []).length ? 'Lo que escribió él al terminar cada sesión:\n' + notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n') : ''}
 ${(señalados || []).some(x => x.dolor) ? 'Reportó molestia física en: ' + señalados.filter(x => x.dolor).map(x => x.name).join(', ') : ''}
+${(corregidos || []).length ? 'Anotó que usó otra carga, y se tomó la suya como punto de partida:\n' + corregidos.map(c => `- ${c.name}: ${c.de} → ${c.a}`).join('\n') : ''}
 
 Escríbele 2 o 3 frases diciéndole qué cambió y por qué. Directo y concreto, sin motivación de
 cartel ni emojis. Si bajó carga en algo, dilo sin dramatizar: es parte del plan.
@@ -599,8 +741,17 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano) {
   const hace7dias = Date.now() - 7 * 86400000;
   const marcas = marcasDeLaSemana(completions || [], hace7dias);
   const notas = notasDeLaSemana(completions || [], hace7dias);
+  const notasEj = notasPorEjercicio(completions || [], hace7dias);
   if (!Object.keys(marcas).length) {
     return { ok: false, razon: 'ninguna sesión marcada esta semana', semana };
+  }
+
+  // Primero lo que de verdad levantó: si anotó otra carga, esa es la base
+  // sobre la que se interpreta su "Fácil" o "Justo".
+  const declarados = await pesosDeclaradosEnNotas(env, rutina, notasEj);
+  const corregidos = declarados.length ? aplicarPesosDeclarados(rutina, declarados) : [];
+  if (corregidos.length) {
+    console.log(`[NOTA-PESO] ${clientId}: ${corregidos.map(c => c.name + ' ' + c.de + '→' + c.a).join(', ')}`);
   }
 
   const cambios = progresarRutina(rutina, marcas);
@@ -626,9 +777,10 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano) {
 
   await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
 
-  const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados);
+  const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos);
   const entrada = { semana, fecha: new Date().toISOString(), motivo, cambios, rotaciones, resumen,
-                    notas: notas.length, molestias: señalados.filter(x => x.dolor).map(x => x.name) };
+                    notas: notas.length, corregidos,
+                    molestias: señalados.filter(x => x.dolor).map(x => x.name) };
   historial.unshift(entrada);
   await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial.slice(0, 60)));
 
@@ -908,9 +1060,16 @@ export default {
         week: body.week,
         notes: body.notes,
         // Cómo fue cada ejercicio: de aquí sale la progresión de la semana
+        // Puede haber nota sin marca: la nota sola también es información
         feedback: Array.isArray(body.feedback)
-          ? body.feedback.filter(f => f && f.name && ['facil','justo','fallo'].includes(f.resp))
-                         .map(f => ({ ci: parseInt(f.ci) || 0, name: String(f.name).slice(0, 120), resp: f.resp }))
+          ? body.feedback
+              .filter(f => f && f.name && (['facil','justo','fallo'].includes(f.resp) || String(f.nota || '').trim()))
+              .map(f => ({
+                ci: parseInt(f.ci) || 0,
+                name: String(f.name).slice(0, 120),
+                resp: ['facil','justo','fallo'].includes(f.resp) ? f.resp : null,
+                nota: String(f.nota || '').trim().slice(0, 400),
+              }))
           : [],
         date: new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }),
         ts: Date.now(),
@@ -1981,6 +2140,42 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     }
 
     // ── CHAT ──
+    // Si el atleta manda su sesión de hoy, el chat puede cambiarle un
+    // ejercicio. Las alternativas salen del catálogo del worker, no del
+    // modelo: así no puede proponer algo que no exista.
+    const sesionHoy = Array.isArray(body.sesionHoy) ? body.sesionHoy.slice(0, 20) : [];
+    let sistema = body.context || '';
+
+    if (sesionHoy.length) {
+      const yaEstan = new Set(sesionHoy.map(e => e.name));
+      const fichas = sesionHoy.map(e => {
+        const cat = PorNombre[e.name];
+        if (!cat) return null;
+        const alt = (PorMusculo[cat.muscle] || [])
+          .filter(x => !yaEstan.has(x.name))
+          .slice(0, 14)
+          .map(x => x.name);
+        return { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso', alternativas: alt };
+      }).filter(Boolean);
+
+      if (fichas.length) {
+        sistema += `
+
+PUEDES CAMBIARLE UN EJERCICIO DE HOY.
+Si te pide cambiar uno — porque la máquina está ocupada, no hay material, le molesta algo —
+elige un reemplazo de la lista de alternativas de ESE ejercicio y termina tu respuesta con una
+línea exactamente así, sola y al final:
+@@CAMBIAR: <nombre actual exacto> >> <nombre nuevo exacto>
+
+Reglas: el nombre nuevo tiene que ser uno de los de su lista de alternativas, copiado letra por
+letra. Un cambio por respuesta. Si no te está pidiendo cambiar nada, no escribas esa línea.
+Avísale en el texto que el cambio es sólo para hoy y que la próxima semana vuelve el original.
+
+Ejercicios de hoy y sus alternativas:
+${JSON.stringify(fichas, null, 1)}`;
+      }
+    }
+
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -1990,20 +2185,54 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 400,
-        system: body.context || '',
+        max_tokens: 500,
+        system: sistema,
         messages: body.messages || []
       })
     });
 
     const claudeData = await claudeRes.json();
-    console.log('Claude status:', claudeRes.status);
-    console.log('Claude response:', JSON.stringify(claudeData).slice(0, 500));
+    if (!claudeRes.ok || claudeData.error) {
+      console.log(`[CHAT] la API respondió ${claudeRes.status}: ${JSON.stringify(claudeData).slice(0, 300)}`);
+    }
 
-    const content = claudeData.content?.[0]?.text || '';
+    let content = textoDeRespuesta(claudeData);
+
+    // El modelo propone el cambio; aquí se comprueba antes de devolverlo
+    let accion = null;
+    const m = content.match(/@@CAMBIAR:\s*(.+?)\s*>>\s*(.+?)\s*$/m);
+    if (m) {
+      content = content.replace(m[0], '').trim();
+      const de = m[1].trim(), a = m[2].trim();
+      const enHoy = sesionHoy.find(e => e.name === de);
+      const viejo = PorNombre[de], nuevo = PorNombre[a];
+      if (!enHoy)       console.log(`[CHAT] "${de}" no está en la sesión de hoy`);
+      else if (!nuevo)  console.log(`[CHAT] "${a}" no existe en el catálogo`);
+      else if (!viejo || viejo.muscle !== nuevo.muscle)
+                        console.log(`[CHAT] "${a}" no es del mismo músculo que "${de}"`);
+      else if (sesionHoy.some(e => e.name === a))
+                        console.log(`[CHAT] "${a}" ya está en la sesión`);
+      else {
+        // El peso sólo se hereda si el aparato se lee igual
+        const heredaPeso = viejo.unit === nuevo.unit && nuevo.unit !== 'corporal';
+        accion = {
+          tipo: 'sustituir', ci: enHoy.ci, ei: enHoy.ei, de,
+          nuevo: {
+            name: nuevo.name, muscle: nuevo.muscle, unit: nuevo.unit, step: nuevo.step,
+            img: nuevo.img, tip: nuevo.tip,
+            w1: heredaPeso ? (enHoy.w1 || '') : '',
+            reps: enHoy.reps || '', repMin: enHoy.repMin, repMax: enHoy.repMax,
+            repNow: enHoy.repNow, calibrar: !heredaPeso && nuevo.unit !== 'corporal',
+          },
+        };
+        console.log(`[CHAT] sustitución de hoy: ${de} → ${a}`);
+      }
+    }
+
     return new Response(JSON.stringify({
       ok: true,
       content,
+      accion,
       _error: !content ? (claudeData.error?.message || claudeData.type || 'empty') : null
     }), { headers: cors });
   },
