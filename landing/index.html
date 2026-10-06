@@ -100,11 +100,11 @@ button { font: inherit; }
 /* Titulares: SF Pro muy gruesa y apretada */
 .d { font-weight: 800; letter-spacing: -.045em; line-height: .95; margin: 0; }
 .d .v { color: var(--violet); } .night .d .v, .hero .d .v, .coach .d .v, .poster .d .v { color: var(--violet-hi); }
-.h2 { font-size: clamp(40px, 5.6vw, 72px); }
+.h2 { font-size: clamp(34px, min(5.6vw, 8.4vh), 72px); }
 .kick { display: inline-flex; align-items: center; gap: 10px; font: 700 13px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--violet-tx); }
 .kick::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: currentColor; }
 .night .kick, .coach .kick { color: var(--lilac); }
-.sub { margin: 20px 0 0; font-size: clamp(17px, 1.7vw, 20px); line-height: 1.5; color: var(--ink-2); max-width: 540px; }
+.sub { margin: clamp(12px, 2vh, 20px) 0 0; font-size: clamp(16px, min(1.7vw, 2.6vh), 20px); line-height: 1.5; color: var(--ink-2); max-width: 540px; }
 .sub b { color: var(--ink); font-weight: 600; }
 .night { background: var(--night); color: #F4F2F8; }
 .night .sub { color: #ADA8BA; } .night .sub b { color: #fff; }
@@ -165,7 +165,7 @@ button { font: inherit; }
   background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px;
   -webkit-mask-image: radial-gradient(70% 70% at 70% 40%, #000, transparent); mask-image: radial-gradient(70% 70% at 70% 40%, #000, transparent); }
 .hero .wrap { position: relative; z-index: 1; flex: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 30px; align-items: center; }
-.hero h1 { font-size: clamp(72px, 10.4vw, 148px); line-height: .9; letter-spacing: -.05em; }
+.hero h1 { font-size: clamp(60px, min(10.4vw, 15.5vh), 148px); line-height: .9; letter-spacing: -.05em; }
 .hero h1 .ln { display: block; overflow: hidden; padding: 0 .06em .06em 0; }
 .hero h1 .ln > span { display: inline-block; transform: translateY(105%); transition: transform 1s var(--ease); transition-delay: calc(var(--i) * 120ms + 150ms); }
 .hero.in h1 .ln > span { transform: none; }
@@ -213,14 +213,14 @@ button { font: inherit; }
 
 /* ─── La semana que se arma ─── */
 .plan-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 64px; align-items: center; }
-.plan-grid .stage { --w: min(290px, 70vw); margin: 0 auto; }
-.wk { margin-top: 30px; padding: clamp(20px, 3vw, 30px); border-radius: 28px; background: var(--paper); box-shadow: 0 30px 70px -40px rgba(40,20,60,.35); }
-.wk-q { display: flex; flex-wrap: wrap; gap: 8px; min-height: 80px; align-content: flex-start; }
+.plan-grid .stage { --w: min(290px, 70vw, calc((100svh - 110px) / 2.12)); margin: 0 auto; }
+.wk { margin-top: clamp(18px, 3vh, 30px); padding: clamp(18px, 2.6vh, 30px) clamp(18px, 3vw, 30px); border-radius: 28px; background: var(--paper); box-shadow: 0 30px 70px -40px rgba(40,20,60,.35); }
+.wk-q { display: flex; flex-wrap: wrap; gap: 8px; min-height: 76px; align-content: flex-start; }
 .wk-q span { padding: 8px 13px; border-radius: 12px; background: var(--ivory); font-size: 15px; font-weight: 500; color: var(--ink-2);
   opacity: 0; transform: translateY(14px) scale(.9); transition: opacity .35s ease, transform .55s var(--spring); }
 .wk-q span.on { opacity: 1; transform: none; }
 .wk-q span b { color: var(--violet-tx); font-weight: 600; }
-.wk-cols { margin-top: 18px; display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(5px, 1vw, 10px); height: 220px; }
+.wk-cols { margin-top: 16px; display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(5px, 1vw, 10px); height: clamp(130px, 21vh, 220px); }
 .wk-col { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
 .wk-col > b { text-align: center; font: 600 13px var(--sans); color: var(--ink-3); }
 .wk-bar { position: relative; height: 24px; border-radius: 12px; background: var(--ivory); overflow: hidden; transition: height .8s var(--spring), background .4s; transition-delay: calc(var(--i) * 90ms); }
@@ -237,7 +237,9 @@ button { font: inherit; }
 @media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; gap: 36px; } .plan-grid .ph-col { order: 2; } .plan-grid .stage { --w: 230px; } .wk-cols { height: 190px; } .wk-q { min-height: 0; } }
 
 /* ─── Cómo sube: seis semanas de un ejercicio ─── */
-.semanas { margin-top: 44px; padding: clamp(22px, 3.4vw, 40px); border-radius: 30px; background: var(--night); color: #fff; position: relative; overflow: hidden; }
+.sube-top { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px 48px; align-items: end; }
+@media (max-width: 900px) { .sube-top { grid-template-columns: 1fr; } }
+.semanas { margin-top: clamp(22px, 3.6vh, 44px); padding: clamp(18px, 3vh, 36px) clamp(20px, 3.4vw, 40px); border-radius: 30px; background: var(--night); color: #fff; position: relative; overflow: hidden; }
 .semanas::before { content: ""; position: absolute; inset: auto -10% -60% 30%; height: 120%; background: radial-gradient(50% 50% at 50% 50%, rgba(110,75,255,.35), transparent 70%); pointer-events: none; }
 .sm-top { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; }
 .sm-top b { display: block; font-size: clamp(20px, 2.2vw, 26px); letter-spacing: -.02em; }
@@ -245,7 +247,7 @@ button { font: inherit; }
 .sm-ley { display: flex; gap: 8px; flex-wrap: wrap; }
 .sm-ley span { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: 13px; color: #DDD8EA; }
 .sm-ley i { width: 8px; height: 8px; border-radius: 50%; }
-.sm-cols { position: relative; margin-top: 30px; display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(8px, 1.6vw, 22px); height: 300px; align-items: end; }
+.sm-cols { position: relative; margin-top: clamp(16px, 3vh, 30px); display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(8px, 1.6vw, 22px); height: clamp(150px, 26vh, 300px); align-items: end; }
 .sm-col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 10px; }
 .sm-marca { padding: 5px 9px; border-radius: 9px; font-size: 13px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translateY(8px) scale(.85); transition: opacity .3s, transform .5s var(--spring); }
 .m-facil { background: rgba(48,209,88,.16); color: var(--ok-hi); } .m-justo { background: rgba(166,139,255,.18); color: var(--lilac); } .m-fallo { background: rgba(255,105,97,.16); color: var(--err-hi); }
@@ -259,11 +261,11 @@ button { font: inherit; }
 .sm-col.on .sm-marca { opacity: 1; transform: none; transition-delay: .5s; }
 .sm-sube { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 8px; background: var(--ok-hi); color: #062b12; font: 800 12px var(--sans); white-space: nowrap; transform: scale(.6); opacity: 0; transition: opacity .3s, transform .5s var(--spring); }
 .sm-col.on .sm-sube { opacity: 1; transform: none; transition-delay: .9s; }
-.ia-linea { margin-top: 16px; display: flex; gap: 14px; align-items: center; padding: 16px 20px; border-radius: 20px; background: var(--sand); font-size: 16px; line-height: 1.5; color: var(--ink-2); }
+.ia-linea { margin-top: 12px; display: flex; gap: 14px; align-items: center; padding: 13px 20px; border-radius: 20px; background: var(--sand); font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 .ia-linea svg { flex: none; width: 24px; height: 24px; color: var(--violet); }
 .ia-linea b { color: var(--ink); }
 @media (max-width: 700px) {
-  .sm-cols { height: 260px; gap: 6px; }
+  .sm-cols { height: clamp(190px, 34vh, 260px); gap: 6px; }
   .sm-marca { font-size: 12px; padding: 4px 6px; }
   .sm-val { font-size: 14px; top: 8px; } .sm-val small { font-size: 12px; }
   .sm-bar { border-radius: 12px 12px 5px 5px; }
@@ -272,7 +274,7 @@ button { font: inherit; }
 
 /* ─── Asistente: el chat de la app, dentro del iPhone ─── */
 .chat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
-.chat-grid .stage { --w: min(310px, 76vw); margin: 0 auto; }
+.chat-grid .stage { --w: min(310px, 76vw, calc((100svh - 100px) / 2.12)); margin: 0 auto; }
 .ui-chat { position: absolute; inset: 0; background: #F2F2F7; color: #1d1d1f; display: flex; flex-direction: column; font-family: var(--sans); }
 .ui-chat .cab { padding: 15cqw 4.5cqw 3.4cqw; display: flex; gap: 3cqw; align-items: center; background: #fff; border-bottom: .3cqw solid #E5E5EA; }
 .ui-chat .cab .av { flex: none; width: 10cqw; height: 10cqw; border-radius: 50%; background: rgba(110,75,255,.12); display: grid; place-items: center; color: var(--violet); }
@@ -302,24 +304,27 @@ button { font: inherit; }
 .temas { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .temas div { padding: 15px; border-radius: 16px; background: var(--paper); font-size: 15px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
 .temas svg { flex: none; width: 22px; height: 22px; color: var(--violet); stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-@media (max-width: 900px) { .chat-grid { grid-template-columns: 1fr; gap: 40px; } .chat-grid .stage { --w: 260px; } }
+@media (max-width: 900px) { .chat-grid { grid-template-columns: 1fr; gap: 40px; } .chat-grid .stage { --w: min(260px, calc((100svh - 110px) / 2.12)); } }
 
 /* ─── Pantallas clave (fila; en el celular se desliza de lado) ─── */
-.pantallas { margin-top: 44px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-.pant .stage { --w: 100%; }
-.pant h3 { margin: 22px 0 0; font-size: 19px; letter-spacing: -.3px; }
+.pantallas { margin-top: clamp(22px, 3.6vh, 44px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.pant .stage { --w: min(100%, calc((100svh - 300px) / 2.1)); margin: 0 auto; }
+.pant { text-align: center; } .pant p { max-width: 240px; margin-left: auto; margin-right: auto; }
+.pant h3 { margin: clamp(12px, 2vh, 22px) 0 0; font-size: 19px; letter-spacing: -.3px; }
 .pant p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
 .pant { opacity: 0; transform: translateY(40px); transition: opacity .7s ease, transform 1s var(--ease); }
 .pantallas.in .pant { opacity: 1; transform: none; }
 .pantallas.in .pant:nth-child(2) { transition-delay: .08s; } .pantallas.in .pant:nth-child(3) { transition-delay: .16s; } .pantallas.in .pant:nth-child(4) { transition-delay: .24s; }
 /* En el celular: la sección se queda quieta y el scroll pasa los teléfonos de lado */
+@media (max-width: 900px) and (max-height: 640px) { .pant p { display: none; } #funciones .h2 { font-size: 30px; } }
 .pant-prog { display: none; }
 @media (max-width: 900px) {
   #funciones { padding: 0; }
   .pant-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; align-items: center; padding-top: 58px; }
   .pant-pin > .wrap { width: 100%; padding: 0 20px; }
   .pantallas { display: flex; gap: 18px; width: max-content; margin-top: 26px; will-change: transform; }
-  .pant { flex: none; width: min(220px, calc((100svh - 330px) / 2.2)); }
+  .pant { flex: none; width: min(220px, calc((100svh - 320px) / 2.2)); }
+  .pant .stage { --w: 100%; }
   .pant h3 { margin-top: 16px; font-size: 17px; } .pant p { font-size: 14px; }
   .pantallas .pant { opacity: 1; transform: none; transition: opacity .4s; }
   .pantallas .pant.lejos { opacity: .45; }
@@ -328,7 +333,7 @@ button { font: inherit; }
 }
 
 /* ─── Con entrenador (y gimnasios) ─── */
-.coach { position: relative; overflow: hidden; border-radius: 36px; padding: clamp(32px, 5vw, 64px);
+.coach { position: relative; overflow: hidden; border-radius: 36px; padding: clamp(28px, 4.6vh, 64px) clamp(32px, 5vw, 64px);
   background: radial-gradient(70% 80% at 100% 100%, rgba(110,75,255,.5), transparent 60%), linear-gradient(150deg, #1d1636, #0B0A10 70%); color: #F4F2F8;
   display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
 .coach .sub { color: #B9B4C6; }
@@ -336,18 +341,20 @@ button { font: inherit; }
 .ticks li { display: flex; gap: 12px; font-size: 16px; line-height: 1.45; color: #E6E2F0; }
 .ticks li i { flex: none; width: 24px; height: 24px; border-radius: 8px; background: rgba(166,139,255,.2); display: grid; place-items: center; color: var(--lilac); }
 .ticks li i svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.coach .ctas { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
-.gym-nota { margin-top: 26px; padding: 16px 18px; border-radius: 18px; background: rgba(255,255,255,.06); border: 1px solid var(--line-d); font-size: 15px; line-height: 1.5; color: #CFCADB; }
+.coach .ctas { margin-top: clamp(18px, 3vh, 28px); display: flex; gap: 12px; flex-wrap: wrap; }
+.gym-nota { margin-top: clamp(16px, 2.6vh, 26px); padding: 14px 18px; border-radius: 18px; background: rgba(255,255,255,.06); border: 1px solid var(--line-d); font-size: 15px; line-height: 1.5; color: #CFCADB; }
 .gym-nota b { color: #fff; }
-.gym-nota a { color: var(--lilac); font-weight: 600; }
-.abanico { position: relative; height: 520px; }
-.abanico .stage { position: absolute; left: 50%; top: 50%; --w: 220px; transition: transform 1.1s var(--spring); }
+.gym-nota a, .pide-demo b { color: var(--lilac); font-weight: 600; white-space: nowrap; }
+.abanico { position: relative; height: min(520px, calc(100svh - 160px)); }
+.abanico .stage { position: absolute; left: 50%; top: 50%; --w: min(220px, calc((100svh - 200px) / 2.15)); transition: transform 1.1s var(--spring); }
 .abanico .stage:nth-child(1) { transform: translate(-50%, -50%); z-index: 1; }
 .abanico .stage:nth-child(2) { transform: translate(-50%, -50%); z-index: 3; }
 .abanico .stage:nth-child(3) { transform: translate(-50%, -50%); z-index: 2; }
 .abanico.in .stage:nth-child(1) { transform: translate(-108%, -46%) rotate(-9deg); }
 .abanico.in .stage:nth-child(2) { transform: translate(-50%, -52%); }
 .abanico.in .stage:nth-child(3) { transform: translate(8%, -46%) rotate(9deg); }
+/* Pantallas bajas: la lista repite lo que ya dice el texto */
+@media (min-width: 1001px) and (max-height: 820px) { .coach .ticks { display: none; } }
 @media (max-width: 1000px) { .coach { grid-template-columns: 1fr; } .abanico { height: 400px; } .abanico .stage { --w: 170px; } }
 @media (max-width: 600px) {
   .coach { padding: 28px 22px 0; gap: 8px; border-radius: 30px; }
@@ -554,9 +561,9 @@ button { font: inherit; }
 <!-- ═══════════ CÓMO SUBE ═══════════ -->
 <section class="sec" id="progresion" style="padding-top:0">
   <div class="wrap">
-    <div class="reveal">
-      <span class="kick">Se ajusta sola</span>
-      <h2 class="d h2" style="margin-top:16px">Tú marcas.<br><span class="v">La semana siguiente, sube.</span></h2>
+    <div class="reveal sube-top">
+      <div><span class="kick">Se ajusta sola</span>
+      <h2 class="d h2" style="margin-top:16px">Tú marcas.<br><span class="v">La semana siguiente, sube.</span></h2></div>
       <p class="sub">Al terminar cada ejercicio tocas <b>Fácil</b>, <b>Justo</b> o <b>No llegué</b>. Primero suben las repeticiones y, cuando llegas al tope, sube el peso.</p>
     </div>
     <div class="semanas reveal" id="semanas">
@@ -626,7 +633,7 @@ button { font: inherit; }
     <div class="coach reveal">
       <div>
         <span class="kick">Con entrenador</span>
-        <h2 class="d h2" style="margin-top:16px; font-size:clamp(40px, 4.8vw, 64px)">¿Entrenas con alguien? <span class="v">Él lo ve todo.</span></h2>
+        <h2 class="d h2" style="margin-top:16px; font-size:clamp(34px, min(4.8vw, 7.4vh), 64px)">¿Entrenas con alguien? <span class="v">Él lo ve todo.</span></h2>
         <p class="sub">Tu entrenador arma la rutina en su portal y tú entrenas en la app. Lo que marcas y anotas en cada ejercicio le llega a él, en el portal y por correo.</p>
         <ul class="ticks">
           <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Todos sus atletas en una pantalla</li>
