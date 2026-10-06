@@ -1,4 +1,6 @@
 import { CATALOGO, PorMusculo, PorNombre } from './catalogo-ejercicios.js';
+import { armarRutina, fichasParaIA, validarEncuesta, explicacionDeRespaldo, resumenDelPlan,
+         filtroDelAtleta, ordenaDias } from './plan-ia.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
 // is missing or the trainer record has no email. Real routing uses
@@ -165,9 +167,35 @@ function textoDeRespuesta(data) {
   return texto;
 }
 
-/* Lista explícita. El resto de atletas sigue dependiendo de su entrenador y
-   a su rutina no la toca nadie automáticamente. */
+/* Cuentas con IA. Las nuevas llevan `modo: 'ia'` en su registro; la lista
+   es la de antes de que existiera el campo y se queda para no tocar el
+   registro de quien ya estaba. El resto de atletas sigue dependiendo de su
+   entrenador y a su rutina no la toca nadie automáticamente. */
 const ATLETAS_IA = ['nicolassaravia'];
+function esIA(atleta) {
+  return !!atleta && (atleta.modo === 'ia' || ATLETAS_IA.includes(atleta.clientId));
+}
+// Cuenta con IA que nadie entrena: no hay a quién mandarle correos
+function sinEntrenador(atleta) {
+  return !!atleta && atleta.modo === 'ia' && !atleta.trainerId;
+}
+
+/* Cómo se le presenta el atleta al modelo. Sale de su perfil: para
+   nicolassaravia da exactamente el texto que antes estaba escrito a mano. */
+function perfilTexto(atleta) {
+  const p = (atleta && atleta.profile) || {};
+  const partes = [];
+  if (p.weight) partes.push(`${p.weight} kg`);
+  if (p.height) partes.push(`${(Number(p.height) / 100).toFixed(2).replace('.', ',')} m`);
+  if (p.goal) partes.push(`objetivo ${p.goal}`);
+  const quien = p.sex === 'f' ? 'Una atleta' : 'Un atleta';
+  const nivel = p.level || 'intermedio';
+  let txt = `${quien} ${p.sex === 'f' ? nivel.replace(/o$/, 'a') : nivel}` + (partes.length ? ` (${partes.join(', ')})` : '');
+  const enc = atleta && atleta.encuesta;
+  if (enc && enc.lugar === 'casa') txt += ', que entrena en casa con mancuernas y un banco';
+  if (enc && enc.molestiaTexto) txt += `. Contó esta molestia: "${enc.molestiaTexto}"`;
+  return txt;
+}
 
 /* Cómo se lee la carga de cada aparato. Lo trae el ejercicio desde el
    catálogo; el sufijo es para que el número de la app sea el mismo que el
@@ -264,7 +292,7 @@ function progresarEjercicio(ex, resp) {
       // Dos semanas sin llegar no es mala suerte: la carga está por encima
       fallos = 0;
       if (corporal)      { reps = Math.max(lo, reps - 2); }
-      else               { peso = Math.max(paso, peso - paso); reps = lo; }
+      else               { peso = pesoAntes ? Math.max(paso, peso - paso) : 0; reps = lo; }
       motivo = 'dos semanas sin llegar';
     } else {
       motivo = 'se repite la misma carga una semana más';
@@ -277,7 +305,8 @@ function progresarEjercicio(ex, resp) {
   ex.repNow = reps;
   ex.reps = reps + ' reps';
   ex.fallos = fallos;
-  if (!corporal) ex.w1 = escribePeso(peso, ex.unit);
+  // Con "barra sola" el número es cero: se deja el texto tal cual
+  if (!corporal && peso > 0) ex.w1 = escribePeso(peso, ex.unit);
 
   const cambioPeso = Math.round(peso) !== Math.round(pesoAntes);
   const cambioReps = reps !== repsAntes;
@@ -339,7 +368,7 @@ function marcasDeLaSemana(completions, desdeTs) {
   for (const c of orden) {
     if (desdeTs && (c.ts || 0) < desdeTs) continue;
     for (const f of (Array.isArray(c.feedback) ? c.feedback : [])) {
-      if (!f || !f.name || !f.resp) continue;
+      if (!f || !f.name || !f.resp || f.cal) continue;
       marcas[(c.sessionKey || '') + '|' + f.name] = f.resp;
     }
   }
@@ -469,8 +498,9 @@ Responde SOLO un JSON array, vacío si no hay nada:
   }
 }
 
-async function proponerRotacion(env, rutina, candidatos) {
+async function proponerRotacion(env, rutina, candidatos, atleta) {
   if (!candidatos.length || !env.ANTHROPIC_API_KEY) return [];
+  const vale = filtroDelAtleta(atleta && atleta.encuesta);
 
   // Lo que ya está en la rutina no puede proponerse como reemplazo
   const yaEstan = new Set();
@@ -485,7 +515,7 @@ async function proponerRotacion(env, rutina, candidatos) {
     const actual = PorNombre[c.name];
     if (!actual) continue;
     const alternativas = (PorMusculo[actual.muscle] || [])
-      .filter(e => !yaEstan.has(e.name))
+      .filter(e => !yaEstan.has(e.name) && vale(e))
       .map(e => e.name);
     if (alternativas.length) {
       fichas.push({ actual: c.name, musculo: actual.muscle, motivo: c.razon,
@@ -494,7 +524,7 @@ async function proponerRotacion(env, rutina, candidatos) {
   }
   if (!fichas.length) return [];
 
-  const prompt = `Eres un entrenador de fuerza. Un atleta avanzado (69 kg, 1,79 m, objetivo hipertrofia)
+  const prompt = `Eres un entrenador de fuerza. ${perfilTexto(atleta)}
 necesita cambiar estos ejercicios. Para cada uno, elige UN reemplazo de su lista de alternativas que
 entrene el mismo músculo con un estímulo distinto (otro ángulo, otro patrón, otro tipo de resistencia).
 No elijas una variante casi idéntica a la que ya hace.
@@ -535,6 +565,7 @@ El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternat
       if (!viejo || !nuevo) return false;
       if (viejo.muscle !== nuevo.muscle) return false;
       if (yaEstan.has(p.nuevo)) return false;
+      if (!vale(nuevo)) return false;
       return candidatos.some(c => c.name === p.actual);
     });
   } catch (e) {
@@ -674,15 +705,17 @@ function resumenDeRespaldo(cambios, rotaciones) {
   return 'Para la semana que viene ' + partes.join(', ') + '.';
 }
 
-async function resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos) {
+async function resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos, atleta) {
   const respaldo = resumenDeRespaldo(cambios, rotaciones);
   if (!env.ANTHROPIC_API_KEY || (!cambios.length && !(notas || []).length)) return respaldo;
-  const prompt = `Eres el entrenador de Nicolás (hipertrofia, avanzado). Estos son los ajustes que el
+  const p = (atleta && atleta.profile) || {};
+  const nombre = String((atleta && atleta.name) || '').split(/\s+/)[0] || 'este atleta';
+  const prompt = `Eres el entrenador de ${nombre} (${p.goal || 'hipertrofia'}, ${p.level || 'intermedio'}). Estos son los ajustes que el
 sistema hizo a su rutina para la semana que viene, a partir de cómo marcó cada ejercicio:
 
 ${JSON.stringify(cambios.slice(0, 40), null, 1)}
 ${rotaciones && rotaciones.length ? 'Ejercicios cambiados:\n' + JSON.stringify(rotaciones, null, 1) : ''}
-${(notas || []).length ? 'Lo que escribió él al terminar cada sesión:\n' + notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n') : ''}
+${(notas || []).length ? 'Lo que escribió al terminar cada sesión:\n' + notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n') : ''}
 ${(señalados || []).some(x => x.dolor) ? 'Reportó molestia física en: ' + señalados.filter(x => x.dolor).map(x => x.name).join(', ') : ''}
 ${(corregidos || []).length ? 'Anotó que usó otra carga, y se tomó la suya como punto de partida:\n' + corregidos.map(c => `- ${c.name}: ${c.de} → ${c.a}`).join('\n') : ''}
 
@@ -719,8 +752,9 @@ Responde solo el texto.`;
 
 /* Orquesta la semana: lee, progresa, guarda y deja registro.
    `motivo` sólo sirve para el log: 'viernes' o 'cron'. */
-async function correrProgresion(env, clientId, motivo, completionsEnMano) {
-  if (!ATLETAS_IA.includes(clientId)) return { ok: false, razon: 'no tiene rutina autogestionada' };
+async function correrProgresion(env, clientId, motivo, completionsEnMano, rutinaEnMano) {
+  const atleta = await getAthlete(env, clientId);
+  if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
 
   const semana = claveSemana(Date.now());
   const historial = await env.DB.get(`progresion:${clientId}`, 'json') || [];
@@ -731,8 +765,10 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano) {
   // KV es de consistencia eventual: al dispararse justo después de guardar la
   // sesión, releerla aquí devuelve la lista SIN la que se acaba de escribir y
   // el ajuste se salta en silencio. Quien ya las tiene en memoria las pasa.
+  // Lo mismo con la rutina: si la sesión que la dispara acaba de calibrar
+  // pesos, la versión buena es la que viene en mano.
   const [rutina, completionsLeidas] = await Promise.all([
-    env.DB.get(`routine:${clientId}`, 'json'),
+    rutinaEnMano ? Promise.resolve(rutinaEnMano) : env.DB.get(`routine:${clientId}`, 'json'),
     completionsEnMano ? Promise.resolve(completionsEnMano) : env.DB.get(`completions:${clientId}`, 'json')
   ]);
   const completions = completionsEnMano || completionsLeidas;
@@ -770,14 +806,14 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano) {
 
   let rotaciones = [];
   if (candidatos.length) {
-    const propuestas = await proponerRotacion(env, rutina, candidatos.slice(0, 3));
+    const propuestas = await proponerRotacion(env, rutina, candidatos.slice(0, 3), atleta);
     rotaciones = aplicarRotacion(rutina, propuestas);
     console.log(`[ROTACION] ${clientId}: ${candidatos.length} candidatos (${señalados.length} por notas), ${rotaciones.length} cambiados`);
   }
 
   await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
 
-  const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos);
+  const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos, atleta);
   const entrada = { semana, fecha: new Date().toISOString(), motivo, cambios, rotaciones, resumen,
                     notas: notas.length, corregidos,
                     molestias: señalados.filter(x => x.dolor).map(x => x.name) };
@@ -786,6 +822,116 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano) {
 
   console.log(`[PROGRESION] ${clientId} semana=${semana} motivo=${motivo} cambios=${cambios.length} rotaciones=${rotaciones.length}`);
   return { ok: true, semana, cambios, rotaciones, resumen };
+}
+
+/* ── Calibración ───────────────────────────────────────────────────────
+   Los pesos de un plan nuevo son estimados. La primera vez que marca un
+   ejercicio, si fue fácil o no llegó, el salto es doble y se aplica en el
+   momento: esperar al sábado con una carga mal puesta es perder una
+   semana. "Justo" confirma la carga y desde ahí sigue la progresión
+   normal. Muta la rutina y marca el feedback usado (`cal`) para que el
+   ajuste semanal no lo cuente dos veces. */
+function calibrarConSesion(rutina, sessionKey, feedback) {
+  const dia = rutina && rutina[sessionKey];
+  if (!dia) return [];
+  const hechos = [];
+  for (const f of (feedback || [])) {
+    if (!f || !f.resp) continue;
+    let ex = null;
+    for (const c of (dia.circuits || [])) for (const e of (c.exercises || [])) if (e.name === f.name) ex = e;
+    if (!ex || !ex.calibrar) continue;
+    const paso = parseInt(ex.step) || 5;
+    const antes = numeroDePeso(ex.w1);
+    // Sin peso escrito (un cambio de ejercicio que dejó la carga en blanco)
+    // no hay de dónde saltar: eso lo fija su nota o el chat.
+    if (!antes && !/barra sola/i.test(ex.w1 || '')) continue;
+    let despues = antes;
+    if (f.resp === 'facil') despues = antes + 2 * paso;
+    else if (f.resp === 'fallo') despues = antes ? Math.max(paso, antes - 2 * paso) : 0;
+    const nuevoW1 = despues > 0 ? escribePeso(despues, ex.unit) : ex.w1;
+    // El mismo ejercicio en otros días (cuerpo completo) se calibra igual
+    for (const k of Object.keys(rutina)) for (const c of (rutina[k].circuits || [])) for (const e of (c.exercises || [])) {
+      if (e.name !== ex.name || !e.calibrar) continue;
+      e.calibrar = false;
+      e.fallos = 0;
+      if (f.resp !== 'justo') e.w1 = nuevoW1;
+    }
+    if (f.resp !== 'justo') {
+      f.cal = true;
+      hechos.push({ name: ex.name, resp: f.resp, de: escribePeso(antes, ex.unit) || ex.w1, a: nuevoW1 });
+    }
+  }
+  return hechos;
+}
+
+/* La encuesta, en una frase para el modelo */
+function describeEncuesta(enc) {
+  const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const quien = enc.sexo === 'f' ? 'Mujer' : 'Hombre';
+  return `${quien} de ${enc.edad} años, ${enc.peso} kg, ${(enc.estatura / 100).toFixed(2).replace('.', ',')} m. ` +
+    `Experiencia: ${enc.nivel}. Objetivo: ${enc.objetivo}. ` +
+    `${enc.dias.length} días (${ordenaDias(enc.dias).map(d => DIAS[d]).join(', ')}), sesiones de ${enc.minutos} min, ` +
+    `${enc.lugar === 'casa' ? 'en casa con mancuernas y un banco' : 'en gimnasio'}.` +
+    (enc.molestias.length ? ` Molestias: ${enc.molestias.join(', ')}.` : '') +
+    (enc.molestiaTexto ? ` En sus palabras: "${enc.molestiaTexto}".` : '');
+}
+
+/* La IA elige un ejercicio por hueco entre candidatos ya filtrados y
+   escribe la explicación. Si tarda o falla, el plan se arma igual con la
+   elección del código y una explicación de respaldo. */
+async function elegirConIA(env, enc) {
+  if (!env.ANTHROPIC_API_KEY) return { elecciones: null, explicacion: null };
+  const fichas = fichasParaIA(enc);
+  const prompt = `Eres un entrenador de fuerza armando el primer plan de una persona nueva.
+
+${describeEncuesta(enc)}
+
+La estructura ya está decidida (días, circuitos, músculos). Para cada hueco elige UN ejercicio de su
+lista "candidatos". Los candidatos ya están filtrados por su lugar, su experiencia y sus molestias, y
+vienen ordenados de más básico a menos: prefiere los primeros salvo que haya una razón.
+ - En un mismo día no repitas ejercicio.
+ - Si un músculo se repite en la semana, varía el ángulo o el aparato entre días.
+ - Si contó una molestia con sus palabras, evita lo que pueda cargarla.
+
+${JSON.stringify(fichas)}
+
+Responde SOLO un JSON, sin texto alrededor:
+{"sesiones":[["ejercicio del hueco 0","ejercicio del hueco 1", ...], ...],
+ "explicacion":"..."}
+"sesiones" lleva una lista por sesión, en orden, con un nombre por hueco copiado letra por letra.
+"explicacion": 3 o 4 frases para la persona. Qué tipo de plan es y por qué encaja con lo que contó, y
+que la primera semana los pesos son un punto de partida que se corrige con lo que marque en cada
+ejercicio (fácil, justo, no llegué). Español de Colombia, tuteando ("entrenas", "marcas"). NUNCA
+voseo. Sin emojis ni frases de cartel motivacional. No uses su nombre.`;
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 45000);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 3000,
+                             messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      console.log(`[PLAN] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+      return { elecciones: null, explicacion: null };
+    }
+    const txt = textoDeRespuesta(data);
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (!m) { console.log('[PLAN] respuesta sin JSON: ' + txt.slice(0, 200)); return { elecciones: null, explicacion: null }; }
+    const j = JSON.parse(m[0]);
+    const elecciones = Array.isArray(j.sesiones) ? j.sesiones.map(x => Array.isArray(x) ? x.map(String) : []) : null;
+    const explicacion = typeof j.explicacion === 'string' ? j.explicacion.trim().slice(0, 900) : null;
+    return { elecciones, explicacion };
+  } catch (e) {
+    console.log('[PLAN] la IA no eligió, elige el código: ' + e.message);
+    return { elecciones: null, explicacion: null };
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 // Authorize a read of a specific athlete's private data (routine, completions,
@@ -828,6 +974,11 @@ async function authorizeTrainerForAthlete(env, body, corsHeaders) {
   }
   if (athlete.trainerId && athlete.trainerId !== trainerUsername) {
     return new Response(JSON.stringify({ ok: false, error: 'Este atleta no te pertenece' }), { headers: corsHeaders, status: 403 });
+  }
+  // Sin trainerId pasaba cualquier entrenador: con las cuentas abiertas,
+  // eso dejaría a cualquiera tocar la rutina de un desconocido.
+  if (sinEntrenador(athlete)) {
+    return new Response(JSON.stringify({ ok: false, error: 'Esta cuenta se gestiona con IA' }), { headers: corsHeaders, status: 403 });
   }
   return null;
 }
@@ -1013,7 +1164,9 @@ export default {
           clientId: match.clientId, username: match.username, name: match.name,
           photoUrl: match.photoUrl || null, trainerId: match.trainerId || null,
           sessionsPerWeek: match.sessionsPerWeek || null,
-          profile: match.profile || {}
+          profile: match.profile || {},
+          modo: esIA(match) ? 'ia' : 'entrenador',
+          trainingDays: Array.isArray(match.trainingDays) ? match.trainingDays : null,
         },
         selfToken
       }), { headers: cors });
@@ -1082,16 +1235,34 @@ export default {
       if (records.some(r => r.day === isoDate)) {
         return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: cors });
       }
+      // Cuenta con IA: los pesos estimados se calibran con la primera marca.
+      // Va antes de guardar la sesión para que quede anotado qué marcas ya
+      // se usaron (f.cal) y el sábado no cuenten dos veces.
+      const ia = esIA(athleteRecord);
+      let calibrados = [];
+      if (ia && entry.feedback.length) {
+        calibrados = calibrarConSesion(routine, body.day, entry.feedback);
+        if (calibrados.length) {
+          await env.DB.put(`routine:${client}`, JSON.stringify(routine));
+          console.log(`[CALIBRA] ${client}: ${calibrados.map(c => c.name + ' ' + c.de + '→' + c.a).join(', ')}`);
+        }
+      }
+
       records.unshift(entry);
       if (records.length > 200) records = records.slice(0, 200);
       await env.DB.put(kvKey, JSON.stringify(records));
 
       // Rutina autogestionada: al cerrar la última sesión de la semana se
-      // recalcula la siguiente. Si esta semana no se llegó al viernes, lo
+      // recalcula la siguiente. Si esta semana no se llegó a la última, lo
       // recoge el cron del sábado.
-      if (ATLETAS_IA.includes(client) && body.day === 'sesion5') {
-        ctx.waitUntil(correrProgresion(env, client, 'viernes', records).catch(e =>
-          console.log('[PROGRESION] falló al cerrar viernes: ' + e.message)));
+      const ultimaSesion = 'sesion' + Object.keys(routine).filter(k => /^sesion\d+$/.test(k)).length;
+      if (ia && body.day === ultimaSesion) {
+        ctx.waitUntil(correrProgresion(env, client, 'ultima-sesion', records, calibrados.length ? routine : null).catch(e =>
+          console.log('[PROGRESION] falló al cerrar la semana: ' + e.message)));
+      }
+      // Una cuenta con IA sin entrenador no le escribe a nadie
+      if (sinEntrenador(athleteRecord)) {
+        return new Response(JSON.stringify({ ok: true, calibrados }), { headers: cors });
       }
 
       // ── Email detallado ──
@@ -1546,6 +1717,115 @@ Devolvé SOLO un JSON así, sin texto extra:
       return new Response(JSON.stringify({ ok: true, athlete: safe }), { headers: cors });
     }
 
+    // ── REGISTRO: ¿está libre este usuario? ──
+    // No expone nada nuevo: el login ya dice si un usuario existe.
+    if (body.action === 'usuario-disponible') {
+      const username = slugifyUsername(String(body.username || '').trim());
+      if (!username || username.length < 3) {
+        return new Response(JSON.stringify({ ok: true, username, disponible: false, motivo: 'corto' }), { headers: cors });
+      }
+      const ids = await bootstrapAthletesIfNeeded(env);
+      const libre = !ids.includes(username) && !(await env.DB.get(`athlete:${username}`));
+      return new Response(JSON.stringify({ ok: true, username, disponible: libre }), { headers: cors });
+    }
+
+    // ── REGISTRO: cuenta con IA ──
+    // Cualquiera puede crearla. Cada una cuesta llamadas a la IA, así que hay
+    // un tope por conexión y otro por día.
+    if (body.action === 'crear-cuenta-ia') {
+      const ip = request.headers.get('CF-Connecting-IP') || 'sin-ip';
+      const hoy = new Date().toISOString().slice(0, 10);
+      const kIp = `registro-ip:${ip}:${hoy}`, kDia = `registro-dia:${hoy}`;
+      const [nIp, nDia] = await Promise.all([env.DB.get(kIp), env.DB.get(kDia)]);
+      if ((parseInt(nIp) || 0) >= 6 || (parseInt(nDia) || 0) >= 200) {
+        return new Response(JSON.stringify({ ok: false, error: 'Se crearon demasiadas cuentas hoy desde aquí. Intenta mañana.' }), { headers: cors, status: 429 });
+      }
+
+      const name = String(body.name || '').trim().slice(0, 60);
+      const username = slugifyUsername(String(body.username || '').trim());
+      if (name.length < 2) return new Response(JSON.stringify({ ok: false, error: 'Escribe tu nombre' }), { headers: cors });
+      if (!username || username.length < 3) return new Response(JSON.stringify({ ok: false, error: 'El usuario necesita al menos 3 letras o números' }), { headers: cors });
+      const { enc, error } = validarEncuesta(body.encuesta);
+      if (error) return new Response(JSON.stringify({ ok: false, error }), { headers: cors });
+
+      const existingIds = await bootstrapAthletesIfNeeded(env);
+      if (existingIds.includes(username) || await env.DB.get(`athlete:${username}`)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Ese usuario ya existe. Prueba con otro.', campo: 'usuario' }), { headers: cors });
+      }
+
+      const { elecciones, explicacion } = await elegirConIA(env, enc);
+      const rutina = armarRutina(enc, elecciones);
+
+      const h = enc.estatura / 100;
+      const bmi = Math.round((enc.peso / (h * h)) * 10) / 10;
+      const bmr = Math.round(10 * enc.peso + 6.25 * enc.estatura - 5 * enc.edad + (enc.sexo === 'f' ? -161 : 5));
+      const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+      const fecha = `${nowCO.getFullYear()}-${String(nowCO.getMonth()+1).padStart(2,'0')}-${String(nowCO.getDate()).padStart(2,'0')}`;
+      const DIA_CORTO = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
+
+      const record = {
+        clientId: username, username, name,
+        trainerId: null,
+        modo: 'ia',
+        origen: 'registro',
+        email: null, phone: null, birthdate: null,
+        sessionsPerWeek: enc.dias.length,
+        trainingDays: enc.dias,
+        preferredDays: enc.dias.map(d => DIA_CORTO[d]),
+        profile: {
+          weight: enc.peso, height: enc.estatura, sex: enc.sexo, age: enc.edad,
+          bodyFat: null, muscleMass: null, bmi, bmr,
+          goal: enc.objetivo, level: enc.nivel, experience: '',
+          injuries: [enc.molestias.join(', '), enc.molestiaTexto].filter(Boolean).join('. '),
+          notes: ''
+        },
+        encuesta: enc,
+        planIA: { explicacion: explicacion || explicacionDeRespaldo(enc), creado: Date.now(), conIA: !!elecciones },
+        measurements: [{ date: fecha, ts: Date.now(), weight: enc.peso, bmi, bmr }],
+        photoUrl: null, pdfUrl: null,
+        createdAt: Date.now(),
+        archived: false
+      };
+      await env.DB.put(`routine:${username}`, JSON.stringify(rutina));
+      await env.DB.put(`athlete:${username}`, JSON.stringify(record));
+      // Se relee el índice justo antes de escribirlo: la IA tarda y en ese
+      // rato pudo entrar otro registro.
+      const idsAhora = await env.DB.get('athlete-index', 'json') || existingIds;
+      if (!idsAhora.includes(username)) await env.DB.put('athlete-index', JSON.stringify([...idsAhora, username]));
+      await Promise.all([
+        env.DB.put(kIp, String((parseInt(nIp) || 0) + 1), { expirationTtl: 172800 }),
+        env.DB.put(kDia, String((parseInt(nDia) || 0) + 1), { expirationTtl: 172800 }),
+      ]);
+      console.log(`[REGISTRO] ${username}: ${enc.dias.length} días, ${enc.objetivo}, ${enc.nivel}, ${enc.lugar}, IA=${!!elecciones}`);
+
+      // Aviso al dueño de la app: una línea, para saber quién entra
+      if (env.RESEND_API_KEY) {
+        ctx.waitUntil(fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Mi Rutina <noreply@mirutinapp.com>',
+            to: DEFAULT_TRAINER_EMAIL,
+            subject: `Nueva cuenta con IA: ${name} (@${username})`,
+            html: `<p style="font-family:-apple-system,Helvetica,sans-serif;font-size:15px">${escapeHtml(name)} (@${escapeHtml(username)}) creó una cuenta con IA.<br>` +
+                  `${escapeHtml(describeEncuesta(enc))}</p>`
+          })
+        }).catch(() => {}));
+      }
+
+      const selfToken = await computeSelfToken(env, username);
+      return new Response(JSON.stringify({
+        ok: true,
+        athlete: {
+          clientId: username, username, name, photoUrl: null, trainerId: null,
+          sessionsPerWeek: record.sessionsPerWeek, profile: record.profile,
+          modo: 'ia', trainingDays: record.trainingDays,
+        },
+        selfToken,
+        plan: { explicacion: record.planIA.explicacion, sesiones: resumenDelPlan(rutina) },
+      }), { headers: cors });
+    }
+
     // ── CREATE ATHLETE (trainer only) ──
     if (body.action === 'create-athlete') {
       if (body.token !== 'ent2026') {
@@ -1803,8 +2083,12 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
     // ── DELETE ATHLETE (trainer only) ──
     if (body.action === 'delete-athlete') {
-      const authErr = await authorizeTrainerForAthlete(env, body, cors);
-      if (authErr) return authErr;
+      // Una cuenta con IA no tiene entrenador que la borre: la borra el admin
+      const adminBorraIA = body.admin === 'admin2026' && sinEntrenador(await getAthlete(env, body.clientId));
+      if (!adminBorraIA) {
+        const authErr = await authorizeTrainerForAthlete(env, body, cors);
+        if (authErr) return authErr;
+      }
       const id = body.clientId;
       const existing = await getAthlete(env, id);
       const ids = (await env.DB.get('athlete-index', 'json')) || [];
@@ -2193,11 +2477,12 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
 
     if (sesionHoy.length) {
       const yaEstan = new Set(sesionHoy.map(e => e.name));
+      const valeChat = filtroDelAtleta(athleteRecord && athleteRecord.encuesta);
       const fichas = sesionHoy.map(e => {
         const cat = PorNombre[e.name];
         if (!cat) return null;
         const alt = (PorMusculo[cat.muscle] || [])
-          .filter(x => !yaEstan.has(x.name))
+          .filter(x => !yaEstan.has(x.name) && valeChat(x))
           .slice(0, 14)
           .map(x => x.name);
         return { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso',
@@ -2326,7 +2611,8 @@ ${JSON.stringify(fichas, null, 1)}`;
       console.log('[CRON] -> progresión semanal + sendWeeklyReport');
       // Primero la rutina de la semana que viene: si el viernes ya la corrió,
       // correrProgresion se sale sola al ver la semana en el historial.
-      for (const id of ATLETAS_IA) {
+      const cuentasIA = (await listAthletes(env)).filter(esIA).map(a => a.clientId);
+      for (const id of cuentasIA) {
         try {
           const r = await correrProgresion(env, id, 'cron');
           console.log(`[CRON] progresión ${id}: ${r.ok ? r.cambios.length + ' cambios' : r.razon}`);
@@ -2367,6 +2653,7 @@ async function sendDailyMealReport(env) {
   const dayLabel = coDate.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 
   for (const athlete of await listAthletes(env)) {
+    if (sinEntrenador(athlete)) continue;
     try {
     const clientId = athlete.clientId;
     const records = await env.DB.get(`meals:${clientId}`, 'json') || [];
@@ -2516,6 +2803,7 @@ async function sendWeeklyReport(env) {
   const dateSet = new Set(week.dates);
 
   for (const athlete of await listAthletes(env)) {
+    if (sinEntrenador(athlete)) continue;
     try {
     const clientId = athlete.clientId;
     const [completions, meals] = await Promise.all([

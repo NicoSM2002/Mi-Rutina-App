@@ -365,6 +365,44 @@ html, body {
 .entrando #content .ex-cards > :nth-child(3) { animation-delay: 260ms; }
 .entrando #content .ex-cards > :nth-child(n+4) { animation-delay: 320ms; }
 
+/* ── Lo mismo en el resto de la app ──
+   El portal del entrenador, la ficha de un cliente, comidas, los accesos y
+   el registro entran con la misma cascada. En las listas cada fila llega
+   un poco detrás de la anterior; en los formularios, cada campo. */
+.entrando:not(.paso) :is(.tportal-header, .tclient-header, .meals-header, .tlogin-back, .admin-header) {
+  animation: cabeceraEntra var(--t-medio) var(--ease-out) both;
+}
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .payments-body) > :not(form):not(#trainer-extra-clients):not(script),
+.entrando .tportal-body > form > *,
+.entrando #trainer-extra-clients > *,
+#role-select.entrando > *,
+.entrando .role-cards > * {
+  animation: subeEntra var(--t-lento) var(--ease-out) both;
+}
+#role-select.entrando > .role-cards { animation:none; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(2) { animation-delay: 45ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(3) { animation-delay: 90ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(4) { animation-delay: 135ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(5) { animation-delay: 180ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(6) { animation-delay: 220ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(7) { animation-delay: 260ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(8) { animation-delay: 295ms; }
+.entrando :is(.tportal-body, #tclient-content, #meals-content, .tlogin-body, #reg-cuerpo > div, .tportal-body > form, #trainer-extra-clients, #role-select, .role-cards) > :nth-child(n+9) { animation-delay: 330ms; }
+/* Las filas de clientes van más juntas: con veinte, la cola no puede tardar */
+.entrando #trainer-extra-clients > :nth-child(n+2) { animation-delay: calc(var(--fila, 0) * 22ms + 60ms); }
+
+/* La barra del entrenador también tiene su indicador que viaja */
+.tbnav-item { position:relative; z-index:1; }
+.tbnav-item.brinca .tbnav-icon { animation: brinco .46s var(--ease-spring); }
+.trainer-bottom-nav .bnav-pill { width:54px; }
+
+/* Al pulsar, se hunde un poco: también en el lado del entrenador */
+:is(.client-card, .role-card, .role-ia, .tlogin-btn, .re-save-btn, .re-add-btn, .cli-sort, .tbnav-item, .reg-atras, .back-btn, .pill-back) {
+  transition: transform var(--t-rapido) var(--ease-out), background-color .15s ease, opacity .15s ease;
+}
+:is(.client-card, .role-card, .role-ia, .tlogin-btn, .re-add-btn, .reg-atras):active { transform:scale(.975); }
+.client-card:active { background:#F6F6F2; }
+
 /* Al cambiar de paso, lo que es de toda la sesión se queda quieto: la barra
    de progreso ya anima sus segmentos sola, y reaparecerla en cada paso le
    quitaba justo esa lectura de "avancé uno". */
@@ -465,6 +503,10 @@ html, body {
   @keyframes splashUp      { from { opacity:0; } to { opacity:1; } }
   @keyframes confettiFall  { from { opacity:0; } to { opacity:0; } }
   .entrando .done-check .ic { animation:none; stroke-dashoffset:0; }
+  @keyframes orbe   { from { opacity:.2; } to { opacity:.2; } }
+  @keyframes latido { from { transform:none; } to { transform:none; } }
+  .reg-listo-check .ic { animation:none; stroke-dashoffset:0; }
+  :is(.client-card, .role-card, .role-ia, .tlogin-btn, .re-add-btn, .reg-atras, .reg-op, .reg-chip):active { transform:none; }
   .bnav-pill { transition: opacity .2s ease; }
   .ex-panel { transition:none; }
   .ex-panel-in { transform:none; }
@@ -1880,6 +1922,188 @@ button.ex-presc:active { background:#FBDCC9; }
 .role-card-sub { font-size:13.5px; color:var(--t2); font-weight:400; letter-spacing:-.25px; }
 .role-card-arrow { color:#B8B8B3; width:20px; height:20px; stroke-width:2; }
 
+/* Botón secundario: mismo tamaño que el primario, sin gritar */
+.btn-secondary {
+  width:100%; border:none; cursor:pointer;
+  background:var(--ac-soft); color:var(--ac-tx);
+  font-family:var(--font-d); font-size:16px; font-weight:700; letter-spacing:-.2px;
+  padding:16px 20px; border-radius:16px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+
+/* Puerta al registro con IA, bajo las dos tarjetas de rol */
+.role-ia {
+  margin-top:18px; width:100%; max-width:430px;
+  display:flex; align-items:center; gap:12px;
+  background:none; border:1.5px dashed #E3C9B8; border-radius:var(--r-group);
+  padding:15px 16px; cursor:pointer; text-align:left; font-family:var(--font-b);
+}
+.role-ia-ic {
+  width:36px; height:36px; border-radius:100px; flex:none;
+  background:var(--ac-soft); color:var(--ac-tx);
+  display:flex; align-items:center; justify-content:center;
+}
+.role-ia-ic .ic { width:19px; height:19px; }
+.role-ia-txt { flex:1; font-size:14.5px; color:var(--t2); letter-spacing:-.2px; line-height:1.35; }
+.role-ia-txt b { display:block; color:var(--t1); font-weight:600; font-size:15.5px; letter-spacing:-.3px; }
+.role-ia-chev { color:#B8B8B3; }
+.tlogin-alt {
+  margin-top:22px; background:none; border:none; cursor:pointer;
+  font-family:var(--font-b); font-size:15px; color:var(--t2); letter-spacing:-.2px; padding:8px;
+}
+.tlogin-alt b { color:var(--ac-tx); font-weight:600; }
+
+/* ══ REGISTRO CON IA ══ */
+#registro { background:var(--bg); display:flex; flex-direction:column; }
+.reg-top {
+  display:flex; align-items:center; gap:14px;
+  padding:calc(var(--sat) + 10px) var(--pad) 6px;
+}
+.reg-atras {
+  width:40px; height:40px; border-radius:100px; flex:none; border:none; cursor:pointer;
+  background:var(--s2); color:var(--t1); display:flex; align-items:center; justify-content:center;
+}
+.reg-barra { flex:1; height:5px; border-radius:100px; background:var(--b); overflow:hidden; }
+.reg-barra i { display:block; height:100%; width:0; border-radius:100px; background:var(--ac-str);
+  transition: width .5s var(--ease-out); }
+.reg-paso-n { font-size:13px; color:var(--t2); font-variant-numeric:tabular-nums; min-width:34px; text-align:right; }
+.reg-cuerpo {
+  flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:18px var(--pad) 24px;
+}
+.reg-pie { padding:10px var(--pad) calc(var(--sab, 0px) + 18px); }
+.reg-pie .tlogin-error:empty { display:none; }
+.reg-pie .tlogin-error { margin:0 0 10px; }
+.reg-saltar {
+  width:100%; margin-top:6px; padding:12px; background:none; border:none; cursor:pointer;
+  font-family:var(--font-b); font-size:15.5px; color:var(--t2);
+}
+.reg-saltar[hidden] { display:none !important; }
+
+.reg-eyebrow { font-size:13px; font-weight:700; color:var(--ac-tx); text-transform:uppercase; letter-spacing:.9px; }
+.reg-t { font-family:var(--font-d); font-size:30px; font-weight:800; color:var(--t1); letter-spacing:-1.2px; line-height:1.1; margin-top:8px; }
+.reg-s { font-size:16px; color:var(--t2); letter-spacing:-.2px; line-height:1.45; margin-top:10px; }
+.reg-campos { margin-top:26px; }
+.reg-campos .tlogin-label { display:block; }
+.reg-hint { font-size:14px; color:var(--t2); margin:-6px 2px 14px; letter-spacing:-.15px; line-height:1.4; }
+.reg-hint.ok { color:var(--gr-str); }
+.reg-hint.mal { color:#C0392B; }
+.reg-fila { display:flex; gap:10px; }
+.reg-fila > * { flex:1; min-width:0; }
+.reg-unidad { position:relative; }
+.reg-unidad .tlogin-input { padding-right:54px; }
+.reg-unidad span { position:absolute; right:18px; top:20px; font-size:16px; color:var(--t2); pointer-events:none; }
+
+/* Opciones con explicación */
+.reg-ops { display:flex; flex-direction:column; gap:12px; margin-top:24px; }
+.reg-op {
+  width:100%; text-align:left; cursor:pointer; font-family:var(--font-b);
+  background:var(--s1); border:1.5px solid var(--b); border-radius:18px;
+  padding:16px 16px 16px 18px; display:flex; gap:14px; align-items:flex-start;
+  transition: border-color .18s ease, background-color .18s ease, transform var(--t-rapido) var(--ease-out);
+}
+.reg-op:active { transform:scale(.98); }
+.reg-op.on { border-color:var(--ac-str); background:#FFFBF8; }
+.reg-op-txt { flex:1; min-width:0; }
+.reg-op-t { display:block; font-family:var(--font-d); font-size:17.5px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+.reg-op-d { display:block; font-size:14.5px; color:var(--t2); letter-spacing:-.15px; line-height:1.42; margin-top:4px; }
+.reg-op-marca {
+  width:24px; height:24px; border-radius:100px; flex:none; margin-top:1px;
+  border:1.5px solid #CFCFCA; display:flex; align-items:center; justify-content:center; color:#fff;
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.reg-op-marca .ic { width:14px; height:14px; stroke-width:3; opacity:0; transform:scale(.4);
+  transition: opacity .15s ease, transform .3s var(--ease-spring); }
+.reg-op.on .reg-op-marca { background:var(--ac-str); border-color:var(--ac-str); }
+.reg-op.on .reg-op-marca .ic { opacity:1; transform:none; }
+.reg-op.compacta { padding:15px 18px; align-items:center; }
+
+/* Chips: días y molestias */
+.reg-chips { display:flex; flex-wrap:wrap; gap:9px; margin-top:22px; }
+.reg-dias { display:grid; grid-template-columns:repeat(7, 1fr); gap:7px; margin-top:24px; }
+.reg-chip {
+  border:1.5px solid var(--b); background:var(--s1); color:var(--t1); cursor:pointer;
+  font-family:var(--font-d); font-weight:700; font-size:15.5px; letter-spacing:-.2px;
+  border-radius:100px; padding:12px 17px;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform var(--t-rapido) var(--ease-out);
+}
+.reg-chip:active { transform:scale(.94); }
+.reg-chip.on { background:var(--ac-str); border-color:var(--ac-str); color:#fff; }
+.reg-dias .reg-chip { padding:0; height:46px; border-radius:14px; font-size:15px; }
+.reg-dias-n { margin-top:14px; font-size:15px; color:var(--t2); letter-spacing:-.2px; min-height:22px; }
+.reg-dias-n b { color:var(--t1); }
+.reg-area {
+  width:100%; margin-top:18px; min-height:90px; resize:none;
+  background:var(--s1); border:1px solid var(--b); border-radius:16px; padding:15px 16px;
+  font-family:var(--font-b); font-size:16px; color:var(--t1); outline:none; line-height:1.4;
+}
+.reg-area:focus { border-color:var(--ac-tx); }
+
+/* Armando el plan */
+.reg-armando { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px 10px; }
+.reg-orbe { position:relative; width:112px; height:112px; margin-bottom:34px; }
+.reg-orbe i {
+  position:absolute; inset:0; border-radius:100px; background:var(--ac-str); opacity:.16;
+  animation: orbe 2.4s var(--ease-out) infinite;
+}
+.reg-orbe i:nth-child(2) { animation-delay:.8s; }
+.reg-orbe i:nth-child(3) { animation-delay:1.6s; }
+.reg-orbe b {
+  position:absolute; inset:26px; border-radius:100px; background:var(--ac-str); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 10px 30px rgba(190,77,11,.32);
+  animation: latido 1.6s ease-in-out infinite;
+}
+.reg-orbe b .ic { width:28px; height:28px; }
+@keyframes orbe { from { transform:scale(.55); opacity:.32; } to { transform:scale(1.35); opacity:0; } }
+@keyframes latido { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+.reg-fase { font-size:16px; color:var(--t2); margin-top:12px; min-height:24px; letter-spacing:-.2px; }
+.reg-fase.cambia { animation: apareceSuave .45s ease both; }
+
+/* El plan listo */
+.reg-listo-check {
+  width:64px; height:64px; border-radius:100px; background:var(--ok); color:#fff;
+  display:flex; align-items:center; justify-content:center; margin-bottom:18px;
+  animation: checkEntra .62s var(--ease-spring) both;
+}
+.reg-listo-check .ic { width:30px; height:30px; stroke-width:2.6; stroke-dasharray:22; stroke-dashoffset:22;
+  animation: traza .5s var(--ease-out) .3s forwards; }
+.reg-explica { font-size:16px; color:var(--t1); line-height:1.5; letter-spacing:-.2px; margin-top:16px; }
+.reg-sesiones { margin-top:22px; }
+.reg-ses { display:flex; align-items:center; gap:14px; padding:14px 16px; }
+.reg-ses + .reg-ses { border-top:1px solid var(--b2); }
+.reg-ses-dia {
+  width:46px; height:46px; border-radius:14px; flex:none; background:var(--ac-soft); color:var(--ac-tx);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-d); font-weight:800; font-size:14px; letter-spacing:-.2px; text-transform:capitalize;
+}
+.reg-ses-t { font-family:var(--font-d); font-size:16.5px; font-weight:700; color:var(--t1); letter-spacing:-.35px; }
+.reg-ses-s { font-size:14px; color:var(--t2); margin-top:2px; letter-spacing:-.15px; }
+.reg-nota {
+  margin-top:16px; display:flex; gap:10px; align-items:flex-start;
+  font-size:14.5px; color:var(--t2); line-height:1.45; letter-spacing:-.15px;
+}
+.reg-nota .ic { flex:none; color:var(--ac-tx); margin-top:2px; }
+
+/* Peso sugerido en la tarjeta del ejercicio, mientras se calibra */
+.ex-peso-txt { font-size:26px !important; letter-spacing:-.6px; }
+.ex-calibra {
+  text-transform:none; letter-spacing:-.1px;
+  display:inline-block; margin-left:8px; padding:2px 8px; border-radius:100px;
+  background:var(--ac-soft); color:var(--ac-tx); font-size:12px; font-weight:600; letter-spacing:-.1px;
+  vertical-align:1px;
+}
+
+/* El plan en el perfil */
+.pg-plan { padding:18px; }
+.pg-plan-top { display:flex; align-items:center; gap:12px; }
+.pg-plan-ic { width:44px; height:44px; border-radius:100px; flex:none; background:var(--ac-soft); color:var(--ac-tx);
+  display:flex; align-items:center; justify-content:center; }
+.pg-plan-t { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
+.pg-plan-s { font-size:14px; color:var(--t2); margin-top:2px; }
+.pg-plan-txt { font-size:15px; color:var(--t1); line-height:1.5; letter-spacing:-.2px; margin-top:14px; }
+#pg-plan-wrap[hidden] { display:none !important; }
+
 /* ══════════════════════════════
    TRAINER LOGIN
 ══════════════════════════════ */
@@ -2996,6 +3220,7 @@ select.na-input {
   <symbol id="i-banana" viewBox="0 0 24 24"><path d="M5 5.5c-.4 4.2 1 7.6 4.2 10.2 3 2.4 6.5 3.2 10.4 2.3-1.1-.6-1.8-1.5-2.1-2.7-1.6.5-3.2.2-4.7-.8-2.4-1.6-3.6-4.1-3.6-7.4 0-.9-.7-1.6-2.1-1.6z"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/><path d="M9.5 20.5v-6h5v6"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4a8.5 8.5 0 1 0 10.3 10.3z"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
 
   <!-- Grupos musculares (picker de ejercicios) -->
@@ -3072,6 +3297,11 @@ select.na-input {
       <svg class="ic role-card-arrow"><use href="#i-chevron-r"/></svg>
     </button>
   </div>
+  <button class="role-ia" onclick="abrirRegistro()">
+    <span class="role-ia-ic"><svg class="ic"><use href="#i-sparkle"/></svg></span>
+    <span class="role-ia-txt"><b>¿Entrenas sin entrenador?</b> Crea tu plan con IA</span>
+    <svg class="ic ic-sm role-ia-chev"><use href="#i-chevron-r"/></svg>
+  </button>
   <button class="admin-secret-btn" onclick="adminLogin()">Acceso administrador</button>
 </div>
 
@@ -3166,6 +3396,23 @@ select.na-input {
       Entrar <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
     </button>
     <div class="tlogin-error" id="athlete-error"></div>
+    <button class="tlogin-alt" onclick="abrirRegistro()">¿No tienes cuenta? <b>Crea tu plan con IA</b></button>
+  </div>
+</div>
+
+<!-- ══ REGISTRO CON IA ══
+     Encuesta corta, una pregunta por pantalla, y al final el plan. -->
+<div class="screen" id="registro">
+  <div class="reg-top">
+    <button class="reg-atras" id="reg-atras" onclick="regAtras()" aria-label="Atrás"><svg class="ic"><use href="#i-chevron-l"/></svg></button>
+    <div class="reg-barra" aria-hidden="true"><i id="reg-progreso"></i></div>
+    <div class="reg-paso-n" id="reg-paso-n"></div>
+  </div>
+  <div class="reg-cuerpo" id="reg-cuerpo"></div>
+  <div class="reg-pie" id="reg-pie">
+    <div class="tlogin-error" id="reg-error" role="alert"></div>
+    <button class="tlogin-btn" id="reg-sig" onclick="regSiguiente()">Continuar</button>
+    <button class="reg-saltar" id="reg-saltar" onclick="regSaltar()" hidden>No lo sé, saltar</button>
   </div>
 </div>
 
@@ -3575,6 +3822,19 @@ select.na-input {
         <svg class="ic ic-sm"><use href="#i-resumen"/></svg> Ver evolución en Progreso
       </button>
     </div>
+    <div id="pg-plan-wrap" hidden>
+      <h2 class="h-sec sec-title">Tu plan</h2>
+      <div class="group pg-plan">
+        <div class="pg-plan-top">
+          <span class="pg-plan-ic"><svg class="ic"><use href="#i-sparkle"/></svg></span>
+          <div>
+            <div class="pg-plan-t" id="pg-plan-t">Plan con IA</div>
+            <div class="pg-plan-s" id="pg-plan-s"></div>
+          </div>
+        </div>
+        <div class="pg-plan-txt" id="pg-plan-txt"></div>
+      </div>
+    </div>
     <div id="pg-trainer-wrap" style="display:none">
       <h2 class="h-sec sec-title">Tu entrenador</h2>
       <div class="group pg-trainer-card">
@@ -3885,13 +4145,23 @@ function entrar(el, dir, paso) {
   el.__tEntrada = setTimeout(() => el.classList.remove('entrando', 'paso'), 1400);
 }
 
+/* Fuera de las pestañas la navegación es en profundidad: ir más adentro
+   entra por la derecha y volver, por la izquierda, como en iOS. */
+const NIVEL_PANTALLA = {
+  'role-select': 0, 'athlete-login': 1, 'trainer-login': 1, 'registro': 2,
+  'trainer-portal': 2, 'trainer-new-athlete': 3, 'trainer-own-profile': 3, 'trainer-client': 3,
+  'trainer-edit-profile': 4,
+  'admin-support': 1, 'admin-create-trainer': 2, 'admin-trainer-detail': 2, 'admin-edit-trainer': 3,
+};
+
 function show(id) {
   const destino = document.getElementById(id);
   const yaEstaba = !!(destino && destino.classList.contains('active'));
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   destino.classList.add('active');
   if (!yaEstaba) {
-    const a = POS_PANTALLA[_pantallaActual], b = POS_PANTALLA[id];
+    let a = POS_PANTALLA[_pantallaActual], b = POS_PANTALLA[id];
+    if (a == null || b == null) { a = NIVEL_PANTALLA[_pantallaActual]; b = NIVEL_PANTALLA[id]; }
     entrar(destino, (a != null && b != null && a !== b) ? Math.sign(b - a) : 0);
   }
   _pantallaActual = id;
@@ -3992,14 +4262,17 @@ async function showRoutine() {
   render();
 }
 
-/* Para quien entrena por día de la semana, la próxima sesión es la de
-   mañana, y el fin de semana la del lunes. Antes salía la de hoy. */
+/* Para quien entrena por día de la semana, la próxima sesión es la del
+   siguiente día de entreno. Antes salía la de hoy. */
 function proximaSesionFija() {
   const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-  const manana = (hoy.getDay() + 1) % 7;                 // 0=domingo … 6=sábado
-  const entreSemana = manana >= 1 && manana <= 5;
-  const num = entreSemana ? manana : 1;
-  return { num, key: 'sesion' + num, esManana: entreSemana };
+  const dias = diasDeEntreno();
+  for (let k = 1; k <= 7; k++) {
+    const d = (hoy.getDay() + k) % 7;
+    const i = dias.indexOf(d);
+    if (i >= 0) return { num: i + 1, key: 'sesion' + (i + 1), esManana: k === 1, dia: NOMBRE_DIA[d] };
+  }
+  return { num: 1, key: 'sesion1', esManana: true, dia: '' };
 }
 
 function textoProximaSesion(state) {
@@ -4011,8 +4284,8 @@ function textoProximaSesion(state) {
   const titulo = dia && typeof deriveSessionTitle === 'function' ? deriveSessionTitle(dia, p.num) : '';
   return {
     nombre: titulo || `Sesión ${p.num}`,
-    cuando: (p.esManana ? 'Mañana' : 'El lunes') + ` · Sesión ${p.num}`,
-    despedida: p.esManana ? 'Nos vemos mañana.' : 'Nos vemos el lunes.',
+    cuando: (p.esManana ? 'Mañana' : `El ${p.dia}`) + ` · Sesión ${p.num}`,
+    despedida: p.esManana ? 'Nos vemos mañana.' : `Nos vemos el ${p.dia}.`,
   };
 }
 
@@ -4064,6 +4337,7 @@ async function refreshCurrentAthleteRecord() {
     const json = await res.json();
     if (json.ok && json.athlete) {
       currentAthleteRecord = json.athlete;
+      recuerdaModo(json.athlete);
       // Solo re-renderizar si seguimos en pantalla de perfil
       const profEl = document.getElementById('profile-generic');
       if (profEl && profEl.classList.contains('active')) {
@@ -4106,23 +4380,62 @@ let currentDay   = 'sesion1';
 let routineStep  = 0;
 
 /* ── session progression ── */
-/* Atletas cuya sesión la decide el día de la semana y no un contador.
-   Lista explícita: para el resto no cambia nada. */
+/* Cuentas con IA: la sesión la decide el día de la semana y no un contador,
+   y la rutina se ajusta sola. Las nuevas lo traen en su cuenta (modo 'ia');
+   la lista es la de antes de que existiera ese campo. Para el resto no
+   cambia nada. */
 const ATLETAS_RUTINA_FIJA = ['nicolassaravia'];
+
+function registroDe(id) {
+  return (currentAthleteRecord && currentAthleteRecord.clientId === id) ? currentAthleteRecord : null;
+}
 
 /* Se autogestiona: ni entrenador en el perfil ni sección de comidas.
    Oculta lo que no usa; no borra nada de lo que hay guardado. */
 function seAutogestiona(athlete) {
-  return ATLETAS_RUTINA_FIJA.includes(athlete || currentAthlete);
+  const id = athlete || currentAthlete;
+  if (ATLETAS_RUTINA_FIJA.includes(id)) return true;
+  const r = registroDe(id);
+  if (r && r.modo) return r.modo === 'ia';
+  // Al reabrir la app el registro llega después: el teléfono lo recuerda
+  try { return localStorage.getItem('modo_' + id) === 'ia'; } catch (e) { return false; }
 }
 
-/* Lunes→sesión 1 … viernes→sesión 5. El fin de semana apunta al lunes, que
-   es el próximo entrenamiento. */
-function sesionPorDiaDeLaSemana() {
+/* Los días que entrena (0=domingo … 6=sábado), de lunes a domingo. Quien
+   no los eligió entrena de lunes a viernes, como hasta ahora. */
+function diasDeEntreno(athlete) {
+  const id = athlete || currentAthlete;
+  const r = registroDe(id);
+  let d = r && Array.isArray(r.trainingDays) && r.trainingDays.length ? r.trainingDays : null;
+  if (!d) { try { d = JSON.parse(localStorage.getItem('dias_' + id) || 'null'); } catch (e) { d = null; } }
+  if (!Array.isArray(d) || !d.length) d = [1, 2, 3, 4, 5];
+  return [...new Set(d.map(Number))].sort((a, b) => (a || 7) - (b || 7));
+}
+
+/* Recuerda en el teléfono el modo y los días, para pintar bien al reabrir */
+function recuerdaModo(dyn) {
+  if (!dyn || !dyn.clientId) return;
+  try {
+    if (dyn.modo) localStorage.setItem('modo_' + dyn.clientId, dyn.modo);
+    if (Array.isArray(dyn.trainingDays)) localStorage.setItem('dias_' + dyn.clientId, JSON.stringify(dyn.trainingDays));
+  } catch (e) {}
+}
+
+const NOMBRE_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/* La sesión de hoy es la del día que toca. Si hoy no entrena, se enseña
+   la del próximo día de entreno, por si quiere adelantarla. */
+function sesionPorDiaDeLaSemana(athlete) {
   const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
   const d = hoy.getDay();                 // 0=domingo … 6=sábado
-  const num = (d >= 1 && d <= 5) ? d : 1; // sábado y domingo → lunes
-  return { num, esFinDeSemana: d === 0 || d === 6 };
+  const dias = diasDeEntreno(athlete);
+  const i = dias.indexOf(d);
+  if (i >= 0) return { num: i + 1, esFinDeSemana: d === 0 || d === 6, esDescanso: false };
+  for (let k = 1; k <= 7; k++) {
+    const j = dias.indexOf((d + k) % 7);
+    if (j >= 0) return { num: j + 1, esFinDeSemana: d === 0 || d === 6, esDescanso: true, diaDeLaSesion: (d + k) % 7 };
+  }
+  return { num: 1, esFinDeSemana: d === 0 || d === 6, esDescanso: false };
 }
 
 function getSessionState(athlete) {
@@ -4137,10 +4450,10 @@ function getSessionState(athlete) {
     const fb = athlete === 'msaravia' ? FALLBACK_DATA_MSARAVIA : FALLBACK_DATA;
     total = Object.keys(fb).length;
   }
-  if (ATLETAS_RUTINA_FIJA.includes(athlete) && total >= 5) {
-    const { num, esFinDeSemana } = sesionPorDiaDeLaSemana();
+  if (seAutogestiona(athlete) && total >= diasDeEntreno(athlete).length) {
+    const { num, esFinDeSemana, esDescanso, diaDeLaSesion } = sesionPorDiaDeLaSemana(athlete);
     return { idx: num - 1, total, week: 1, sessionNum: num,
-             sessionKey: 'sesion' + num, porDia: true, esFinDeSemana };
+             sessionKey: 'sesion' + num, porDia: true, esFinDeSemana, esDescanso, diaDeLaSesion };
   }
   const idx    = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   const offset = parseInt(localStorage.getItem('sessionOffset_' + athlete) || '0');
@@ -4161,7 +4474,7 @@ function advanceSession(athlete) {
   // Con rutina por día de la semana no hay contador que avanzar: mañana es
   // mañana. Pero sí hay que anotar que hoy ya entrenó — al saltarse esto
   // entero, la app no lo sabía hasta preguntarle al servidor.
-  if (ATLETAS_RUTINA_FIJA.includes(athlete)) { marcaCompletadaHoy(athlete); return; }
+  if (seAutogestiona(athlete)) { marcaCompletadaHoy(athlete); return; }
   const idx = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   localStorage.setItem('sessionIdx_' + athlete, idx + 1);
   localStorage.setItem('lastCompleted_' + athlete, new Date().toDateString());
@@ -5130,10 +5443,13 @@ function renderExCard(ex, ci, ei, w) {
   // El peso en grande; las reps a su lado, en una pastilla.
   const pw = parseWeight(wv);
   const sufijo = String(wv || '').replace(/^\s*[\d.,]+\s*(kg|kilos?|lbs?|libras?)?\s*/i, '').trim();
-  const cargaHtml = (!isSpecial && (pw.num || repsDisplay))
+  // Una carga sin número ("barra sola") se escribe tal cual
+  const cargaTexto = !pw.num && wv && /[a-z]/i.test(wv) ? String(wv) : '';
+  const cargaHtml = (!isSpecial && (pw.num || cargaTexto || repsDisplay))
     ? `<div class="ex-carga">
          ${pw.num ? `<span class="ex-peso">${pw.num.replace('.', ',')}</span>
-                     <span class="ex-unidad">${pw.unit}${sufijo ? (sufijo[0] === '/' ? '' : ' ') + sufijo : ''}</span>` : ''}
+                     <span class="ex-unidad">${pw.unit}${sufijo ? (sufijo[0] === '/' ? '' : ' ') + sufijo : ''}</span>`
+           : cargaTexto ? `<span class="ex-peso ex-peso-txt">${cargaTexto.charAt(0).toUpperCase() + cargaTexto.slice(1)}</span>` : ''}
          ${repsDisplay ? (timerSeconds > 0
             ? `<button class="ex-reps ex-reps-timer" onclick="event.stopPropagation();startTimer(${timerSeconds})">
                  <svg class="ic ic-sm"><use href="#i-clock"/></svg>${repsDisplay}</button>`
@@ -5160,7 +5476,8 @@ function renderExCard(ex, ci, ei, w) {
       <div class="ex-info">
         <div class="ex-name"><span class="ex-name-txt">${currentName}</span>${infoBtnHtml}</div>
         ${muscleName ? `<div class="ex-musculo">${muscleName}${ex.sustituido
-            ? '<span class="ex-cambiado">cambiado hoy</span>' : ''}${badgeHtml}</div>` : badgeHtml}
+            ? '<span class="ex-cambiado">cambiado hoy</span>' : ''}${ex.calibrar && wv
+            ? '<span class="ex-calibra">peso sugerido</span>' : ''}${badgeHtml}</div>` : badgeHtml}
       </div>
     </div>
     ${cargaHtml}
@@ -5639,25 +5956,420 @@ async function athleteLogin() {
       setLoginBusy(btn, false);
       return;
     }
-    const dyn = json.athlete;
-    athleteSelfToken = json.selfToken;
-    try { localStorage.setItem(`selfToken_${dyn.clientId}`, json.selfToken); } catch {}
-    try { localStorage.setItem('currentAthlete', dyn.clientId); } catch {}
     document.getElementById('athlete-username').value = '';
-    currentAthlete = dyn.clientId;
-    currentAthleteRecord = dyn;
-    data = {};
-    loadRoutine();
-    ajustaNavAtleta();
-    showGenericProfile(dyn);   // precarga los datos del perfil
-    showToday(); activateNav('today');   // ...pero se entra por Hoy
-    loadAthletePayment(currentAthlete);
-    if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
+    entrarComoAtleta(json.athlete, json.selfToken);
     setLoginBusy(btn, false);
   } catch (e) {
     errEl.textContent = 'Error de red. Revisa tu conexión e inténtalo de nuevo.';
     setLoginBusy(btn, false);
   }
+}
+
+/* ══ REGISTRO CON IA ═════════════════════════════════════════════════
+   Una pregunta por pantalla. Las respuestas viven en `REG` hasta el final:
+   no se crea nada en el servidor hasta pulsar "Crear mi plan", así que
+   salirse a mitad no deja cuentas a medias. */
+const REG = { paso: 0, nombre: '', usuario: '', usuarioLibre: null, usuarioTocado: false, enc: null };
+
+function encuestaVacia() {
+  return { objetivo: null, nivel: null, dias: [], minutos: 60, lugar: 'gimnasio',
+           sexo: null, edad: '', peso: '', estatura: '',
+           molestias: [], molestiaTexto: '', referencias: { banca: '', sentadilla: '', jalon: '' } };
+}
+
+const REG_OBJETIVOS = [
+  { v: 'hipertrofia', t: 'Ganar músculo',
+    d: 'Que se note más volumen. Series de 8 a 12 repeticiones con descansos cortos. Es el objetivo más común.' },
+  { v: 'fuerza', t: 'Ganar fuerza',
+    d: 'Levantar más en los básicos (banca, sentadilla, remo). Menos repeticiones, más carga y más descanso. El músculo también crece, pero el foco es el número.' },
+  { v: 'recomposicion', t: 'Recomposición',
+    d: 'Ganar músculo y perder grasa a la vez. Entrenamiento de músculo con descansos más cortos y cardio suave al final. Funciona mejor si cuidas lo que comes.' },
+];
+const REG_NIVELES = [
+  { v: 'principiante', t: 'Principiante',
+    d: 'Menos de un año entrenando con constancia, o vuelves después de mucho tiempo. Empiezas con máquinas y mancuernas, que son más fáciles de controlar.' },
+  { v: 'intermedio', t: 'Intermedio',
+    d: 'De uno a tres años. Conoces los ejercicios básicos y los haces con buena técnica.' },
+  { v: 'avanzado', t: 'Avanzado',
+    d: 'Más de tres años sin parar. Sabes llegar cerca del fallo y tus pesos ya suben despacio.' },
+];
+const REG_DIAS = [[1, 'L', 'lunes'], [2, 'M', 'martes'], [3, 'X', 'miércoles'], [4, 'J', 'jueves'], [5, 'V', 'viernes'], [6, 'S', 'sábado'], [0, 'D', 'domingo']];
+const REG_MOLESTIAS = [['hombro', 'Hombro'], ['rodilla', 'Rodilla'], ['lumbar', 'Espalda baja'], ['codo', 'Codo o muñeca']];
+
+const escR = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const marcaOp = '<span class="reg-op-marca"><svg class="ic"><use href="#i-check"/></svg></span>';
+
+/* Cada paso: cómo se pinta, qué falta para seguir y el texto del botón */
+const REG_PASOS = [
+  { // 0 · Bienvenida
+    pinta: () => `
+      <div class="reg-eyebrow">Plan con IA</div>
+      <div class="reg-t">Tu plan, hecho para ti</div>
+      <div class="reg-s">Te hago unas preguntas, toma unos dos minutos, y armo tu rutina: días, ejercicios, series y pesos de partida.</div>
+      <div class="group reg-sesiones">
+        <div class="reg-ses"><span class="reg-ses-dia"><svg class="ic"><use href="#i-sparkle"/></svg></span>
+          <div><div class="reg-ses-t">Se ajusta cada semana</div><div class="reg-ses-s">Marcas cada ejercicio como fácil, justo o no llegué, y los pesos se mueven solos.</div></div></div>
+        <div class="reg-ses"><span class="reg-ses-dia"><svg class="ic"><use href="#i-chat"/></svg></span>
+          <div><div class="reg-ses-t">Le puedes preguntar</div><div class="reg-ses-s">Si la máquina está ocupada o algo te molesta, el chat te cambia el ejercicio.</div></div></div>
+        <div class="reg-ses"><span class="reg-ses-dia"><svg class="ic"><use href="#i-resumen"/></svg></span>
+          <div><div class="reg-ses-t">Ves tu progreso</div><div class="reg-ses-s">Cuánto subió cada ejercicio, semana a semana.</div></div></div>
+      </div>`,
+    boton: 'Empezar',
+  },
+  { // 1 · Nombre y usuario
+    pinta: () => `
+      <div class="reg-t">¿Cómo te llamas?</div>
+      <div class="reg-s">Con tu usuario entras a la app desde cualquier teléfono.</div>
+      <div class="reg-campos">
+        <label class="tlogin-label" for="reg-nombre">Nombre</label>
+        <input class="tlogin-input" id="reg-nombre" type="text" autocomplete="given-name" maxlength="60"
+          value="${escR(REG.nombre)}" oninput="regNombre(this.value)" placeholder="Tu nombre">
+        <label class="tlogin-label" for="reg-usuario">Usuario</label>
+        <input class="tlogin-input" id="reg-usuario" type="text" autocomplete="off" autocapitalize="none" maxlength="20"
+          value="${escR(REG.usuario)}" oninput="regUsuario(this.value)" placeholder="Solo letras y números">
+        <div class="reg-hint" id="reg-usuario-hint">Solo minúsculas y números. Guárdalo: es tu acceso.</div>
+      </div>`,
+    falta: () => REG.nombre.trim().length < 2 ? 'Escribe tu nombre.'
+      : REG.usuario.length < 3 ? 'El usuario necesita al menos 3 letras o números.' : null,
+    antes: regCompruebaUsuario,
+  },
+  { // 2 · Objetivo
+    pinta: () => `
+      <div class="reg-t">¿Qué quieres lograr?</div>
+      <div class="reg-s">Define cuántas repeticiones haces, cuánto descansas y si hay cardio.</div>
+      <div class="reg-ops">${REG_OBJETIVOS.map(o => `
+        <button class="reg-op${REG.enc.objetivo === o.v ? ' on' : ''}" onclick="regElige('objetivo','${o.v}',this)">
+          <span class="reg-op-txt"><span class="reg-op-t">${o.t}</span><span class="reg-op-d">${o.d}</span></span>${marcaOp}
+        </button>`).join('')}</div>`,
+    falta: () => REG.enc.objetivo ? null : 'Elige un objetivo.',
+  },
+  { // 3 · Experiencia
+    pinta: () => `
+      <div class="reg-t">¿Cuánto llevas entrenando?</div>
+      <div class="reg-s">Para elegir ejercicios que puedas hacer bien desde el primer día.</div>
+      <div class="reg-ops">${REG_NIVELES.map(o => `
+        <button class="reg-op${REG.enc.nivel === o.v ? ' on' : ''}" onclick="regElige('nivel','${o.v}',this)">
+          <span class="reg-op-txt"><span class="reg-op-t">${o.t}</span><span class="reg-op-d">${o.d}</span></span>${marcaOp}
+        </button>`).join('')}</div>`,
+    falta: () => REG.enc.nivel ? null : 'Elige tu experiencia.',
+  },
+  { // 4 · Días
+    pinta: () => `
+      <div class="reg-t">¿Qué días entrenas?</div>
+      <div class="reg-s">Entre 2 y 6. Con 3 a 5 se progresa muy bien; deja algún día de descanso entre medias si puedes.</div>
+      <div class="reg-dias">${REG_DIAS.map(([d, l, nom]) => `
+        <button class="reg-chip${REG.enc.dias.includes(d) ? ' on' : ''}" aria-label="${nom}" aria-pressed="${REG.enc.dias.includes(d)}"
+          onclick="regDia(${d},this)">${l}</button>`).join('')}</div>
+      <div class="reg-dias-n" id="reg-dias-n">${regTextoDias()}</div>`,
+    falta: () => REG.enc.dias.length < 2 ? 'Elige al menos 2 días.' : REG.enc.dias.length > 6 ? 'Máximo 6 días: uno de descanso es parte del plan.' : null,
+  },
+  { // 5 · Tiempo y lugar
+    pinta: () => `
+      <div class="reg-t">¿Cuánto tiempo tienes y dónde entrenas?</div>
+      <div class="reg-s">Con más tiempo caben más circuitos.</div>
+      <div class="reg-ops">${[[45, '45 minutos', 'Dos circuitos.'], [60, 'Una hora', 'Tres circuitos.'], [90, 'Hora y media', 'Tres circuitos con una vuelta más.']].map(([v, t, d]) => `
+        <button class="reg-op compacta${REG.enc.minutos === v ? ' on' : ''}" onclick="regElige('minutos',${v},this)">
+          <span class="reg-op-txt"><span class="reg-op-t">${t}</span><span class="reg-op-d">${d}</span></span>${marcaOp}
+        </button>`).join('')}</div>
+      <div class="reg-ops">${[['gimnasio', 'En un gimnasio', 'Máquinas, poleas, barras y mancuernas.'], ['casa', 'En casa', 'Con mancuernas y un banco.']].map(([v, t, d]) => `
+        <button class="reg-op compacta${REG.enc.lugar === v ? ' on' : ''}" onclick="regElige('lugar','${v}',this)">
+          <span class="reg-op-txt"><span class="reg-op-t">${t}</span><span class="reg-op-d">${d}</span></span>${marcaOp}
+        </button>`).join('')}</div>`,
+  },
+  { // 6 · Sobre ti
+    pinta: () => `
+      <div class="reg-t">Sobre ti</div>
+      <div class="reg-s">Con esto se estiman tus pesos de partida y tu metabolismo.</div>
+      <div class="reg-chips">${[['m', 'Hombre'], ['f', 'Mujer']].map(([v, t]) => `
+        <button class="reg-chip${REG.enc.sexo === v ? ' on' : ''}" onclick="regElige('sexo','${v}',this)">${t}</button>`).join('')}</div>
+      <div class="reg-campos">
+        <div class="reg-fila">
+          <div><label class="tlogin-label" for="reg-edad">Edad</label>
+            <div class="reg-unidad"><input class="tlogin-input" id="reg-edad" type="number" inputmode="numeric" min="14" max="90"
+              value="${escR(REG.enc.edad)}" oninput="REG.enc.edad=this.value;regLimpiaError()"><span>años</span></div></div>
+          <div><label class="tlogin-label" for="reg-peso">Peso</label>
+            <div class="reg-unidad"><input class="tlogin-input" id="reg-peso" type="number" inputmode="decimal" step="0.1"
+              value="${escR(REG.enc.peso)}" oninput="REG.enc.peso=this.value;regLimpiaError()"><span>kg</span></div></div>
+        </div>
+        <label class="tlogin-label" for="reg-estatura">Estatura</label>
+        <div class="reg-unidad"><input class="tlogin-input" id="reg-estatura" type="number" inputmode="numeric"
+          value="${escR(REG.enc.estatura)}" oninput="REG.enc.estatura=this.value;regLimpiaError()" placeholder="Por ejemplo, 172"><span>cm</span></div>
+      </div>`,
+    falta: () => {
+      const e = REG.enc;
+      if (!e.sexo) return 'Elige hombre o mujer.';
+      if (!(+e.edad >= 14 && +e.edad <= 90)) return 'Revisa la edad.';
+      if (!(+e.peso >= 30 && +e.peso <= 250)) return 'Revisa el peso, en kilos.';
+      if (!(+e.estatura >= 120 && +e.estatura <= 230)) return 'Revisa la estatura, en centímetros.';
+      return null;
+    },
+  },
+  { // 7 · Molestias
+    pinta: () => `
+      <div class="reg-t">¿Te molesta algo?</div>
+      <div class="reg-s">Los ejercicios que suelen cargar esa zona quedan fuera de tu plan. Si es una lesión, que la vea un profesional.</div>
+      <div class="reg-chips">${REG_MOLESTIAS.map(([v, t]) => `
+        <button class="reg-chip${REG.enc.molestias.includes(v) ? ' on' : ''}" onclick="regMolestia('${v}',this)">${t}</button>`).join('')}
+        <button class="reg-chip${!REG.enc.molestias.length ? ' on' : ''}" id="reg-ninguna" onclick="regMolestia('',this)">Nada</button></div>
+      <textarea class="reg-area" id="reg-molestia-txt" maxlength="300" placeholder="¿Algo más que deba saber? (opcional)"
+        oninput="REG.enc.molestiaTexto=this.value">${escR(REG.enc.molestiaTexto)}</textarea>`,
+  },
+  { // 8 · Pesos de referencia (opcional)
+    pinta: () => `
+      <div class="reg-t">¿Sabes cuánto levantas?</div>
+      <div class="reg-s">El peso con el que haces unas 10 repeticiones, en libras y contando la barra. Si no lo sabes, sáltalo: lo estimo y se corrige la primera semana.</div>
+      <div class="reg-campos">${[['banca', 'Press de banca'], ['sentadilla', 'Sentadilla'], ['jalon', 'Jalón al pecho']].map(([k, t]) => `
+        <label class="tlogin-label" for="reg-ref-${k}">${t}</label>
+        <div class="reg-unidad"><input class="tlogin-input" id="reg-ref-${k}" type="number" inputmode="numeric"
+          value="${escR(REG.enc.referencias[k])}" oninput="REG.enc.referencias['${k}']=this.value"><span>lbs</span></div>`).join('')}
+      </div>`,
+    boton: 'Crear mi plan',
+    saltar: true,
+  },
+];
+
+function abrirRegistro() {
+  if (!REG.enc) REG.enc = encuestaVacia();
+  REG.paso = 0;
+  show('registro');
+  regPinta(0);
+}
+
+function regPinta(dir) {
+  const p = REG_PASOS[REG.paso];
+  const cuerpo = document.getElementById('reg-cuerpo');
+  cuerpo.innerHTML = `<div class="reg-paso">${p.pinta()}</div>`;
+  cuerpo.scrollTop = 0;
+  const total = REG_PASOS.length - 1;
+  document.getElementById('reg-progreso').style.width = (REG.paso / total * 100) + '%';
+  document.getElementById('reg-paso-n').textContent = REG.paso ? `${REG.paso} de ${total}` : '';
+  const sig = document.getElementById('reg-sig');
+  sig.innerHTML = (p.boton || 'Continuar');
+  sig.disabled = false;
+  document.getElementById('reg-saltar').hidden = !p.saltar;
+  document.getElementById('reg-pie').hidden = false;
+  document.getElementById('reg-atras').style.visibility = '';
+  regLimpiaError();
+  if (dir) entrar(document.getElementById('registro'), dir, true);
+  if (REG.paso === 1) regPintaUsuario();
+}
+
+function regLimpiaError() { const e = document.getElementById('reg-error'); if (e) e.textContent = ''; }
+
+async function regSiguiente() {
+  const p = REG_PASOS[REG.paso];
+  const falta = p.falta && p.falta();
+  if (falta) { document.getElementById('reg-error').textContent = falta; return; }
+  if (p.antes) {
+    const ok = await p.antes();
+    if (!ok) return;
+  }
+  if (REG.paso === REG_PASOS.length - 1) return regCrear();
+  REG.paso++;
+  regPinta(1);
+}
+
+function regSaltar() {
+  REG.enc.referencias = { banca: '', sentadilla: '', jalon: '' };
+  regCrear();
+}
+
+function regAtras() {
+  if (REG.paso === 0) { show('role-select'); return; }
+  REG.paso--;
+  regPinta(-1);
+}
+
+/* Elegir una opción marca esa y desmarca sus hermanas, sin repintar todo */
+function regElige(campo, valor, btn) {
+  REG.enc[campo] = valor;
+  btn.parentElement.querySelectorAll('.reg-op, .reg-chip').forEach(b => b.classList.toggle('on', b === btn));
+  regLimpiaError();
+}
+
+function regDia(d, btn) {
+  const dias = REG.enc.dias;
+  const i = dias.indexOf(d);
+  if (i >= 0) dias.splice(i, 1); else dias.push(d);
+  btn.classList.toggle('on', i < 0);
+  btn.setAttribute('aria-pressed', String(i < 0));
+  document.getElementById('reg-dias-n').innerHTML = regTextoDias();
+  regLimpiaError();
+}
+
+function regTextoDias() {
+  const n = REG.enc.dias.length;
+  if (!n) return '';
+  const tipo = n <= 3 ? 'cuerpo completo cada día' : n === 4 ? 'torso y pierna alternados'
+    : n === 5 ? 'un grupo grande por día' : 'empuje, tirón y pierna';
+  return n > 6 ? '<b>Son muchos días.</b> Quita alguno.' : `<b>${n} día${n === 1 ? '' : 's'}</b>${n >= 2 ? ' · ' + tipo : ''}`;
+}
+
+function regMolestia(v, btn) {
+  const m = REG.enc.molestias;
+  if (!v) { m.length = 0; }
+  else { const i = m.indexOf(v); if (i >= 0) m.splice(i, 1); else m.push(v); }
+  const chips = btn.parentElement.querySelectorAll('.reg-chip');
+  chips.forEach(b => {
+    if (b.id === 'reg-ninguna') b.classList.toggle('on', !m.length);
+    else b.classList.toggle('on', m.includes(b.getAttribute('onclick').match(/'(\w*)'/)[1]));
+  });
+}
+
+/* El usuario se sugiere del nombre hasta que lo toque a mano */
+const slugReg = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 20);
+function regNombre(v) {
+  REG.nombre = v;
+  if (!REG.usuarioTocado) {
+    REG.usuario = slugReg(v);
+    REG.usuarioLibre = null;
+    const u = document.getElementById('reg-usuario');
+    if (u) u.value = REG.usuario;
+    regPintaUsuario();
+  }
+  regLimpiaError();
+}
+function regUsuario(v) {
+  REG.usuarioTocado = true;
+  const limpio = slugReg(v);
+  REG.usuario = limpio;
+  REG.usuarioLibre = null;
+  const u = document.getElementById('reg-usuario');
+  if (u && u.value !== limpio) u.value = limpio;
+  regPintaUsuario();
+  regLimpiaError();
+}
+function regPintaUsuario(estado) {
+  const h = document.getElementById('reg-usuario-hint');
+  if (!h) return;
+  h.className = 'reg-hint' + (estado === 'libre' ? ' ok' : estado === 'ocupado' ? ' mal' : '');
+  h.textContent = estado === 'libre' ? `@${REG.usuario} está libre.`
+    : estado === 'ocupado' ? `@${REG.usuario} ya existe. Prueba con otro.`
+    : 'Solo minúsculas y números. Guárdalo: es tu acceso.';
+}
+
+/* Antes de seguir se comprueba que el usuario esté libre */
+async function regCompruebaUsuario() {
+  if (REG.usuarioLibre === true) return true;
+  const btn = document.getElementById('reg-sig');
+  setLoginBusy(btn, true, 'Comprobando…');
+  try {
+    const r = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'usuario-disponible', username: REG.usuario }) });
+    const j = await r.json();
+    setLoginBusy(btn, false);
+    if (j.disponible) { REG.usuarioLibre = true; regPintaUsuario('libre'); return true; }
+    regPintaUsuario('ocupado');
+    document.getElementById('reg-error').textContent = 'Ese usuario ya existe.';
+    return false;
+  } catch (e) {
+    setLoginBusy(btn, false);
+    document.getElementById('reg-error').textContent = 'Sin conexión. Revisa tu internet e inténtalo de nuevo.';
+    return false;
+  }
+}
+
+/* Mientras la IA arma el plan: el orbe late y las frases van contando qué
+   está pasando. Tarda entre unos segundos y medio minuto. */
+const REG_FASES = ['Eligiendo la división para tus días', 'Filtrando ejercicios para ti',
+                   'Ordenando los circuitos', 'Calculando tus pesos de partida', 'Preparando el calentamiento',
+                   'Repasando que todo encaje'];
+async function regCrear() {
+  const cuerpo = document.getElementById('reg-cuerpo');
+  document.getElementById('reg-pie').hidden = true;
+  document.getElementById('reg-atras').style.visibility = 'hidden';
+  document.getElementById('reg-progreso').style.width = '100%';
+  document.getElementById('reg-paso-n').textContent = '';
+  cuerpo.innerHTML = `<div class="reg-paso reg-armando">
+      <div class="reg-orbe"><i></i><i></i><i></i><b><svg class="ic"><use href="#i-sparkle"/></svg></b></div>
+      <div class="reg-t">Armando tu plan</div>
+      <div class="reg-fase" id="reg-fase">${REG_FASES[0]}</div>
+    </div>`;
+  entrar(document.getElementById('registro'), 1, true);
+  let f = 0;
+  const reloj = setInterval(() => {
+    const el = document.getElementById('reg-fase');
+    if (!el) return clearInterval(reloj);
+    f = Math.min(f + 1, REG_FASES.length - 1);
+    el.classList.remove('cambia'); void el.offsetWidth; el.classList.add('cambia');
+    el.textContent = REG_FASES[f];
+  }, 3200);
+
+  const e = REG.enc;
+  const encuesta = {
+    objetivo: e.objetivo, nivel: e.nivel, dias: e.dias, minutos: e.minutos, lugar: e.lugar,
+    sexo: e.sexo, edad: +e.edad, peso: +e.peso, estatura: +e.estatura,
+    molestias: e.molestias, molestiaTexto: e.molestiaTexto,
+    referencias: { banca: +e.referencias.banca || null, sentadilla: +e.referencias.sentadilla || null, jalon: +e.referencias.jalon || null },
+  };
+  let j = null, fallo = null;
+  try {
+    const r = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'crear-cuenta-ia', name: REG.nombre.trim(), username: REG.usuario, encuesta }) });
+    j = await r.json();
+    if (!j.ok) fallo = j;
+  } catch (err) { fallo = { error: 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' }; }
+  clearInterval(reloj);
+
+  if (fallo) {
+    // Se vuelve a donde está lo que hay que corregir
+    REG.paso = fallo.campo === 'usuario' ? 1 : REG_PASOS.length - 1;
+    if (fallo.campo === 'usuario') REG.usuarioLibre = false;
+    regPinta(-1);
+    document.getElementById('reg-error').textContent = fallo.error || 'No se pudo crear el plan. Inténtalo de nuevo.';
+    return;
+  }
+  regMuestraPlan(j);
+}
+
+function regMuestraPlan(j) {
+  const sesiones = (j.plan && j.plan.sesiones) || [];
+  const DIA_CORTO = { 'Lunes': 'Lun', 'Martes': 'Mar', 'Miércoles': 'Mié', 'Jueves': 'Jue', 'Viernes': 'Vie', 'Sábado': 'Sáb', 'Domingo': 'Dom' };
+  document.getElementById('reg-cuerpo').innerHTML = `<div class="reg-paso">
+      <div class="reg-listo-check"><svg class="ic"><use href="#i-check"/></svg></div>
+      <div class="reg-t">Tu plan está listo</div>
+      <div class="reg-explica">${escR(j.plan && j.plan.explicacion)}</div>
+      <div class="group reg-sesiones">${sesiones.map(x => `
+        <div class="reg-ses">
+          <span class="reg-ses-dia">${DIA_CORTO[x.dia] || escR(String(x.dia || '').slice(0, 3))}</span>
+          <div><div class="reg-ses-t">${escR(Array.isArray(x.musculos)
+              ? deriveSessionTitle({ circuits: [{ exercises: x.musculos.map(m => ({ muscle: m })) }] }, 0) : x.title)}</div>
+            <div class="reg-ses-s">${x.circuitos} circuito${x.circuitos === 1 ? '' : 's'} · ${x.ejercicios} ejercicios · ${x.series} series</div></div>
+        </div>`).join('')}</div>
+      <div class="reg-nota"><svg class="ic ic-sm"><use href="#i-info"/></svg>
+        <span>Los pesos de esta semana son sugeridos. Marca cada ejercicio al terminar y se corrigen solos desde la primera sesión.</span></div>
+      <div class="reg-nota"><svg class="ic ic-sm"><use href="#i-perfil"/></svg>
+        <span>Tu usuario es <b>@${escR(j.athlete.username)}</b>. Con él entras desde cualquier teléfono.</span></div>
+    </div>`;
+  const pie = document.getElementById('reg-pie');
+  pie.hidden = false;
+  document.getElementById('reg-saltar').hidden = true;
+  const sig = document.getElementById('reg-sig');
+  sig.innerHTML = 'Empezar <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>';
+  sig.onclick = () => {
+    sig.onclick = regSiguiente;
+    REG.paso = 0; REG.enc = null; REG.nombre = ''; REG.usuario = ''; REG.usuarioTocado = false; REG.usuarioLibre = null;
+    entrarComoAtleta(j.athlete, j.selfToken);
+  };
+  entrar(document.getElementById('registro'), 1, true);
+}
+
+/* Deja la sesión del atleta abierta y lo lleva a Hoy. Lo usan el login y
+   el registro con IA. */
+function entrarComoAtleta(dyn, selfToken) {
+  athleteSelfToken = selfToken;
+  try { localStorage.setItem(`selfToken_${dyn.clientId}`, selfToken); } catch {}
+  try { localStorage.setItem('currentAthlete', dyn.clientId); } catch {}
+  recuerdaModo(dyn);
+  currentAthlete = dyn.clientId;
+  currentAthleteRecord = dyn;
+  data = {};
+  loadRoutine();
+  ajustaNavAtleta();
+  showGenericProfile(dyn);   // precarga los datos del perfil
+  showToday(); activateNav('today');   // ...pero se entra por Hoy
+  loadAthletePayment(currentAthlete);
+  if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
 }
 
 /* Estado de espera de los botones de acceso: bloquea el botón, lo marca como
@@ -5936,10 +6648,28 @@ async function setAvatarPhoto(el, url, initials) {
   } catch { /* se quedan las iniciales */ }
 }
 
+/* Qué plan tiene y por qué, en el lugar donde los demás ven a su entrenador */
+function pintaPlanIA() {
+  const wrap = document.getElementById('pg-plan-wrap');
+  const r = currentAthleteRecord;
+  const plan = r && r.planIA;
+  if (!wrap) return;
+  if (!plan || !plan.explicacion) { wrap.hidden = true; return; }
+  const DIAS_C = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const dias = diasDeEntreno().map(d => DIAS_C[d]).join(' · ');
+  const OBJ = { hipertrofia: 'Ganar músculo', fuerza: 'Ganar fuerza', recomposicion: 'Recomposición' };
+  document.getElementById('pg-plan-t').textContent = OBJ[r.profile && r.profile.goal] || 'Plan con IA';
+  document.getElementById('pg-plan-s').textContent = dias;
+  document.getElementById('pg-plan-txt').textContent = plan.explicacion;
+  wrap.hidden = false;
+}
+
 async function loadAthleteTrainerCard(trainerId) {
   const wrap = document.getElementById('pg-trainer-wrap');
   // Sin entrenador no hay tarjeta que mostrar
-  if (wrap && seAutogestiona()) { wrap.style.display = 'none'; return; }
+  if (wrap && seAutogestiona()) { wrap.style.display = 'none'; pintaPlanIA(); return; }
+  const pw = document.getElementById('pg-plan-wrap');
+  if (pw) pw.hidden = true;
   if (!trainerId) { wrap.style.display = 'none'; return; }
   try {
     const trainers = await fetchTrainersCached();
@@ -6343,7 +7073,7 @@ function renderClientList() {
     const initials = displayName.split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
     const plan = a.profile?.goal ? ('Plan: ' + prettyGoal(a.profile.goal)) : ('Sesiones: ' + (a.sessionsPerWeek || '—') + '/semana');
     return `${i ? '<div class="group-sep"></div>' : ''}
-      <div class="client-card" onclick="openTrainerClient('${esc(a.clientId)}','${esc(displayName)}')">
+      <div class="client-card" style="--fila:${Math.min(i, 14)}" onclick="openTrainerClient('${esc(a.clientId)}','${esc(displayName)}')">
         <div class="client-avatar">${esc(initials)}</div>
         <div class="client-body">
           <div class="client-name">${esc(displayName)}</div>
@@ -6798,6 +7528,11 @@ function renderCompletionCard(c) {
 
 function setTrainerTab(tab) {
   if (!FEATURE_PAGOS && tab === 'pagos') tab = 'editar';
+  const desde = ORDEN_TAB_ENTRENADOR.indexOf(activeTrainerTab);
+  const hacia = ORDEN_TAB_ENTRENADOR.indexOf(tab);
+  if (desde >= 0 && hacia >= 0 && desde !== hacia) {
+    entrar(document.getElementById('trainer-client'), Math.sign(hacia - desde), true);
+  }
   activeTrainerTab = tab;
   document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
   document.getElementById('tab-comidas').classList.toggle('active', tab === 'comidas');
@@ -6809,10 +7544,21 @@ function setTrainerTab(tab) {
 }
 
 function activateTrainerNav(tab) {
+  const antes = document.querySelector('.tbnav-item.active');
   document.querySelectorAll('.tbnav-item').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('tbnav-' + tab);
   if (el) el.classList.add('active');
+  if (el && antes && el !== antes) {
+    el.classList.remove('brinca');
+    void el.offsetWidth;
+    el.classList.add('brinca');
+    el.addEventListener('animationend', () => el.classList.remove('brinca'), { once: true });
+  }
+  pildoraEn('trainer-bottom-nav', '.tbnav-item.active .tbnav-icon');
 }
+
+/* Orden de las pestañas del entrenador, para saber de qué lado entra */
+const ORDEN_TAB_ENTRENADOR = ['editar', 'comidas', 'resumen', 'pagos', 'rutinas'];
 
 function renderTrainerTab() {
   const el = document.getElementById('tclient-content');
@@ -7720,8 +8466,7 @@ function openComplete() {
   document.getElementById('complete-notes').value = '';
 
   // Sin entrenador al otro lado, las notas son la entrada del ajuste semanal
-  const solo = typeof ATLETAS_RUTINA_FIJA !== 'undefined'
-            && ATLETAS_RUTINA_FIJA.includes(currentAthlete);
+  const solo = seAutogestiona();
   const cab = document.getElementById('complete-notes-head');
   const txt = document.getElementById('complete-notes');
   const btn = document.getElementById('complete-confirm');
@@ -8130,7 +8875,7 @@ async function sendChat() {
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat() })
+      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat(), client: currentAthlete })
     });
     const data = await res.json();
     if (data.content) {
@@ -8156,9 +8901,7 @@ async function sendChat() {
 
 /* Lo que el chat necesita saber para poder cambiar algo */
 function sesionParaChat() {
-  const esMio = typeof ATLETAS_RUTINA_FIJA !== 'undefined'
-             && ATLETAS_RUTINA_FIJA.includes(currentAthlete);
-  if (!esMio) return [];
+  if (!seAutogestiona()) return [];
   const day = data && data[currentDay];
   if (!day || !Array.isArray(day.circuits)) return [];
   const out = [];
@@ -8299,12 +9042,14 @@ let editorBlock = null;
 function openEditorBlock(kind, ci) {
   reordenando = false;
   editorBlock = (kind === 'circuit') ? { kind, ci } : { kind };
+  entrar(document.getElementById('trainer-client'), 1, true);
   renderRoutineEditor();
   const c = document.getElementById('tclient-content');
   if (c) c.scrollTop = 0;
 }
 function closeEditorBlock() {
   editorBlock = null;
+  entrar(document.getElementById('trainer-client'), -1, true);
   renderRoutineEditor();
   const c = document.getElementById('tclient-content');
   if (c) c.scrollTop = 0;
@@ -9564,8 +10309,12 @@ function activateNav(tab) {
    primera vez se coloca sin animar: si no, entraría deslizándose desde la
    izquierda al abrir la app. */
 function muevePildora(intento) {
+  pildoraEn('bottom-nav', '.bnav-item.active .bnav-icon', intento);
+}
+
+function pildoraEn(navId, selIcono, intento) {
   intento = intento || 0;
-  const nav = document.getElementById('bottom-nav');
+  const nav = document.getElementById(navId);
   if (!nav) return;
   let pill = nav.querySelector('.bnav-pill');
   if (!pill) {
@@ -9574,16 +10323,15 @@ function muevePildora(intento) {
     pill.setAttribute('aria-hidden', 'true');
     nav.prepend(pill);
   }
-  const act = nav.querySelector('.bnav-item.active');
-  const ic = act && act.querySelector('.bnav-icon');
+  const ic = nav.querySelector(selIcono);
   const rn = nav.getBoundingClientRect();
   // La barra puede estar oculta todavía (pantalla de acceso): se reintenta
   if (!ic || !rn.width) {
-    if (intento < 12) requestAnimationFrame(() => muevePildora(intento + 1));
+    if (intento < 12) requestAnimationFrame(() => pildoraEn(navId, selIcono, intento + 1));
     return;
   }
   const ri = ic.getBoundingClientRect();
-  const x = ri.left - rn.left + ri.width / 2 - 29;
+  const x = ri.left - rn.left + ri.width / 2 - pill.offsetWidth / 2;
   const y = ri.top - rn.top + ri.height / 2 - 16;
   const primera = !pill.classList.contains('visible');
   if (primera) pill.style.transition = 'none';
@@ -9654,6 +10402,17 @@ function renderToday() {
           </div>
         </div>
       </div>`;
+  } else if (tieneContenido && state && state.esDescanso) {
+    // Hoy no le toca: se dice, y la próxima queda a mano por si la adelanta
+    const cuando = NOMBRE_DIA[state.diaDeLaSesion] || '';
+    entrenamiento = `<div class="today-card">
+        <div class="today-eyebrow">Hoy descansas</div>
+        <div class="today-title">${deriveSessionTitle(day, (key.match(/\d+/)||[''])[0])}</div>
+        <div class="today-sub">Es tu sesión del ${cuando}. Si quieres adelantarla, ya está lista.</div>
+        <button class="btn-secondary today-cta today-cta-suave" onclick="showRoutine();activateNav('routine')">
+          Entrenar igual <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
+        </button>
+      </div>`;
   } else if (tieneContenido) {
     const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
     const wuN = parseInt(day.warmupSeries) || 2;
@@ -9681,7 +10440,7 @@ function renderToday() {
     entrenamiento = `<div class="today-card">
         <div class="today-eyebrow">Tu entrenamiento</div>
         <div class="today-title">Sin rutina cargada</div>
-        <div class="today-sub">Tu entrenador aún no cargó esta sesión.</div>
+        <div class="today-sub">${seAutogestiona() ? 'Tu plan se está preparando. Vuelve a abrir en un momento.' : 'Tu entrenador aún no cargó esta sesión.'}</div>
       </div>`;
   }
 

@@ -1,0 +1,540 @@
+/* ══════════════════════════════════════════════════════════════════════
+   GENERADOR DE PLANES
+
+   Arma la primera rutina de una cuenta con IA a partir de la encuesta.
+   Es la misma lógica con la que se armó a mano la de nicolassaravia,
+   pasada a reglas:
+
+     · Los días definen la división (cuerpo completo, torso/pierna, la de
+       cinco días, empuje/tirón/pierna).
+     · El tiempo define cuántos circuitos caben y la experiencia cuántas
+       series. Cada circuito son tres ejercicios.
+     · El objetivo define rangos de repeticiones, descansos y si hay cardio.
+     · El lugar, la experiencia y las molestias filtran el catálogo ANTES
+       de que nadie elija nada.
+
+   La IA sólo elige entre candidatos válidos (y escribe la explicación); el
+   código comprueba cada elección y, si algo no cuadra o la API no
+   responde, elige él. Sin IA el plan sale igual de completo.
+   ══════════════════════════════════════════════════════════════════════ */
+import { CATALOGO, PorNombre } from './catalogo-ejercicios.js';
+
+const sinTilde = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+export const OBJETIVOS = ['hipertrofia', 'fuerza', 'recomposicion'];
+export const NIVELES = ['principiante', 'intermedio', 'avanzado'];
+export const MOLESTIAS = ['hombro', 'rodilla', 'lumbar', 'codo'];
+const NOMBRE_DIA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+/* ── Qué tipo de ejercicio es ──────────────────────────────────────────
+   C = compuesto. A = aislamiento. En hombro se distingue la porción,
+   porque un día de hombro con tres press no es un día de hombro:
+   L = lateral, P = posterior, F = frontal. */
+export function tipoDe(ex) {
+  const n = sinTilde(ex.name), m = ex.muscle;
+  if (m === 'hombros') {
+    if (/press/.test(n)) return 'C';
+    if (/frontal/.test(n)) return 'F';
+    if (/pajaro|face pull|invertido|inversa|cuban/.test(n)) return 'P';
+    return 'L';
+  }
+  if (['biceps', 'triceps', 'pantorrilla', 'abdomen', 'trapecio', 'antebrazo'].includes(m)) {
+    return /agarre cerrado|chin-up/.test(n) ? 'C' : 'A';
+  }
+  if (/brazos rectos|pull ?over|apertura|cruce|peck|patada|abduc|aductora|extension de cuadriceps|curl femoral|curl nordico|sissy|wall sit|estatica/.test(n)) return 'A';
+  return 'C';
+}
+
+/* ── Filtros ──────────────────────────────────────────────────────── */
+
+// En casa: mancuernas, un banco y el propio cuerpo
+const CASA_TAMBIEN = new Set(['Elevación de talones unilateral de pie', 'Pullover con mancuerna']);
+function sirveEnCasa(ex) {
+  if (CASA_TAMBIEN.has(ex.name)) return true;
+  const n = sinTilde(ex.name);
+  if (!['mancuerna', 'corporal'].includes(ex.unit)) return false;
+  return !/barra|polea|cable|maquina|multipower|smith|paralelas|colgado|silla romana|prensa|hack|landmine|declinado|disco|kettlebell|wheel|glute-ham|nordico|dominada|remo invertido|chin-up|asistid/.test(n);
+}
+
+// Lo que pide técnica o una base que un principiante todavía no tiene
+const DIFICILES = /pendlay|pistol|nordico|glute-ham|wheel|rollout|dominadas pronas|colgado|peso muerto con barra|peso muerto sumo|sentadilla frontal|sentadilla trasera|buenos dias|jm press|zottman|cuban|waiter|tate|landmine|sissy|kettlebell|abiertas y cerradas|giros rusos|farmer|curl de muneca|piernas rigidas|box squat|fondos en paralelas|remo con barra inclinado|press militar con barra|press militar sentada|barra t/;
+
+// Lo que suele cargar cada zona. Conservador a propósito: si hay duda, fuera.
+const POR_MOLESTIA = {
+  hombro: /press militar|press de hombro|press arnold|cuban|remo al menton|fondos|landmine|abiertas y cerradas|pull ?over|declinado|dominadas pronas|colgado|elevacion frontal con barra/,
+  rodilla: /pistol|sissy|zancada|bulgara|step-up|wall sit|estatica|sentadilla frontal|sentadilla trasera|box squat|hack|pendulo|talones elevados|sumo en multipower/,
+  lumbar: /peso muerto|buenos dias|remo con barra|pendlay|barra t|sentadilla trasera|sentadilla frontal|kettlebell|giros rusos|wheel|rollout|good/,
+  codo: /skull|press frances|jm press|curl de biceps con barra|curl de muneca|curl inverso|barra plana|predicador barra|arana con barra|zottman|tate|flexion diamante|fondos en banco|waiter/,
+};
+
+/* Qué ejercicios valen para esta persona. Lo usan el generador, la
+   rotación semanal y el chat: así ninguno de los tres propone algo que
+   no puede hacer. Sin encuesta (cuentas anteriores) vale todo. */
+export function filtroDelAtleta(enc) {
+  if (!enc) return () => true;
+  const casa = enc.lugar === 'casa';
+  const novato = enc.nivel === 'principiante';
+  const zonas = (enc.molestias || []).filter(z => POR_MOLESTIA[z]);
+  return ex => {
+    const n = sinTilde(ex.name);
+    if (casa && !sirveEnCasa(ex)) return false;
+    if (novato && DIFICILES.test(n)) return false;
+    for (const z of zonas) if (POR_MOLESTIA[z].test(n)) return false;
+    return true;
+  };
+}
+
+/* ── Preferencias ─────────────────────────────────────────────────────
+   Los básicos de cada músculo van primero. Lo que no está en la lista
+   queda detrás, en el orden del catálogo. */
+const PREFERIDOS = [
+  // pecho
+  'Press de banca plano con barra', 'Press inclinado con mancuernas', 'Press de banca plano con mancuernas',
+  'Press inclinado Smith', 'Press de pecho en máquina', 'Press inclinado en máquina', 'Fondos en paralelas para pecho',
+  'Cruce de poleas', 'Peck deck', 'Aperturas inclinadas con mancuernas', 'Cruce de cables bajo a alto',
+  'Aperturas con mancuernas en banco plano', 'Aperturas en máquina', 'Flexión estándar', 'Push-up inclinado',
+  // espalda
+  'Jalón al pecho agarre ancho', 'Remo con barra inclinado', 'Remo sentado en polea', 'Dominadas pronas',
+  'Jalón al pecho agarre cerrado', 'Remo con mancuerna a una mano', 'Remo sentado en máquina', 'Remo en barra T',
+  'Dominadas asistidas en máquina', 'Jalón con brazos rectos en polea', 'Pull over en cable', 'Pullover con mancuerna',
+  // hombros
+  'Press de hombro sentado con mancuernas', 'Press militar con barra', 'Press de hombro en máquina', 'Press Arnold con mancuernas',
+  'Elevaciones laterales con mancuernas', 'Elevación lateral en polea', 'Vuelos laterales sentada',
+  'Face Pull con cuerda en polea', 'Peck deck invertido', 'Pájaros con mancuernas inclinado', 'Pájaro en cables (pec deck inversa)',
+  'Elevaciones frontales alternas con mancuernas', 'Elevación frontal con disco',
+  // pierna
+  'Sentadilla en multipower', 'Prensa de piernas 45', 'Sentadilla trasera con barra', 'Hack Squat',
+  'Sentadilla Goblet con mancuerna', 'Sentadilla búlgara', 'Zancadas con mancuernas',
+  'Extensión de cuádriceps', 'Extensión de cuádriceps unilateral',
+  'Peso muerto rumano con barra', 'Peso muerto a piernas rígidas', 'Curl femoral tumbado', 'Curl femoral sentado',
+  'Curl femoral unilateral de pie',
+  'Hip Thrust con barra', 'Hip Thrust en máquina', 'Hip Thrust en multipower', 'Peso muerto rumano con mancuernas',
+  'Hip thrust unilateral con mancuerna', 'Puente de glúteos con barra',
+  'Patada de glúteo en polea', 'Abductora en máquina', 'Abducción de cadera en polea', 'Patada de glúteo en máquina',
+  'Patada de glúteo con mancuerna',
+  'Elevación de talones de pie', 'Elevación de talones sentado', 'Elevación de talones en prensa',
+  'Elevación de talones unilateral de pie',
+  // brazos
+  'Curl de bíceps con barra', 'Curl inclinado con mancuernas', 'Curl martillo', 'Curl en polea con cuerda',
+  'Curl de bíceps con mancuernas', 'Curl predicador barra EZ', 'Curl bayesiano en polea', 'Curl predicador en máquina',
+  'Curl de concentración',
+  'Extensiones de tríceps en polea con barra V', 'Extensiones de tríceps en polea con cuerda',
+  'Extensión unilateral de tríceps sobre cabeza en polea', 'Press francés acostado con barra',
+  'Extensión de tríceps sobre la cabeza', 'Patada de tríceps con mancuerna', 'Skull crusher con mancuernas',
+  'Extensión de tríceps sentado con mancuerna',
+  // core y trapecio
+  'Crunch en polea arrodillado', 'Elevación de piernas en silla romana', 'Plancha estática', 'Crunch abdominal clásico',
+  'Crunch inverso', 'Encogimientos con mancuernas', 'Encogimientos con barra', 'Encogimientos en polea',
+];
+const RANGO_PREF = new Map(PREFERIDOS.map((n, i) => [n, i]));
+const rangoPref = ex => RANGO_PREF.has(ex.name) ? RANGO_PREF.get(ex.name) : 500 + CATALOGO.indexOf(ex);
+
+/* ── Divisiones ───────────────────────────────────────────────────────
+   Cada sesión son hasta tres circuitos de tres huecos, en orden de
+   prioridad: con poco tiempo se quedan los dos primeros circuitos, que
+   llevan los básicos. El patrón 2+1 / 1+2 es el de la rutina original. */
+const S = (titulo, ...c) => ({ titulo, huecos: c.flat() });
+const DIVISIONES = {
+  2: [
+    S('Cuerpo completo A', [['cuadriceps','C'],['pecho','C'],['espalda','C']], [['isquio','A'],['hombros','L'],['biceps','A']], [['gluteo','C'],['triceps','A'],['abdomen','A']]),
+    S('Cuerpo completo B', [['isquio','C'],['espalda','C'],['pecho','C']], [['cuadriceps','A'],['hombros','C'],['triceps','A']], [['pantorrilla','A'],['biceps','A'],['hombros','P']]),
+  ],
+  3: [
+    S('Cuerpo completo A', [['cuadriceps','C'],['pecho','C'],['espalda','C']], [['isquio','A'],['hombros','L'],['biceps','A']], [['gluteo','C'],['triceps','A'],['abdomen','A']]),
+    S('Cuerpo completo B', [['isquio','C'],['espalda','C'],['pecho','C']], [['cuadriceps','A'],['hombros','C'],['triceps','A']], [['pantorrilla','A'],['biceps','A'],['hombros','P']]),
+    S('Cuerpo completo C', [['gluteo','C'],['pecho','C'],['espalda','C']], [['cuadriceps','C'],['hombros','L'],['espalda','A']], [['isquio','A'],['biceps','A'],['triceps','A']]),
+  ],
+  4: [
+    S('Torso A', [['pecho','C'],['espalda','C'],['hombros','L']], [['pecho','C'],['espalda','C'],['biceps','A']], [['hombros','C'],['triceps','A'],['hombros','P']]),
+    S('Pierna A', [['cuadriceps','C'],['isquio','C'],['pantorrilla','A']], [['cuadriceps','C'],['gluteo','C'],['abdomen','A']], [['cuadriceps','A'],['isquio','A'],['pantorrilla','A']]),
+    S('Torso B', [['espalda','C'],['pecho','C'],['hombros','P']], [['espalda','C'],['pecho','A'],['triceps','A']], [['hombros','C'],['biceps','A'],['hombros','L']]),
+    S('Pierna B', [['isquio','C'],['cuadriceps','C'],['abdomen','A']], [['gluteo','C'],['cuadriceps','C'],['pantorrilla','A']], [['isquio','A'],['gluteo','A'],['cuadriceps','A']]),
+  ],
+  5: [
+    S('Pecho + Bíceps', [['pecho','C'],['pecho','C'],['biceps','A']], [['pecho','A'],['biceps','A'],['biceps','A']], [['pecho','A'],['pecho','A'],['biceps','A']]),
+    S('Espalda + Tríceps', [['espalda','C'],['espalda','C'],['triceps','A']], [['espalda','C'],['triceps','A'],['triceps','A']], [['espalda','C'],['espalda','A'],['triceps','A']]),
+    S('Pierna', [['cuadriceps','C'],['isquio','C'],['pantorrilla','A']], [['cuadriceps','C'],['isquio','A'],['gluteo','C']], [['cuadriceps','A'],['isquio','A'],['pantorrilla','A']]),
+    S('Hombros', [['hombros','C'],['hombros','L'],['hombros','P']], [['hombros','C'],['hombros','L'],['hombros','P']], [['hombros','F'],['hombros','P'],['trapecio','A']]),
+    S('Espalda + Pecho', [['espalda','C'],['espalda','C'],['pecho','C']], [['pecho','C'],['pecho','A'],['espalda','C']], [['espalda','A'],['espalda','C'],['pecho','A']]),
+  ],
+  6: [
+    S('Empuje A', [['pecho','C'],['pecho','C'],['hombros','L']], [['hombros','C'],['pecho','A'],['triceps','A']], [['triceps','A'],['hombros','L'],['triceps','A']]),
+    S('Tirón A', [['espalda','C'],['espalda','C'],['biceps','A']], [['espalda','C'],['hombros','P'],['biceps','A']], [['espalda','A'],['biceps','A'],['trapecio','A']]),
+    S('Pierna A', [['cuadriceps','C'],['isquio','C'],['pantorrilla','A']], [['cuadriceps','C'],['gluteo','C'],['abdomen','A']], [['cuadriceps','A'],['isquio','A'],['pantorrilla','A']]),
+    S('Empuje B', [['pecho','C'],['hombros','C'],['triceps','A']], [['pecho','C'],['pecho','A'],['hombros','L']], [['hombros','L'],['triceps','A'],['pecho','A']]),
+    S('Tirón B', [['espalda','C'],['espalda','C'],['hombros','P']], [['espalda','C'],['biceps','A'],['biceps','A']], [['espalda','A'],['hombros','P'],['abdomen','A']]),
+    S('Pierna B', [['isquio','C'],['cuadriceps','C'],['abdomen','A']], [['gluteo','C'],['cuadriceps','C'],['pantorrilla','A']], [['isquio','A'],['gluteo','A'],['cuadriceps','A']]),
+  ],
+};
+
+/* ── Volumen y estímulo ───────────────────────────────────────────── */
+function estructura(enc) {
+  const circuitos = enc.minutos <= 45 ? 2 : 3;
+  // Un principiante progresa con menos; cuatro vueltas sólo con tiempo de sobra
+  const series = enc.nivel === 'principiante' ? 3 : (enc.minutos >= 90 || enc.nivel === 'avanzado') ? 4 : 3;
+  const descanso = enc.objetivo === 'fuerza' ? 90 : enc.objetivo === 'recomposicion' ? 45 : 60;
+  return { circuitos, series, descanso };
+}
+
+/* Rango de repeticiones por tipo de movimiento: el mismo criterio que la
+   rotación semanal, con la fuerza bajando el rango de los compuestos. */
+export function rangoDeRepsPara(nombre, enc) {
+  const n = sinTilde(nombre);
+  let r = [8, 12];
+  if (/talones|crunch|plancha|abdomen|piernas/.test(n)) r = [12, 20];
+  else if (/press de banca|press inclinado|press militar|press de hombro|sentadilla|peso muerto|dominada|remo con barra|remo en barra|remo pendlay|hack|prensa|hip thrust|zancada/.test(n)) r = [6, 10];
+  else if (/curl|extension|elevacion|apertura|cruce|cable|pajaro|vuelo|face ?pull|peck deck|patada|encogimiento|skull|jm press|press frances|fondos/.test(n)) r = [10, 15];
+  const cat = PorNombre[nombre];
+  const basico = cat && cat.unit !== 'corporal' && tipoDe(cat) === 'C';
+  if (enc && enc.objetivo === 'fuerza' && r[0] === 6 && basico) r = enc.nivel === 'principiante' ? [6, 8] : [4, 6];
+  // Un principiante aprende el movimiento con algo más de margen
+  if (enc && enc.nivel === 'principiante' && r[0] === 6 && enc.objetivo !== 'fuerza') r = [8, 12];
+  return r;
+}
+
+/* ── Cargas de partida ────────────────────────────────────────────────
+   No hay forma de saber cuánto levanta alguien a quien no se ha visto
+   entrenar. Se estima por peso corporal, nivel y sexo, a la baja, y se
+   marca para calibrar: la primera vez que marque el ejercicio, el salto
+   es doble. Si dio pesos de referencia, esos mandan sobre su grupo.
+
+   Proporción de la carga TOTAL de trabajo (8-12 reps) respecto al peso
+   corporal en un hombre intermedio. Mancuerna: por mancuerna. */
+const PROPORCION = [
+  // Las pantorrillas primero: "talones en prensa" no es una prensa de piernas
+  [/talones en prensa/, 0.8],
+  [/talones unilateral/, 0.2],
+  [/talones (de pie|burro)/, 0.8],
+  [/talones/, 0.5],
+  [/press de banca (plano|declinado) con barra|press de banca agarre cerrado/, 0.8],
+  [/press inclinado (con barra|smith)/, 0.6],
+  [/press (de banca|inclinado).*mancuerna/, 0.22],
+  [/press (de pecho|inclinado) en maquina/, 0.55],
+  [/apertura.*mancuerna/, 0.1],
+  [/peck deck invertido|pajaro en cables/, 0.3],
+  [/apertura|peck|cruce/, 0.3],
+  [/sentadilla frontal/, 0.65],
+  [/sentadilla (en multipower|trasera|sumo en multipower|con talones)|box squat|hack|pendulo|zancadas (con barra|en multipower)/, 0.85],
+  [/prensa/, 1.6],
+  [/goblet|sentadilla sumo con mancuerna/, 0.25],
+  [/bulgara|zancadas|step-up/, 0.13],
+  [/extension de cuadriceps/, 0.45],
+  [/curl femoral/, 0.35],
+  [/aductora|abductora|abduccion/, 0.45],
+  [/peso muerto con barra|peso muerto sumo/, 1.0],
+  [/peso muerto (rumano con barra|a piernas)|buenos dias/, 0.7],
+  [/peso muerto rumano con mancuernas/, 0.22],
+  [/hip thrust (con barra|en multipower)|puente de gluteos/, 0.9],
+  [/hip thrust en maquina/, 0.7],
+  [/hip thrust unilateral/, 0.15],
+  [/patada de gluteo/, 0.2],
+  [/remo (con barra|pendlay|en barra t)/, 0.55],
+  [/jalon con brazos rectos|pull ?over/, 0.3],
+  [/jalon|remo (sentado|alto|unilateral en polea)/, 0.55],
+  [/remo con mancuerna/, 0.22],
+  [/press militar|press de hombro en multipower/, 0.45],
+  [/press (de hombro sentado|arnold).*mancuerna/, 0.16],
+  [/press de hombro en maquina/, 0.4],
+  [/lateral.*mancuerna|vuelos|pajaros con mancuernas|frontal/, 0.06],
+  [/lateral en polea|remo al menton cable/, 0.1],
+  [/face pull/, 0.3],
+  [/curl.*barra|curl predicador maquina discos|waiter/, 0.3],
+  [/curl.*mancuerna|curl martillo|curl de concentracion|zottman/, 0.11],
+  [/curl/, 0.25],
+  [/extension.*(polea|maquina)|extensiones de triceps/, 0.28],
+  [/press frances|jm press|barra plana/, 0.3],
+  [/extension de triceps (sobre la cabeza|sentado)/, 0.2],
+  [/patada de triceps/, 0.06],
+  [/skull crusher|tate/, 0.09],
+  [/encogimientos con mancuernas|encogimientos inclinados/, 0.28],
+  [/encogimientos/, 0.8],
+  [/crunch en (polea|maquina)/, 0.35],
+];
+const TREN_INFERIOR = new Set(['cuadriceps', 'isquio', 'gluteo', 'pantorrilla']);
+
+function pesoBarra(n) {
+  if (/multipower|smith/.test(n)) return 20;
+  if (/barra|sentadilla trasera|sentadilla frontal|box squat|peso muerto|hip thrust con barra|puente de gluteos|buenos dias|pendlay|zancadas con barra/.test(n)) return 45;
+  return 0;   // prensa, hack, péndulo, barra T: sólo cuentan los discos
+}
+
+function redondea(v, paso) {
+  const p = paso || 5;
+  return Math.round(v / p) * p;
+}
+
+/* Grupo al que afecta cada peso de referencia */
+const REFERENCIA_DE = {
+  pecho: 'banca', triceps: 'banca', hombros: 'banca',
+  cuadriceps: 'sentadilla', isquio: 'sentadilla', gluteo: 'sentadilla', pantorrilla: 'sentadilla',
+  espalda: 'jalon', biceps: 'jalon', trapecio: 'jalon',
+};
+// Contra qué ejercicio se compara cada referencia
+const BASE_REFERENCIA = {
+  banca: 'Press de banca plano con barra',
+  sentadilla: 'Sentadilla en multipower',
+  jalon: 'Jalón al pecho agarre ancho',
+};
+
+function cargaEstimada(ex, enc, factores) {
+  if (ex.unit === 'corporal' || !ex.step) return '';
+  const n = sinTilde(ex.name);
+  const regla = PROPORCION.find(([re]) => re.test(n));
+  const prop = regla ? regla[1]
+    : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'lado' ? 0.6 : 0.3;
+  const kgCuerpo = Number(enc.peso) || 70;
+  const lbs = kgCuerpo * 2.2046;
+  const nivel = { principiante: 0.6, intermedio: 0.9, avanzado: 1.2 }[enc.nivel] || 0.75;
+  const mujer = enc.sexo === 'f' ? (TREN_INFERIOR.has(ex.muscle) ? 0.75 : 0.55) : 1;
+  // La referencia dice mucho de los básicos y poco de un curl: en los
+  // aislamientos se aplica amortiguada.
+  const refBruto = factores[REFERENCIA_DE[ex.muscle]] || 1;
+  const ref = tipoDe(ex) === 'C' ? refBruto : Math.sqrt(refBruto);
+  let total = lbs * prop * nivel * mujer * ref;
+
+  if (ex.unit === 'lado') {
+    const lado = (total - pesoBarra(n)) / 2;
+    if (lado < ex.step) return pesoBarra(n) ? 'barra sola' : `${ex.step} lbs/lado`;
+    return `${redondea(lado, ex.step)} lbs/lado`;
+  }
+  const v = Math.max(ex.step, redondea(total, ex.step));
+  return ex.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+}
+
+/* Si dio pesos de referencia, cuánto se separa de lo estimado. Acotado:
+   un dato raro no puede triplicar todo un grupo. */
+function factoresDeReferencia(enc) {
+  const out = {};
+  const refs = enc.referencias || {};
+  for (const clave of Object.keys(BASE_REFERENCIA)) {
+    const dado = Number(refs[clave]);
+    if (!dado || !isFinite(dado) || dado <= 0) continue;
+    const ex = PorNombre[BASE_REFERENCIA[clave]];
+    if (!ex) continue;
+    // Lo estimado sin factor, en carga total
+    const txt = cargaEstimada(ex, enc, {});
+    let estimado = parseFloat(txt) || 0;
+    if (ex.unit === 'lado') estimado = estimado * 2 + pesoBarra(sinTilde(ex.name));
+    if (txt === 'barra sola') estimado = pesoBarra(sinTilde(ex.name));
+    if (!estimado) continue;
+    out[clave] = Math.min(2, Math.max(0.5, dado / estimado));
+  }
+  return out;
+}
+
+/* ── Candidatos por hueco ─────────────────────────────────────────── */
+const VECINO = { isquio: 'gluteo', gluteo: 'isquio', trapecio: 'hombros', pantorrilla: 'cuadriceps' };
+export function huecosDelPlan(enc) {
+  const n = Math.max(2, Math.min(6, (enc.dias || []).length));
+  const division = DIVISIONES[n];
+  const { circuitos } = estructura(enc);
+  const vale = filtroDelAtleta(enc);
+  const novato = enc.nivel === 'principiante';
+
+  const orden = (a, b) => {
+    if (novato) {
+      // Primero lo guiado: máquina y mancuerna antes que barra libre
+      const u = e => e.unit === 'placa' ? 0 : e.unit === 'mancuerna' ? 1 : 2;
+      if (u(a) !== u(b)) return u(a) - u(b);
+    }
+    return rangoPref(a) - rangoPref(b);
+  };
+
+  return division.map((ses, si) => {
+    const huecos = ses.huecos.slice(0, circuitos * 3).map(([musculo, tipo]) => {
+      let cands = CATALOGO.filter(e => e.muscle === musculo && vale(e) && tipoDe(e) === tipo);
+      // Si el filtro deja el hueco vacío, se acepta el otro tipo del mismo
+      // músculo, y si tampoco hay, el músculo vecino (en casa no hay curl
+      // femoral, pero sí peso muerto rumano con mancuernas).
+      if (!cands.length) cands = CATALOGO.filter(e => e.muscle === musculo && vale(e));
+      if (!cands.length && VECINO[musculo]) cands = CATALOGO.filter(e => e.muscle === VECINO[musculo] && vale(e));
+      return { musculo, tipo, candidatos: cands.sort(orden).map(e => e.name) };
+    });
+    return { titulo: ses.titulo, huecos };
+  });
+}
+
+/* Elige un ejercicio por hueco. Usa la elección de la IA si existe y es
+   válida; si no, el más preferido que no esté ya en la sesión y que se
+   haya usado menos en la semana (así el segundo día de pecho no repite). */
+function elegirTodo(sesiones, eleccionesIA) {
+  const usosSemana = new Map();
+  return sesiones.map((ses, si) => {
+    const enSesion = new Set();
+    const elegidos = ses.huecos.map((h, hi) => {
+      const ia = eleccionesIA && eleccionesIA[si] && eleccionesIA[si][hi];
+      let nombre = (ia && h.candidatos.includes(ia) && !enSesion.has(ia)) ? ia : null;
+      if (!nombre) {
+        const libres = h.candidatos.filter(c => !enSesion.has(c));
+        libres.sort((a, b) => (usosSemana.get(a) || 0) - (usosSemana.get(b) || 0));
+        nombre = libres[0] || null;
+      }
+      if (nombre) {
+        enSesion.add(nombre);
+        usosSemana.set(nombre, (usosSemana.get(nombre) || 0) + 1);
+      }
+      return nombre;
+    });
+    return elegidos;
+  });
+}
+
+/* ── Calentamiento ────────────────────────────────────────────────────
+   Específico y corto: activación + rampa sobre el primer compuesto del
+   día. Una sola vuelta. */
+function calentamiento(primero, enc, musculoPrincipal) {
+  const casa = enc.lugar === 'casa';
+  const inferior = TREN_INFERIOR.has(musculoPrincipal);
+  const img = n => (PorNombre[n] && PorNombre[n].img) || undefined;
+  const pasos = [];
+  if (inferior) {
+    pasos.push({ text: casa ? 'Marcha en el sitio o saltos suaves' : 'Bicicleta o caminadora, ritmo suave', w: '', reps: casa ? '3 min' : '5 min' });
+    pasos.push({ text: 'Sentadilla sin peso, profunda y controlada', w: 'sin peso', reps: '15 reps', img: img('Sentadilla sin peso') });
+  } else {
+    pasos.push({ text: 'Movilidad de hombro: círculos y pasadas con banda', w: '', reps: '60 seg' });
+    if (!casa && PorNombre['Face Pull con cuerda en polea']) {
+      pasos.push({ text: 'Face pull con cuerda, suave', w: 'muy ligero', reps: '15 reps', img: img('Face Pull con cuerda en polea') });
+    } else {
+      pasos.push({ text: 'Elevaciones laterales muy ligeras', w: 'muy ligero', reps: '15 reps', img: img('Elevaciones laterales con mancuernas') });
+    }
+  }
+  if (primero && primero.unit !== 'corporal') {
+    const num = parseFloat(primero.w1) || 0;
+    if (primero.unit === 'lado' && pesoBarra(sinTilde(primero.name))) {
+      pasos.push({ text: `${primero.name} · solo la barra`, w: 'barra sola', reps: '12 reps', img: primero.img });
+      if (num >= 20) pasos.push({ text: `${primero.name} · aproximación`, w: `${redondea(num * 0.5, 5)} lbs/lado`, reps: '6 reps', img: primero.img });
+    } else if (num) {
+      const suf = primero.unit === 'lado' ? ' lbs/lado' : primero.unit === 'mancuerna' ? ' lbs c/u' : ' lbs';
+      pasos.push({ text: `${primero.name} · aproximación`, w: Math.max(primero.step || 5, redondea(num * 0.5, primero.step || 5)) + suf, reps: '10 reps', img: primero.img });
+      pasos.push({ text: `${primero.name} · última antes de empezar`, w: Math.max(primero.step || 5, redondea(num * 0.75, primero.step || 5)) + suf, reps: '4 reps', img: primero.img });
+    }
+  }
+  return pasos.map(p => { if (!p.img) delete p.img; return p; });
+}
+
+/* Días de entreno en orden de la semana: lunes primero, domingo al final */
+export function ordenaDias(dias) {
+  return [...new Set((dias || []).map(Number).filter(d => d >= 0 && d <= 6))]
+    .sort((a, b) => (a || 7) - (b || 7));
+}
+
+/* ── Ensamblar la rutina ──────────────────────────────────────────── */
+export function armarRutina(enc, eleccionesIA) {
+  const dias = ordenaDias(enc.dias);
+  const sesiones = huecosDelPlan(enc);
+  const elegidos = elegirTodo(sesiones, eleccionesIA);
+  const { series, descanso } = estructura(enc);
+  const factores = factoresDeReferencia(enc);
+  const rutina = {};
+
+  sesiones.forEach((ses, si) => {
+    const ejercicios = elegidos[si].map((nombre, hi) => {
+      if (!nombre) return null;
+      const cat = PorNombre[nombre];
+      const [lo, hi2] = rangoDeRepsPara(nombre, enc);
+      const w1 = cargaEstimada(cat, enc, factores);
+      return {
+        name: cat.name, muscle: cat.muscle, unit: cat.unit, step: cat.step,
+        img: cat.img, tip: cat.tip,
+        w1, reps: lo + ' reps', repMin: lo, repMax: hi2, repNow: lo, fallos: 0,
+        calibrar: cat.unit !== 'corporal',
+        _hueco: hi,
+      };
+    });
+
+    const circuits = [];
+    for (let c = 0; c * 3 < ejercicios.length; c++) {
+      const exs = ejercicios.slice(c * 3, c * 3 + 3).filter(Boolean).map(e => { delete e._hueco; return e; });
+      if (exs.length) circuits.push({ label: `Circuito ${circuits.length + 1}`, series, rest: `${descanso}s descanso`, exercises: exs });
+    }
+
+    // Drop en la última serie: sólo avanzados, sólo el último aislamiento
+    // del día y sólo donde la carga se cambia en segundos.
+    if (enc.nivel === 'avanzado' && enc.objetivo !== 'fuerza' && circuits.length) {
+      const ult = circuits[circuits.length - 1].exercises;
+      const ex = ult[ult.length - 1];
+      if (ex && ['placa', 'mancuerna'].includes(ex.unit) && tipoDe(ex) !== 'C' && parseFloat(ex.w1)) {
+        ex.dropFinal = { pasos: 2, reps: [10, 8] };
+      }
+    }
+
+    const primero = circuits[0] && circuits[0].exercises[0];
+    const diaSemana = dias[si];
+    rutina['sesion' + (si + 1)] = {
+      title: ses.titulo,
+      dia: diaSemana !== undefined ? NOMBRE_DIA[diaSemana] : '',
+      sub: '',
+      warmup: calentamiento(primero, enc, primero && primero.muscle),
+      warmupHombro: null,
+      warmupSeries: 1,
+      cardio: enc.objetivo === 'recomposicion'
+        ? 'Cardio al final: 15 min a ritmo moderado (caminadora inclinada o bicicleta)' : '',
+      circuits,
+    };
+  });
+  return rutina;
+}
+
+/* Lo que se le manda a la IA para que elija: los huecos con sus mejores
+   candidatos. Ocho por hueco bastan y mantienen el mensaje corto. */
+export function fichasParaIA(enc) {
+  return huecosDelPlan(enc).map((s, si) => ({
+    sesion: si + 1, titulo: s.titulo,
+    huecos: s.huecos.map((h, hi) => ({ hueco: hi, musculo: h.musculo, tipo: h.tipo, candidatos: h.candidatos.slice(0, 8) })),
+  }));
+}
+
+/* La explicación del plan cuando la IA no está */
+export function explicacionDeRespaldo(enc) {
+  const n = ordenaDias(enc.dias).length;
+  const division = n <= 3 ? 'cuerpo completo en cada sesión' : n === 4 ? 'torso y pierna alternados'
+    : n === 5 ? 'un grupo grande por día, con pecho y espalda dos veces' : 'empuje, tirón y pierna, dos veces por semana';
+  const obj = { hipertrofia: 'ganar músculo', fuerza: 'ganar fuerza', recomposicion: 'ganar músculo y perder grasa a la vez' }[enc.objetivo] || 'progresar';
+  return `Tu plan es de ${n} días con ${division}, pensado para ${obj}. ` +
+    `Los pesos son un punto de partida estimado: la primera semana marca cada ejercicio como fácil, justo o no llegué y ` +
+    `se corrige solo. Desde ahí, cada sábado se ajusta según cómo te fue.`;
+}
+
+/* Resumen corto para enseñar el plan recién hecho */
+export function resumenDelPlan(rutina) {
+  return Object.keys(rutina).sort().map(k => {
+    const s = rutina[k];
+    const exs = (s.circuits || []).flatMap(c => c.exercises || []);
+    return { key: k, title: s.title, dia: s.dia, ejercicios: exs.length, circuitos: (s.circuits || []).length,
+             series: (s.circuits[0] && s.circuits[0].series) || 0, nombres: exs.slice(0, 4).map(e => e.name),
+             // La app titula cada sesión por sus músculos: con esto el resumen
+             // dice lo mismo que verá después en Rutina
+             musculos: exs.map(e => e.muscle) };
+  });
+}
+
+/* Valida y normaliza la encuesta. Devuelve { enc } o { error } */
+export function validarEncuesta(e) {
+  if (!e || typeof e !== 'object') return { error: 'Faltan las respuestas' };
+  const enc = {
+    objetivo: OBJETIVOS.includes(e.objetivo) ? e.objetivo : null,
+    nivel: NIVELES.includes(e.nivel) ? e.nivel : null,
+    dias: ordenaDias(e.dias),
+    minutos: [45, 60, 90].includes(Number(e.minutos)) ? Number(e.minutos) : 60,
+    lugar: e.lugar === 'casa' ? 'casa' : 'gimnasio',
+    sexo: e.sexo === 'f' ? 'f' : e.sexo === 'm' ? 'm' : null,
+    edad: Math.round(Number(e.edad)) || null,
+    peso: Number(e.peso) || null,
+    estatura: Number(e.estatura) || null,
+    molestias: Array.isArray(e.molestias) ? e.molestias.filter(z => MOLESTIAS.includes(z)) : [],
+    molestiaTexto: String(e.molestiaTexto || '').trim().slice(0, 300),
+    referencias: {},
+  };
+  for (const k of Object.keys(BASE_REFERENCIA)) {
+    const v = Number(e.referencias && e.referencias[k]);
+    if (v > 0 && v < 1500) enc.referencias[k] = Math.round(v);
+  }
+  if (!enc.objetivo) return { error: 'Elige un objetivo' };
+  if (!enc.nivel) return { error: 'Elige tu experiencia' };
+  if (enc.dias.length < 2 || enc.dias.length > 6) return { error: 'Elige entre 2 y 6 días' };
+  if (!enc.sexo) return { error: 'Falta el sexo' };
+  if (!enc.edad || enc.edad < 14 || enc.edad > 90) return { error: 'Revisa la edad' };
+  if (!enc.peso || enc.peso < 30 || enc.peso > 250) return { error: 'Revisa el peso (en kg)' };
+  if (!enc.estatura || enc.estatura < 120 || enc.estatura > 230) return { error: 'Revisa la estatura (en cm)' };
+  return { enc };
+}
