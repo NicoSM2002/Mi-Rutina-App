@@ -864,6 +864,9 @@ function calibrarConSesion(rutina, sessionKey, feedback) {
   return hechos;
 }
 
+/* Formas de voseo que el modelo a veces cuela pese a pedirle tuteo */
+const VOSEO = /(vos|tenés|podés|querés|sabés|hacés|sentís|sintás|llegás|llegués|marcás|entrenás|subís|bajás|necesitás|empezás|seguís|vas a poder vos|completás|ajustás|notás|descansás)/i;
+
 /* La encuesta, en una frase para el modelo */
 function describeEncuesta(enc) {
   const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -901,8 +904,9 @@ Responde SOLO un JSON, sin texto alrededor:
 "sesiones" lleva una lista por sesión, en orden, con un nombre por hueco copiado letra por letra.
 "explicacion": 3 o 4 frases para la persona. Qué tipo de plan es y por qué encaja con lo que contó, y
 que la primera semana los pesos son un punto de partida que se corrige con lo que marque en cada
-ejercicio (fácil, justo, no llegué). Español de Colombia, tuteando ("entrenas", "marcas"). NUNCA
-voseo. Sin emojis ni frases de cartel motivacional. No uses su nombre.`;
+ejercicio (fácil, justo, no llegué). Español de Colombia, tuteando: "entrenas", "marcas", "llegas",
+"sientes", "puedes". NUNCA voseo rioplatense: nada de "llegás", "sentís", "sintás", "podés", "tenés",
+"vos". Sin emojis ni frases de cartel motivacional. No uses su nombre.`;
 
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 45000);
@@ -911,7 +915,10 @@ voseo. Sin emojis ni frases de cartel motivacional. No uses su nombre.`;
       method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
                  'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 3000,
+      // Elegir entre candidatos ya filtrados no necesita razonamiento largo:
+      // con el modelo que piensa primero, el razonamiento se comía los
+      // tokens y la respuesta llegaba vacía.
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000,
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -921,10 +928,15 @@ voseo. Sin emojis ni frases de cartel motivacional. No uses su nombre.`;
     }
     const txt = textoDeRespuesta(data);
     const m = txt.match(/\{[\s\S]*\}/);
-    if (!m) { console.log('[PLAN] respuesta sin JSON: ' + txt.slice(0, 200)); return { elecciones: null, explicacion: null }; }
+    if (!m) { console.log(`[PLAN] respuesta sin JSON (stop=${data.stop_reason}): ` + txt.slice(0, 200)); return { elecciones: null, explicacion: null }; }
     const j = JSON.parse(m[0]);
     const elecciones = Array.isArray(j.sesiones) ? j.sesiones.map(x => Array.isArray(x) ? x.map(String) : []) : null;
-    const explicacion = typeof j.explicacion === 'string' ? j.explicacion.trim().slice(0, 900) : null;
+    let explicacion = typeof j.explicacion === 'string' ? j.explicacion.trim().slice(0, 900) : null;
+    // Si aun así se le escapa el voseo, va la explicación de respaldo
+    if (explicacion && VOSEO.test(explicacion)) {
+      console.log('[PLAN] explicación con voseo, va la de respaldo: ' + explicacion.slice(0, 120));
+      explicacion = null;
+    }
     return { elecciones, explicacion };
   } catch (e) {
     console.log('[PLAN] la IA no eligió, elige el código: ' + e.message);
