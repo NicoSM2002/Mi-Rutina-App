@@ -312,10 +312,19 @@ button { font: inherit; }
 .pant { opacity: 0; transform: translateY(40px); transition: opacity .7s ease, transform 1s var(--ease); }
 .pantallas.in .pant { opacity: 1; transform: none; }
 .pantallas.in .pant:nth-child(2) { transition-delay: .08s; } .pantallas.in .pant:nth-child(3) { transition-delay: .16s; } .pantallas.in .pant:nth-child(4) { transition-delay: .24s; }
+/* En el celular: la sección se queda quieta y el scroll pasa los teléfonos de lado */
+.pant-prog { display: none; }
 @media (max-width: 900px) {
-  .pantallas { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; margin: 36px -20px 0; padding: 0 20px 14px; scrollbar-width: none; }
-  .pantallas::-webkit-scrollbar { display: none; }
-  .pant { flex: none; width: 210px; scroll-snap-align: center; }
+  #funciones { padding: 0; }
+  .pant-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; align-items: center; padding-top: 58px; }
+  .pant-pin > .wrap { width: 100%; padding: 0 20px; }
+  .pantallas { display: flex; gap: 18px; width: max-content; margin-top: 26px; will-change: transform; }
+  .pant { flex: none; width: min(220px, calc((100svh - 330px) / 2.2)); }
+  .pant h3 { margin-top: 16px; font-size: 17px; } .pant p { font-size: 14px; }
+  .pantallas .pant { opacity: 1; transform: none; transition: opacity .4s; }
+  .pantallas .pant.lejos { opacity: .45; }
+  .pant-prog { display: block; margin-top: 18px; width: 120px; height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .pant-prog i { display: block; height: 100%; width: calc(var(--p, 0) * 100%); background: var(--violet); }
 }
 
 /* ─── Con entrenador (y gimnasios) ─── */
@@ -339,8 +348,16 @@ button { font: inherit; }
 .abanico.in .stage:nth-child(1) { transform: translate(-108%, -46%) rotate(-9deg); }
 .abanico.in .stage:nth-child(2) { transform: translate(-50%, -52%); }
 .abanico.in .stage:nth-child(3) { transform: translate(8%, -46%) rotate(9deg); }
-@media (max-width: 1000px) { .coach { grid-template-columns: 1fr; } .abanico { height: 430px; } .abanico .stage { --w: 180px; } }
-@media (max-width: 480px) { .abanico { height: 360px; } .abanico .stage { --w: 150px; } }
+@media (max-width: 1000px) { .coach { grid-template-columns: 1fr; } .abanico { height: 400px; } .abanico .stage { --w: 170px; } }
+@media (max-width: 600px) {
+  .coach { padding: 28px 22px 0; gap: 8px; border-radius: 30px; }
+  .coach .ticks, .gym-largo { display: none; }
+  .coach .ctas { margin-top: 22px; }
+  .coach .ctas .ya-tengo { background: none; box-shadow: none; height: auto; padding: 8px 4px; color: var(--lilac); }
+  .gym-nota { margin-top: 18px; padding: 12px 14px; font-size: 14px; }
+  .abanico { height: 270px; margin: 0 -22px; overflow: hidden; }
+  .abanico .stage { --w: 132px; top: 60%; }
+}
 
 /* ─── Planes ─── */
 .plans { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -358,7 +375,15 @@ button { font: inherit; }
 .plan li svg { flex: none; width: 18px; height: 18px; margin-top: 1px; stroke: var(--violet); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .plan.hl li svg { stroke: var(--violet-hi); }
 .plan .btn { margin-top: auto; width: 100%; }
-@media (max-width: 900px) { .plans { grid-template-columns: 1fr; } .plan ul { display: none; } .plan.hl ul { display: grid; } }
+@media (max-width: 900px) {
+  .plans { grid-template-columns: 1fr; gap: 10px; margin-top: 30px; }
+  .plan { padding: 20px; display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center; border-radius: 22px; }
+  .plan ul, .plan-note { display: none; }
+  .plan-name, .plan-for { grid-column: 1; } .plan-for { font-size: 14px; }
+  .plan-price { grid-column: 2; grid-row: 1 / span 2; margin: 0; font-size: 28px; text-align: right; }
+  .plan-price s { display: none; } .plan-price .per { font-size: 12px; margin-top: 4px; }
+  .plan .btn { grid-column: 1 / -1; margin-top: 16px; height: 46px; }
+}
 
 /* ─── Preguntas ─── */
 .faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 60px; align-items: start; }
@@ -378,13 +403,28 @@ button { font: inherit; }
 .poster .d { font-size: clamp(52px, 8vw, 112px); letter-spacing: -.05em; }
 .poster .sub { margin: 22px auto 0; color: #B9B4C6; }
 .poster .ctas { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.poster .barras { position: relative; inset: auto; height: 150px; margin: 60px auto 0; width: min(420px, 80%); }
-.lead { margin-top: 70px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; padding: clamp(26px, 4vw, 44px); border-radius: 30px; background: var(--night-2); border: 1px solid var(--line-d); }
-.lead h3 { margin: 0; font-size: 28px; letter-spacing: -.03em; }
-.lead p { margin: 12px 0 0; font-size: 16px; line-height: 1.5; color: #ADA8BA; }
-.lead-alt { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
-.lead-alt .btn { background: rgba(255,255,255,.08); box-shadow: none; }
+.poster .barras { position: relative; inset: auto; height: 130px; margin: 54px auto 0; width: min(380px, 76%); }
+.pide-demo { display: inline-block; margin-top: 22px; font-size: 15px; color: #ADA8BA; }
+.pide-demo b { color: var(--lilac); font-weight: 600; }
+.hoja { border: 0; padding: 0; background: transparent; width: min(520px, calc(100% - 24px)); max-height: calc(100% - 24px); color: #fff; overflow: visible; }
+.hoja::backdrop { background: rgba(11,10,16,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.hoja[open] { animation: hoja-c .45s var(--spring); }
+@keyframes hoja-c { from { opacity: 0; transform: translateY(24px) scale(.97); } }
+.hoja-in { position: relative; max-height: calc(100svh - 24px); overflow: auto; padding: 28px; border-radius: 28px; background: var(--night-2); border: 1px solid var(--line-d); box-shadow: 0 40px 90px -30px rgba(0,0,0,.7); }
+.hoja-in h3 { margin: 0; padding-right: 40px; font-size: 24px; letter-spacing: -.03em; }
+.hoja-in > p { margin: 8px 0 20px; font-size: 15px; line-height: 1.5; color: #ADA8BA; }
+.hoja-x { position: absolute; right: 16px; top: 16px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.hoja-x:focus { outline: none; } .hoja-x:focus-visible { box-shadow: 0 0 0 2px var(--violet-hi); }
+.hoja-x svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+.lead-alt { margin-top: 16px; display: flex; gap: 10px; }
+.lead-alt .btn { flex: 1; height: 46px; background: rgba(255,255,255,.08); box-shadow: none; font-size: 15px; }
 .lead-form { display: grid; gap: 12px; }
+@keyframes hoja-s { from { transform: translateY(100%); } }
+@media (max-width: 600px) {
+  .hoja { width: 100%; max-width: 100%; margin: auto 0 0; max-height: 92svh; }
+  .hoja-in { border-radius: 26px 26px 0 0; padding: 24px 20px calc(20px + env(safe-area-inset-bottom)); max-height: 92svh; }
+  .hoja[open] { animation: hoja-s .5s var(--spring); }
+}
 .field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #CFCADB; }
 .field .muted { color: #8A8497; font-weight: 400; }
 .field input, .field select { width: 100%; height: 50px; padding: 0 14px; border-radius: 14px; border: 1.5px solid transparent; background: rgba(255,255,255,.07); font: 17px var(--sans); color: #fff; outline: none; transition: border-color .2s; -webkit-appearance: none; appearance: none; }
@@ -393,11 +433,11 @@ button { font: inherit; }
 .field input:focus, .field select:focus { border-color: var(--violet-hi); }
 .field input.invalid { border-color: var(--err-hi); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.lead-success { padding: 28px; border-radius: 22px; background: rgba(255,255,255,.06); text-align: center; }
+.lead-success { padding: 18px 8px 4px; text-align: center; }
 .lead-success .ok { width: 52px; height: 52px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--violet); color: #fff; }
 .lead-success .ok svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.lead-success h3 { margin-top: 16px; font-size: 22px; }
-@media (max-width: 900px) { .lead { grid-template-columns: 1fr; gap: 26px; } }
+.lead-success h3 { margin-top: 14px; padding: 0; font-size: 21px; }
+.lead-success p { color: #ADA8BA; font-size: 15px; line-height: 1.5; }
 @media (max-width: 420px) { .row2 { grid-template-columns: 1fr; } }
 .foot { padding: 34px 0 48px; background: var(--night); color: #8A8497; font-size: 14px; border-top: 1px solid var(--line-d); margin-top: 80px; }
 .foot .wrap { display: flex; gap: 16px 32px; flex-wrap: wrap; align-items: center; }
@@ -559,6 +599,7 @@ button { font: inherit; }
 
 <!-- ═══════════ PANTALLAS CLAVE ═══════════ -->
 <section class="sec" id="funciones">
+  <div class="pant-pin">
   <div class="wrap">
     <div class="reveal">
       <span class="kick">En el gimnasio</span>
@@ -574,6 +615,8 @@ button { font: inherit; }
       <div class="pant"><div class="stage"><div class="phone dark"><div class="scr"><img src="/landing/img/app/oscuro-circuito-720.webp" srcset="/landing/img/app/oscuro-circuito-420.webp 420w, /landing/img/app/oscuro-circuito-720.webp 720w" sizes="260px" alt="Modo oscuro" loading="lazy" width="720" height="1561"></div></div></div>
         <h3>Claro u oscuro</h3><p>Sigue a tu iPhone o eliges tú.</p></div>
     </div>
+    <div class="pant-prog" aria-hidden="true"><i id="pantProg"></i></div>
+  </div>
   </div>
 </section>
 
@@ -590,8 +633,8 @@ button { font: inherit; }
           <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Editor de rutinas con más de 170 ejercicios</li>
           <li><i><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></i>Tus marcas y notas de cada sesión</li>
         </ul>
-        <div class="ctas"><a href="#cta" class="btn" data-cta="entrenador">Quiero usarla con mis atletas</a><a href="/" class="btn btn-line">Ya tengo usuario</a></div>
-        <div class="gym-nota" id="gimnasio"><b>¿Tienes un gimnasio?</b> Un panel para varios entrenadores y sus atletas, con los datos de cada uno separados. <a href="#cta">Agenda una demo ›</a></div>
+        <div class="ctas"><a href="#cta" class="btn" data-cta="entrenador">Quiero usarla con mis atletas</a><a href="/" class="btn btn-line ya-tengo">Ya tengo usuario</a></div>
+        <div class="gym-nota" id="gimnasio"><b>¿Tienes un gimnasio?</b> <span class="gym-largo">Un panel para varios entrenadores y sus atletas, con los datos de cada uno separados.</span> <a href="#cta" data-tipo="gimnasio">Agenda una demo ›</a></div>
       </div>
       <div class="abanico" id="abanico">
         <div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/ent-atletas-420.webp" alt="Portal del entrenador: lista de clientes" loading="lazy" width="420" height="911"></div></div></div>
@@ -674,43 +717,43 @@ button { font: inherit; }
       <h2 class="d">Tu primera semana<br><span class="v">empieza hoy.</span></h2>
       <p class="sub">Dos minutos de preguntas y tienes tu plan.</p>
       <div class="ctas"><a href="/?crear=1" class="btn" data-cta="cierre">Crear mi plan gratis <svg><use href="#i-flecha"/></svg></a></div>
+      <a href="#cta" class="pide-demo">¿Eres entrenador o tienes un gimnasio? <b>Pide una demo ›</b></a>
     </div>
-    <div class="lead reveal" id="cta">
-      <div>
-        <h3>¿Eres entrenador o tienes un gimnasio?</h3>
-        <p>Déjanos tus datos y te escribimos en menos de una hora para mostrarte la app en 15 minutos.</p>
-        <div class="lead-alt">
-          <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn">WhatsApp</a>
-          <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn">Correo</a>
-        </div>
-      </div>
-      <div>
-        <form id="leadForm" class="lead-form" novalidate>
-          <div class="field"><label for="lead-name">Nombre</label><input id="lead-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" required></div>
-          <div class="field"><label for="lead-email">Correo</label><input id="lead-email" name="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com" required></div>
-          <div class="row2">
-            <div class="field"><label for="lead-wa">WhatsApp <span class="muted">(opcional)</span></label><input id="lead-wa" name="whatsapp" type="tel" autocomplete="tel" placeholder="300 000 0000"></div>
-            <div class="field"><label for="lead-type">Soy</label>
-              <select id="lead-type" name="type">
-                <option value="entrenador">Entrenador independiente</option>
-                <option value="gimnasio">Dueño de gimnasio</option>
-                <option value="atleta">Atleta</option>
-                <option value="otro">Otro</option>
-              </select></div>
-          </div>
-          <button type="submit" class="btn lead-submit"><span class="lead-submit-text">Quiero la demo</span></button>
-        </form>
-        <div id="leadSuccess" class="lead-success" hidden>
-          <div class="ok"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
-          <h3>Listo. Te escribimos ya.</h3>
-          <p>Revisa tu correo en la próxima hora. Si tienes prisa, escríbenos por WhatsApp.</p>
-        </div>
-      </div>
-    </div>
-  </div>
   <div class="barras" id="barrasCierre" aria-hidden="true"><i></i><i></i><i></i></div>
 </section>
 </main>
+
+<dialog class="hoja" id="cta" aria-labelledby="hoja-t">
+  <div class="hoja-in">
+    <button class="hoja-x" type="button" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h3 id="hoja-t">Te la mostramos en 15 minutos</h3>
+    <p>Déjanos tus datos y te escribimos en menos de una hora. Si tienes prisa, escríbenos directo.</p>
+    <form id="leadForm" class="lead-form" novalidate>
+      <div class="field"><label for="lead-name">Nombre</label><input id="lead-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" required></div>
+      <div class="field"><label for="lead-email">Correo</label><input id="lead-email" name="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com" required></div>
+      <div class="row2">
+        <div class="field"><label for="lead-wa">WhatsApp <span class="muted">(opcional)</span></label><input id="lead-wa" name="whatsapp" type="tel" autocomplete="tel" placeholder="300 000 0000"></div>
+        <div class="field"><label for="lead-type">Soy</label>
+          <select id="lead-type" name="type">
+            <option value="entrenador">Entrenador independiente</option>
+            <option value="gimnasio">Dueño de gimnasio</option>
+            <option value="atleta">Atleta</option>
+            <option value="otro">Otro</option>
+          </select></div>
+      </div>
+      <button type="submit" class="btn lead-submit"><span class="lead-submit-text">Quiero la demo</span></button>
+    </form>
+    <div id="leadSuccess" class="lead-success" hidden>
+      <div class="ok"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
+      <h3>Listo. Te escribimos ya.</h3>
+      <p>Revisa tu correo en la próxima hora. Si tienes prisa, escríbenos por WhatsApp.</p>
+    </div>
+    <div class="lead-alt">
+      <a href="https://wa.me/573185278840?text=Hola%2C%20quiero%20probar%20Mi%20Rutina" target="_blank" rel="noopener" class="btn">WhatsApp</a>
+      <a href="mailto:juansaravia2002@gmail.com?subject=Quiero%20probar%20Mi%20Rutina" class="btn">Correo</a>
+    </div>
+  </div>
+</dialog>
 
 <footer class="foot" style="margin-top:0">
   <div class="wrap">
@@ -855,6 +898,40 @@ button { font: inherit; }
     else if (!e.isIntersecting && chatVivo) { chatVivo = false; chatVuelta++; }
   }), { threshold: .45 }).observe($('#uiChat'));
 
+  // ─── La hoja de demo: la abren todos los botones para entrenadores y gimnasios
+  const hoja = $('#cta');
+  document.querySelectorAll('a[href="#cta"]').forEach(a => a.addEventListener('click', ev => {
+    ev.preventDefault();
+    $('#lead-type').value = a.dataset.tipo || (/gimnasio/.test(a.dataset.cta || '') ? 'gimnasio' : 'entrenador');
+    if (hoja.showModal) hoja.showModal(); else hoja.setAttribute('open', '');
+    track('demo_open', { where: a.dataset.cta || a.dataset.tipo || '' });
+  }));
+  const cierraHoja = () => hoja.close ? hoja.close() : hoja.removeAttribute('open');
+  hoja.querySelector('.hoja-x').addEventListener('click', cierraHoja);
+  hoja.addEventListener('click', ev => { if (ev.target === hoja) cierraHoja(); });
+
+  // ─── Pantallas en el celular: el scroll vertical las pasa de lado
+  const fun = $('#funciones'), pants = $('#pantallas'), pantEls = [...pants.children], movil = matchMedia('(max-width: 900px)');
+  const PAUSA = () => innerHeight * .2;
+  const sobra = () => Math.max(0, pants.scrollWidth - (fun.clientWidth - 40));
+  const midePant = () => {
+    if (!movil.matches) { fun.style.height = ''; pants.style.transform = ''; return; }
+    fun.style.height = (innerHeight + sobra() + 2 * PAUSA()) + 'px';
+  };
+  const muevePant = () => {
+    if (!movil.matches) return;
+    const r = fun.getBoundingClientRect(), max = sobra();
+    const x = Math.min(max, Math.max(0, -r.top - PAUSA()));
+    pants.style.transform = `translate3d(${(-x).toFixed(1)}px,0,0)`;
+    $('#pantProg').parentElement.style.setProperty('--p', (max ? x / max : 0).toFixed(3));
+    const cx = innerWidth / 2;
+    pantEls.forEach(p => { const b = p.getBoundingClientRect(); p.classList.toggle('lejos', Math.abs(b.left + b.width / 2 - cx) > b.width * .75); });
+  };
+  midePant(); addEventListener('load', () => { midePant(); muevePant(); });
+  let anchoAntes = innerWidth;
+  addEventListener('resize', () => { if (Math.abs(innerWidth - anchoAntes) < 2) return; anchoAntes = innerWidth; midePant(); muevePant(); });
+  movil.addEventListener('change', () => { midePant(); muevePant(); });
+
   // ─── Preguntas: abren y cierran suave
   document.querySelectorAll('.faq details').forEach(d => {
     const s = d.querySelector('summary'), a = d.querySelector('.ans');
@@ -871,8 +948,8 @@ button { font: inherit; }
   const nav = $('#nav'), noches = [...document.querySelectorAll('.hero, .night, .poster, .foot')];
   const navTono = () => nav.classList.toggle('claro', !noches.some(s => { const r = s.getBoundingClientRect(); return r.top <= 30 && r.bottom > 30; }));
   let tick = false;
-  addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; navTono(); }); } }, { passive: true });
-  navTono();
+  addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; navTono(); muevePant(); }); } }, { passive: true });
+  navTono(); muevePant();
 
   // ─── Analítica
   document.querySelectorAll('a[href^="https://wa.me"]').forEach(a => a.addEventListener('click', () => track('click_whatsapp', { location: a.closest('section')?.id || 'page' })));
@@ -907,7 +984,7 @@ button { font: inherit; }
       const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'landing-lead', ...data }) });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Error al enviar');
-      leadForm.hidden = true; leadSuccess.hidden = false;
+      leadForm.hidden = true; leadSuccess.hidden = false; hoja.querySelector('.lead-alt').hidden = true;
       track('lead_form_submit', { type: data.type, has_whatsapp: !!data.whatsapp });
     } catch (err) {
       txt.textContent = 'Reintentar'; btn.disabled = false;
