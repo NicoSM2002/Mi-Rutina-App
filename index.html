@@ -1922,16 +1922,19 @@ button.ex-presc:active { background:var(--ac-soft2); }
 
 /* Nota opcional del ejercicio: plegada hasta que haya algo que contar */
 .nota-wrap { margin-top:9px; }
+.nota-wrap { margin-top:10px; }
 .nota-btn {
   display:inline-flex; align-items:center; gap:7px; max-width:100%;
-  background:none; border:none; cursor:pointer; padding:7px 2px; min-height:38px;
-  font-family:var(--font-b); font-size:13px; color:var(--t2); letter-spacing:-.1px;
-  text-align:left;
+  background:var(--s2); border:none; border-radius:100px; cursor:pointer;
+  padding:8px 14px; min-height:36px;
+  font-family:var(--font-b); font-size:15px; font-weight:500; color:var(--t1); letter-spacing:-.2px;
+  text-align:left; transition:transform var(--t-rapido) var(--ease-out), background-color .15s ease;
 }
-.nota-btn .ic { width:14px; height:14px; flex:none; }
+.nota-btn:active { transform:scale(.96); background:var(--press); }
+.nota-btn .ic { width:15px; height:15px; flex:none; color:var(--ac-tx); }
 .nota-et { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.nota-btn.con-nota { color:var(--t1); }
-.nota-btn.con-nota .ic { color:var(--ac-tx); }
+/* Con nota escrita, el botón la enseña en el tono del acento */
+.nota-btn.con-nota { background:var(--ac-soft); color:var(--ac-tx); }
 .nota-caja { display:none; margin-top:4px; }
 .nota-caja.show { display:block; }
 .nota-input {
@@ -2932,7 +2935,7 @@ select.na-input {
   background:var(--bar);
   backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
   border-top:1px solid var(--b);
-  padding:9px 8px calc(var(--sab) + 9px);
+  padding:7px 8px max(6px, calc(var(--sab) - 12px));
   justify-content:space-around;
   align-items:center;
 }
@@ -2963,7 +2966,7 @@ select.na-input {
   background:var(--bar);
   backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
   border-top:1px solid var(--b);
-  padding:9px 4px calc(var(--sab) + 9px);
+  padding:7px 4px max(6px, calc(var(--sab) - 12px));
   justify-content:space-around;
   align-items:center;
 }
@@ -3359,6 +3362,7 @@ select.na-input {
 .screen.saliendo { visibility:visible; opacity:1; pointer-events:none; }
 .screen.empuje-arriba { z-index:3; box-shadow:-10px 0 28px rgba(0,0,0,.14); }
 .screen.empuje-abajo { z-index:2; }
+.screen.abre-tarjeta { box-shadow:none; }
 .empuje-vivo { position:relative; }
 :is(.empuje-vivo, .empuje-copia).empuje-arriba { z-index:4; background:var(--bg); box-shadow:-10px 0 28px rgba(0,0,0,.14); }
 .empuje-copia { background:var(--bg); }
@@ -3592,6 +3596,20 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 /* Pestañas del panel de admin: caben a cualquier ancho */
 .admin-tab { min-width:0; padding:10px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 @media (max-width:360px) { .admin-tab { font-size:13px; } }
+
+/* ══ Progreso: segmentado con pieza deslizante ══ */
+.prog-tabs { position:relative; background:var(--s2); border-radius:12px; padding:3px; gap:0; }
+.prog-tab { position:relative; z-index:1; min-height:38px; padding:8px; border-radius:10px; background:transparent !important;
+  color:var(--t1) !important; font-weight:500; font-size:15px; transition:color .2s ease; }
+.prog-tab.active { font-weight:600; }
+.seg-pieza {
+  position:absolute; top:3px; bottom:3px; left:4px; border-radius:10px; background:var(--s1);
+  box-shadow:0 2px 6px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); opacity:0; pointer-events:none;
+}
+.seg-pieza.lista { opacity:1; }
+.resumen-cuerpo { display:flex; flex-direction:column; gap:16px; }
+.resumen-cuerpo > * { flex-shrink:0; }
+#resumen-scroll > .resumen-week-nav { padding-bottom:4px; }
 
 /* ══ Números: SF Pro Rounded, cifras del mismo ancho ══ */
 :is(.ex-peso, .ex-reps, .met-value, .met-fila-v, .timer-num, .fz-hero-n, .fz-val, .fz-semana-n, .fz-m b,
@@ -4455,13 +4473,18 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
   <div class="resumen-header">
     <h1 class="resumen-title">Tu progreso</h1>
     <div class="prog-tabs" id="prog-tabs">
+      <span class="seg-pieza" aria-hidden="true"></span>
       <button class="prog-tab" id="prog-tab-fuerza" onclick="setProgressTab('fuerza')" hidden>Fuerza</button>
       <button class="prog-tab active" id="prog-tab-entreno" onclick="setProgressTab('entreno')">Constancia</button>
       <button class="prog-tab" id="prog-tab-comida" onclick="setProgressTab('comida')">Alimentación</button>
     </div>
-    <div class="resumen-week-nav" id="resumen-week-nav"></div>
   </div>
-  <div class="resumen-content" id="resumen-content"></div>
+  <!-- La barra de semanas va dentro del contenido: en la cabecera aparecía y
+       desaparecía al cambiar de pestaña y todo saltaba -->
+  <div class="resumen-content" id="resumen-scroll">
+    <div class="resumen-week-nav" id="resumen-week-nav"></div>
+    <div class="resumen-cuerpo" id="resumen-content"></div>
+  </div>
 </div>
 
 <!-- ══ PAYMENTS (athlete) ══ -->
@@ -4782,7 +4805,8 @@ function show(id) {
   if (!yaEstaba) {
     const pestana = POS_PANTALLA[_pantallaActual] != null && POS_PANTALLA[id] != null;
     const a = NIVEL_PANTALLA[_pantallaActual], b = NIVEL_PANTALLA[id];
-    if (pestana) fundePantalla(destino);
+    if (id === 'routine' && _abreDesde && origen && origen.id === 'today') { abreDesdeTarjeta(origen, destino, _abreDesde); _abreDesde = null; }
+    else if (pestana) fundePantalla(destino);
     else if (a != null && b != null && a !== b && origen && origen !== destino) empujaPantalla(origen, destino, Math.sign(b - a));
     else entrar(destino, 0);   // primera entrada: arranque → portada, acceso → Hoy
   }
@@ -6917,7 +6941,7 @@ function regDia(d, btn) {
 function regTextoDias() {
   const n = REG.enc.dias.length;
   if (!n) return '';
-  const tipo = n <= 3 ? 'cuerpo completo cada día' : n === 4 ? 'torso y pierna alternados'
+  const tipo = n === 2 ? 'torso y pierna' : n === 3 ? 'empuje, tirón y pierna' : n === 4 ? 'torso y pierna alternados'
     : n === 5 ? 'un grupo grande por día' : 'empuje, tirón y pierna';
   return n > 6 ? '<b>Son muchos días.</b> Quita alguno.' : `<b>${n} día${n === 1 ? '' : 's'}</b>${n >= 2 ? ' · ' + tipo : ''}`;
 }
@@ -6995,11 +7019,11 @@ const LETRA_SEMANA = { 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S', 0: 'D' };
 const CM = { pe: 'var(--m-pecho)', es: 'var(--m-espalda)', pi: 'var(--m-pierna)', ho: 'var(--m-hombros)', br: 'var(--m-brazos)', co: 'var(--m-core)' };
 // Los músculos de cada día según cuántos días entrena (la misma división del plan)
 const MUSCULOS_DIA = {
-  2: [['pi','pe','es','pi','ho','br'], ['pi','es','pe','pi','ho','br']],
-  3: [['pi','pe','es','pi','ho','br'], ['pi','es','pe','pi','ho','br'], ['pi','pe','es','pi','ho','es']],
-  4: [['pe','es','ho','pe','es','br'], ['pi','pi','pi','pi','pi','co'], ['es','pe','ho','es','pe','br'], ['pi','pi','co','pi','pi','pi']],
+  2: [['pe','es','ho','pe','es','br'], ['pi','pi','pi','pi','pi','pi']],
+  3: [['pe','pe','ho','ho','pe','br'], ['es','es','br','es','ho','br'], ['pi','pi','pi','pi','pi','pi']],
+  4: [['pe','es','ho','pe','es','br'], ['pi','pi','pi','pi','pi','pi'], ['es','pe','ho','es','pe','br'], ['pi','pi','pi','pi','pi','pi']],
   5: [['pe','pe','br','pe','br','br'], ['es','es','br','es','br','br'], ['pi','pi','pi','pi','pi','pi'], ['ho','ho','ho','ho','ho','ho'], ['es','es','pe','pe','pe','es']],
-  6: [['pe','pe','ho','ho','pe','br'], ['es','es','br','es','ho','br'], ['pi','pi','pi','pi','co','pi'], ['pe','ho','br','pe','pe','ho'], ['es','es','ho','es','br','br'], ['pi','pi','co','pi','pi','pi']],
+  6: [['pe','pe','ho','ho','pe','br'], ['es','es','br','es','ho','br'], ['pi','pi','pi','pi','pi','pi'], ['pe','ho','br','pe','pe','ho'], ['es','es','ho','es','br','br'], ['pi','pi','pi','pi','pi','pi']],
 };
 
 async function regCrear() {
@@ -7096,7 +7120,7 @@ function armaEscena(cuerpo, e) {
     });
     anima(orbe, [{ opacity: 0, transform: 'translate(-50%,-50%) scale(0)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }], 'rebote', 160);
     await espera(820); if (!vivo) return;
-    frase(nDias <= 3 ? `${nDias} días: cuerpo completo en cada uno` : nDias === 4 ? '4 días: torso y pierna alternados'
+    frase(nDias === 2 ? '2 días: torso y pierna' : nDias === 3 ? '3 días: empuje, tirón y pierna' : nDias === 4 ? '4 días: torso y pierna alternados'
       : nDias === 5 ? '5 días: un grupo grande por día' : '6 días: empuje, tirón y pierna');
     // 3 · El orbe se abre en tus siete días
     anima(orbe, [{ opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(.3) translateY(-120px)' }], 'firme');
@@ -8571,11 +8595,13 @@ async function showResumen(weekOf) {
   show('resumen');
   document.getElementById('bottom-nav').style.display = 'flex';
   ajustaPestanasProgreso();
+  requestAnimationFrame(() => muevePiezaSegmentado(document.getElementById('prog-tabs')));
+  if (!weekOf) precargaProgreso();
   if (progressTab === 'fuerza') { renderFuerza(); return; }
   const nav = document.getElementById('resumen-week-nav');
   const content = document.getElementById('resumen-content');
   nav.innerHTML = '';
-  content.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando resumen…</div>';
+  content.innerHTML = '<div class="tdata-empty">Cargando resumen…</div>';
   try {
     const body = { action: 'get-weekly-summary', client: currentAthlete, selfToken: getSelfToken() };
     if (weekOf) body.weekOf = weekOf;
@@ -8591,7 +8617,7 @@ async function showResumen(weekOf) {
 
 async function renderTrainerResumen(weekOf) {
   const el = document.getElementById('tclient-content');
-  el.innerHTML = '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando resumen…</div>';
+  el.innerHTML = '<div class="tdata-empty">Cargando resumen…</div>';
   try {
     const body = { action: 'get-weekly-summary', client: trainerClientId, token: TRAINER_TOKEN, trainerUsername: currentTrainer };
     if (weekOf) body.weekOf = weekOf;
@@ -8610,24 +8636,59 @@ async function renderTrainerResumen(weekOf) {
 let progressTab = 'entreno';
 let _pestanaElegida = false;   // si ya eligió una pestaña, no se le cambia
 const POS_PROGRESO = { fuerza:0, entreno:1, comida:2 };
-function setProgressTab(t) {
-  const desde = POS_PROGRESO[progressTab], hacia = POS_PROGRESO[t];
-  if (t !== progressTab) {
-    fundePantalla(document.getElementById('resumen-content'));
+/* La pieza blanca del segmentado viaja hasta la opción elegida */
+function muevePiezaSegmentado(cont, animar) {
+  if (!cont) return;
+  const pieza = cont.querySelector('.seg-pieza'), act = cont.querySelector('.prog-tab.active');
+  if (!pieza || !act || !act.offsetWidth) return;
+  const nuevo = `translateX(${act.offsetLeft - 4}px)`;
+  pieza.style.width = act.offsetWidth + 'px';
+  if (animar && pieza.style.transform && pieza.style.transform !== nuevo) {
+    anima(pieza, [{ transform: pieza.style.transform }, { transform: nuevo }], 'suave', 0, { fill: 'none' });
   }
+  pieza.style.transform = nuevo;
+  pieza.classList.add('lista');
+}
+window.addEventListener('resize', () => muevePiezaSegmentado(document.getElementById('prog-tabs')));
+
+function setProgressTab(t) {
+  const cambia = t !== progressTab;
+  const scroll = document.getElementById('resumen-scroll');
+  if (cambia && scroll) scroll.scrollTop = 0;
   progressTab = t;
   _pestanaElegida = true;
   document.getElementById('prog-tab-fuerza')?.classList.toggle('active', t === 'fuerza');
   document.getElementById('prog-tab-entreno')?.classList.toggle('active', t === 'entreno');
   document.getElementById('prog-tab-comida')?.classList.toggle('active', t === 'comida');
+  muevePiezaSegmentado(document.getElementById('prog-tabs'), cambia);
   // La navegación por semanas no aplica a fuerza: ahí se mira la tendencia
   const nav = document.getElementById('resumen-week-nav');
   if (nav) nav.hidden = (t === 'fuerza');
-  if (t === 'fuerza') { renderFuerza(); return; }
-  // Si se entró por Fuerza, el resumen semanal todavía no se pidió: sin esto,
-  // pasar a Constancia dejaba la pantalla vacía.
-  if (_lastResumenData) renderResumenContent(_lastResumenData, 'resumen-week-nav', 'resumen-content', false);
+  // El contenido nuevo se pinta primero y luego aparece: antes se fundía el
+  // viejo y el nuevo llegaba de golpe después
+  if (t === 'fuerza') renderFuerza();
+  else if (_lastResumenData) renderResumenContent(_lastResumenData, 'resumen-week-nav', 'resumen-content', false);
   else showResumen();
+  if (cambia) {
+    const c = document.getElementById('resumen-content');
+    c.getAnimations().forEach(a => a.cancel());
+    anima(c, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], 'suave', 0, { fill: 'none', duration: 320 });
+  }
+}
+
+/* Las dos pestañas se piden al entrar a Progreso: cambiar entre ellas es
+   inmediato en vez de esperar al servidor. */
+async function precargaProgreso() {
+  const pide = (action) => fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, client: currentAthlete, selfToken: getSelfToken() }) }).then(r => r.json()).catch(() => ({}));
+  if (!_lastResumenData) {
+    const d = await pide('get-weekly-summary');
+    if (d && d.ok && !_lastResumenData) { _lastResumenData = d; resumenWeekOf = d.monday; }
+  }
+  if (seAutogestiona() && !_historialFuerza) {
+    const [h, w] = await Promise.all([pide('get-progresion'), _lastResumenData ? Promise.resolve(_lastResumenData) : pide('get-weekly-summary')]);
+    if (!_historialFuerza) { _historialFuerza = h.historial || []; _semanaFuerza = { completions: (w && w.completions) || [] }; }
+  }
 }
 let _lastResumenData = null;
 let _historialFuerza = null;   // lo que devuelve get-progresion
@@ -11473,10 +11534,34 @@ function renderToday() {
   pintaAjusteGuardado();
 }
 
-/* Empezar desde Hoy: la tarjeta se expande hasta ser la rutina */
+/* Empezar desde Hoy: la rutina de verdad se abre creciendo desde la
+   tarjeta, como las tarjetas de la App Store. Hoy se queda debajo, un poco
+   más oscuro, hasta que la rutina ocupa toda la pantalla. */
+let _abreDesde = null;
 function empezarDesdeHoy(btn) {
   const card = btn && btn.closest('.sc');
-  expandeDesde(card, () => { showRoutine(); activateNav('routine'); });
+  _abreDesde = card && !movReducido() ? card.getBoundingClientRect() : null;
+  showRoutine(); activateNav('routine');
+}
+function abreDesdeTarjeta(origen, destino, r) {
+  const shell = document.getElementById('app-shell');
+  const b = shell.getBoundingClientRect();
+  const W = shell.clientWidth || innerWidth, H = shell.clientHeight || innerHeight;
+  const x = r.left - b.left, y = r.top - b.top;
+  const recorte = (x, y, w, h, rad) => `inset(${y}px ${W - x - w}px ${H - y - h}px ${x}px round ${rad}px)`;
+  [origen, destino].forEach(e => e.getAnimations().forEach(a => a.cancel()));
+  origen.classList.add('saliendo', 'empuje-abajo');
+  destino.classList.add('empuje-arriba', 'abre-tarjeta');
+  anima(destino, [{ clipPath: recorte(x, y, r.width, r.height, 26) }, { clipPath: recorte(0, 0, W, H, 0) }], 'firme', 0, { fill: 'none' });
+  // El contenido llega desde la altura de la tarjeta, sin aparecer de golpe
+  const cont = destino.querySelector('.r-content'), cab = destino.querySelector('.r-header');
+  [cab, cont].forEach((el, i) => el && anima(el, [{ transform: `translateY(${Math.max(0, y - 40) * 0.25}px)`, opacity: .2 }, { transform: 'none', opacity: 1 }], 'firme', i * 30, { fill: 'none' }));
+  anima(origen, [{ filter: 'brightness(1)' }, { filter: 'brightness(.88)' }], 'firme', 0, { fill: 'forwards' });
+  setTimeout(() => {
+    origen.classList.remove('saliendo', 'empuje-abajo');
+    destino.classList.remove('empuje-arriba', 'abre-tarjeta');
+    origen.getAnimations().forEach(a => a.cancel());
+  }, RESORTE.firme.duration + 30);
 }
 
 /* ── Ajuste semanal de la rutina ──────────────────────────────────

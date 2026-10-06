@@ -5,7 +5,7 @@
    Es la misma lógica con la que se armó a mano la de nicolassaravia,
    pasada a reglas:
 
-     · Los días definen la división (cuerpo completo, torso/pierna, la de
+     · Los días definen la división (torso/pierna, empuje/tirón/pierna, la de
        cinco días, empuje/tirón/pierna).
      · El tiempo define cuántos circuitos caben y la experiencia cuántas
        series. Cada circuito son tres ejercicios.
@@ -134,22 +134,19 @@ const rangoPref = ex => RANGO_PREF.has(ex.name) ? RANGO_PREF.get(ex.name) : 500 
    prioridad: con poco tiempo se quedan los dos primeros circuitos, que
    llevan los básicos. El patrón 2+1 / 1+2 es el de la rutina original. */
 const S = (titulo, ...c) => ({ titulo, huecos: c.flat() });
+/* Regla del usuario: pierna va siempre sola, sin otro grupo. Y no todos los
+   días tienen que juntar dos grupos: depende de la división (hombro, por
+   ejemplo, puede ir solo). Por eso no hay cuerpo completo. */
+const TORSO_A = [[['pecho','C'],['espalda','C'],['hombros','L']], [['pecho','C'],['espalda','C'],['biceps','A']], [['hombros','C'],['triceps','A'],['hombros','P']]];
+const TORSO_B = [[['espalda','C'],['pecho','C'],['hombros','P']], [['espalda','C'],['pecho','A'],['triceps','A']], [['hombros','C'],['biceps','A'],['abdomen','A']]];
+const PIERNA_A = [[['cuadriceps','C'],['isquio','C'],['pantorrilla','A']], [['cuadriceps','C'],['gluteo','C'],['isquio','A']], [['cuadriceps','A'],['gluteo','A'],['pantorrilla','A']]];
+const PIERNA_B = [[['isquio','C'],['cuadriceps','C'],['gluteo','A']], [['gluteo','C'],['cuadriceps','C'],['pantorrilla','A']], [['isquio','A'],['gluteo','A'],['cuadriceps','A']]];
+const EMPUJE = [[['pecho','C'],['pecho','C'],['hombros','L']], [['hombros','C'],['pecho','A'],['triceps','A']], [['triceps','A'],['hombros','L'],['triceps','A']]];
+const TIRON = [[['espalda','C'],['espalda','C'],['biceps','A']], [['espalda','C'],['hombros','P'],['biceps','A']], [['espalda','A'],['biceps','A'],['abdomen','A']]];
 const DIVISIONES = {
-  2: [
-    S('Cuerpo completo A', [['cuadriceps','C'],['pecho','C'],['espalda','C']], [['isquio','A'],['hombros','L'],['biceps','A']], [['gluteo','C'],['triceps','A'],['abdomen','A']]),
-    S('Cuerpo completo B', [['isquio','C'],['espalda','C'],['pecho','C']], [['cuadriceps','A'],['hombros','C'],['triceps','A']], [['pantorrilla','A'],['biceps','A'],['hombros','P']]),
-  ],
-  3: [
-    S('Cuerpo completo A', [['cuadriceps','C'],['pecho','C'],['espalda','C']], [['isquio','A'],['hombros','L'],['biceps','A']], [['gluteo','C'],['triceps','A'],['abdomen','A']]),
-    S('Cuerpo completo B', [['isquio','C'],['espalda','C'],['pecho','C']], [['cuadriceps','A'],['hombros','C'],['triceps','A']], [['pantorrilla','A'],['biceps','A'],['hombros','P']]),
-    S('Cuerpo completo C', [['gluteo','C'],['pecho','C'],['espalda','C']], [['cuadriceps','C'],['hombros','L'],['espalda','A']], [['isquio','A'],['biceps','A'],['triceps','A']]),
-  ],
-  4: [
-    S('Torso A', [['pecho','C'],['espalda','C'],['hombros','L']], [['pecho','C'],['espalda','C'],['biceps','A']], [['hombros','C'],['triceps','A'],['hombros','P']]),
-    S('Pierna A', [['cuadriceps','C'],['isquio','C'],['pantorrilla','A']], [['cuadriceps','C'],['gluteo','C'],['abdomen','A']], [['cuadriceps','A'],['isquio','A'],['pantorrilla','A']]),
-    S('Torso B', [['espalda','C'],['pecho','C'],['hombros','P']], [['espalda','C'],['pecho','A'],['triceps','A']], [['hombros','C'],['biceps','A'],['hombros','L']]),
-    S('Pierna B', [['isquio','C'],['cuadriceps','C'],['abdomen','A']], [['gluteo','C'],['cuadriceps','C'],['pantorrilla','A']], [['isquio','A'],['gluteo','A'],['cuadriceps','A']]),
-  ],
+  2: [S('Torso', ...TORSO_A), S('Pierna', ...PIERNA_A)],
+  3: [S('Empuje', ...EMPUJE), S('Tirón', ...TIRON), S('Pierna', ...PIERNA_A)],
+  4: [S('Torso A', ...TORSO_A), S('Pierna A', ...PIERNA_A), S('Torso B', ...TORSO_B), S('Pierna B', ...PIERNA_B)],
   5: [
     S('Pecho + Bíceps', [['pecho','C'],['pecho','C'],['biceps','A']], [['pecho','A'],['biceps','A'],['biceps','A']], [['pecho','A'],['pecho','A'],['biceps','A']]),
     S('Espalda + Tríceps', [['espalda','C'],['espalda','C'],['triceps','A']], [['espalda','C'],['triceps','A'],['triceps','A']], [['espalda','C'],['espalda','A'],['triceps','A']]),
@@ -158,12 +155,10 @@ const DIVISIONES = {
     S('Espalda + Pecho', [['espalda','C'],['espalda','C'],['pecho','C']], [['pecho','C'],['pecho','A'],['espalda','C']], [['espalda','A'],['espalda','C'],['pecho','A']]),
   ],
   6: [
-    S('Empuje A', [['pecho','C'],['pecho','C'],['hombros','L']], [['hombros','C'],['pecho','A'],['triceps','A']], [['triceps','A'],['hombros','L'],['triceps','A']]),
-    S('Tirón A', [['espalda','C'],['espalda','C'],['biceps','A']], [['espalda','C'],['hombros','P'],['biceps','A']], [['espalda','A'],['biceps','A'],['trapecio','A']]),
-    S('Pierna A', [['cuadriceps','C'],['isquio','C'],['pantorrilla','A']], [['cuadriceps','C'],['gluteo','C'],['abdomen','A']], [['cuadriceps','A'],['isquio','A'],['pantorrilla','A']]),
+    S('Empuje A', ...EMPUJE), S('Tirón A', ...TIRON), S('Pierna A', ...PIERNA_A),
     S('Empuje B', [['pecho','C'],['hombros','C'],['triceps','A']], [['pecho','C'],['pecho','A'],['hombros','L']], [['hombros','L'],['triceps','A'],['pecho','A']]),
-    S('Tirón B', [['espalda','C'],['espalda','C'],['hombros','P']], [['espalda','C'],['biceps','A'],['biceps','A']], [['espalda','A'],['hombros','P'],['abdomen','A']]),
-    S('Pierna B', [['isquio','C'],['cuadriceps','C'],['abdomen','A']], [['gluteo','C'],['cuadriceps','C'],['pantorrilla','A']], [['isquio','A'],['gluteo','A'],['cuadriceps','A']]),
+    S('Tirón B', [['espalda','C'],['espalda','C'],['hombros','P']], [['espalda','C'],['biceps','A'],['biceps','A']], [['espalda','A'],['hombros','P'],['trapecio','A']]),
+    S('Pierna B', ...PIERNA_B),
   ],
 };
 
@@ -487,7 +482,7 @@ export function fichasParaIA(enc) {
 /* La explicación del plan cuando la IA no está */
 export function explicacionDeRespaldo(enc) {
   const n = ordenaDias(enc.dias).length;
-  const division = n <= 3 ? 'cuerpo completo en cada sesión' : n === 4 ? 'torso y pierna alternados'
+  const division = n === 2 ? 'un día de torso y otro de pierna' : n === 3 ? 'empuje, tirón y pierna' : n === 4 ? 'torso y pierna alternados'
     : n === 5 ? 'un grupo grande por día, con pecho y espalda dos veces' : 'empuje, tirón y pierna, dos veces por semana';
   const obj = { hipertrofia: 'ganar músculo', fuerza: 'ganar fuerza', recomposicion: 'ganar músculo y perder grasa a la vez' }[enc.objetivo] || 'progresar';
   return `Tu plan es de ${n} días con ${division}, pensado para ${obj}. ` +
