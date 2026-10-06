@@ -515,7 +515,7 @@ html, body {
 :is(.client-card, .role-card, .role-ia, .tlogin-btn, .re-save-btn, .re-add-btn, .cli-sort, .tbnav-item, .reg-atras, .back-btn, .pill-back) {
   transition: transform var(--t-rapido) var(--ease-out), background-color .15s ease, opacity .15s ease;
 }
-:is(.client-card, .role-card, .role-ia, .tlogin-btn, .re-add-btn, .reg-atras):active { transform:scale(.975); }
+:is(.role-ia, .tlogin-btn, .re-add-btn, .reg-atras):active { transform:scale(.975); }
 .client-card:active { background:var(--press); }
 
 /* Al cambiar de paso, lo que es de toda la sesión se queda quieto: la barra
@@ -595,9 +595,18 @@ html, body {
   transition: transform var(--t-rapido) var(--ease-out), background-color .15s ease,
               color .15s ease, border-color .15s ease, opacity .15s ease;
 }
-:is(.btn-primary, .step-next-btn, .complete-confirm, .complete-cancel, .today-row, .met-fila,
-    .blk-row, .done-link, .prog-tab, .chat-fab, .today-cta, .re-save-btn):active {
+:is(.btn-primary, .step-next-btn, .complete-confirm, .complete-cancel,
+    .done-link, .chat-fab, .today-cta, .re-save-btn):active {
   transform:scale(.97);
+}
+/* Las filas no se encogen: al hacer scroll el dedo las "pulsa" sin querer y
+   la lista entera parpadeaba. El gris de pulsado llega con un instante de
+   retraso, así sólo aparece cuando de verdad se toca. */
+:is(.today-row, .met-fila, .blk-row, .client-card, .role-card, .meal-row, .cir-ex-closed, .expicker-item, .admin-chat-card, .session-full-row) {
+  transition: background-color .12s ease 0s;
+}
+:is(.today-row, .met-fila, .blk-row, .client-card, .role-card, .meal-row, .cir-ex-closed, .expicker-item, .admin-chat-card, .session-full-row):active {
+  transform:none; transition-delay:.09s;
 }
 
 /* ── Reducir movimiento ──
@@ -790,7 +799,7 @@ html, body {
   padding:15px 0; background:none; border:none; cursor:pointer; text-align:left;
   font-family:var(--font-b);
 }
-.met-fila:active { opacity:.55; }
+.met-fila:active { background:var(--press); }
 .met-fila-l {
   flex:1; min-width:0; font-size:15px; color:var(--t1); letter-spacing:-.2px;
   display:inline-flex; align-items:center; gap:7px; flex-wrap:wrap;
@@ -1236,8 +1245,8 @@ button.ex-presc:active { background:var(--ac-soft2); }
 
 .timer-overlay {
   position:fixed; inset:0; z-index:200;
-  background:rgba(10,11,20,.75);
-  backdrop-filter:blur(10px);
+  background:var(--scrim);
+  backdrop-filter:blur(6px);
   -webkit-backdrop-filter:blur(10px);
   display:flex; align-items:flex-end;
   opacity:0; pointer-events:none;
@@ -1247,7 +1256,7 @@ button.ex-presc:active { background:var(--ac-soft2); }
 
 .timer-sheet {
   width:100%;
-  background:var(--s2); border:1px solid var(--b);
+  background:var(--bg); border:none;
   border-radius:28px 28px 0 0;
   padding:28px 32px calc(var(--sab) + 36px);
   text-align:center;
@@ -1935,6 +1944,9 @@ button.ex-presc:active { background:var(--ac-soft2); }
 .nota-et { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Con nota escrita, el botón la enseña en el tono del acento */
 .nota-btn.con-nota { background:var(--ac-soft); color:var(--ac-tx); }
+.nota-btn.abierta { background:var(--ac-str); color:#fff; }
+.nota-btn.abierta .ic { color:#fff; }
+.nota-input { font-size:17px; margin-top:6px; }
 .nota-caja { display:none; margin-top:4px; }
 .nota-caja.show { display:block; }
 .nota-input {
@@ -2516,7 +2528,7 @@ select.na-input {
   cursor:pointer; user-select:none;
 }
 .tmeal-day-header-info { flex:1; }
-.tmeal-day-label { font-size:15px; font-weight:700; color:var(--t1); text-transform:capitalize; }
+.tmeal-day-label { font-size:15px; font-weight:700; color:var(--t1); }
 .tmeal-day-date { font-size:12px; color:var(--t2); margin-top:2px; }
 .tmeal-day-count { font-size:12px; color:var(--cy); font-weight:600; background:rgba(110,75,255,.1); padding:3px 8px; border-radius:20px; }
 .tmeal-day-chevron { font-size:12px; color:var(--t2); transition:transform .2s; }
@@ -3362,7 +3374,9 @@ select.na-input {
 .screen.saliendo { visibility:visible; opacity:1; pointer-events:none; }
 .screen.empuje-arriba { z-index:3; box-shadow:-10px 0 28px rgba(0,0,0,.14); }
 .screen.empuje-abajo { z-index:2; }
-.screen.abre-tarjeta { box-shadow:none; }
+.screen.hoja-sube { box-shadow:0 -10px 30px rgba(0,0,0,.18); border-radius:22px 22px 0 0; overflow:hidden; }
+.screen.hoja-detras { transform-origin:50% 60%; overflow:hidden; }
+body:has(.hoja-detras), #app-shell:has(.hoja-detras) { background:#000; }
 .empuje-vivo { position:relative; }
 :is(.empuje-vivo, .empuje-copia).empuje-arriba { z-index:4; background:var(--bg); box-shadow:-10px 0 28px rgba(0,0,0,.14); }
 .empuje-copia { background:var(--bg); }
@@ -3625,6 +3639,19 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
   font-size:15px; color:var(--t1); line-height:1.45; display:flex; gap:8px; align-items:flex-start;
 }
 .rs-ex-nota-atleta .ic { flex:none; color:var(--ac-tx); margin-top:2px; }
+
+/* ══ Esqueletos de carga: respiran en vez de decir "vacío" ══ */
+.sc-cargando { display:flex; flex-direction:column; gap:12px; min-height:206px; }
+.sc-cargando i, .sk-linea {
+  display:block; border-radius:8px; background:var(--s2);
+  animation: respira 1.4s ease-in-out infinite;
+}
+.sc-cargando i:nth-child(1) { width:34%; height:12px; }
+.sc-cargando i:nth-child(2) { width:68%; height:28px; margin-top:10px; }
+.sc-cargando i:nth-child(3) { width:52%; height:14px; }
+.sc-cargando i:nth-child(4) { width:100%; height:50px; border-radius:100px; margin-top:auto; }
+.sk-linea { width:150px; height:15px; display:inline-block; vertical-align:middle; }
+@keyframes respira { 0%,100% { opacity:1; } 50% { opacity:.45; } }
 
 /* ══ Números: SF Pro Rounded, cifras del mismo ancho ══ */
 :is(.ex-peso, .ex-reps, .met-value, .met-fila-v, .timer-num, .fz-hero-n, .fz-val, .fz-semana-n, .fz-m b,
@@ -4820,7 +4847,7 @@ function show(id) {
   if (!yaEstaba) {
     const pestana = POS_PANTALLA[_pantallaActual] != null && POS_PANTALLA[id] != null;
     const a = NIVEL_PANTALLA[_pantallaActual], b = NIVEL_PANTALLA[id];
-    if (id === 'routine' && _abreDesde && origen && origen.id === 'today') { abreDesdeTarjeta(origen, destino, _abreDesde); _abreDesde = null; }
+    if (id === 'routine' && _abreDesde && origen && origen.id === 'today') { abreDesdeTarjeta(origen, destino); _abreDesde = null; }
     else if (pestana) fundePantalla(destino);
     else if (a != null && b != null && a !== b && origen && origen !== destino) empujaPantalla(origen, destino, Math.sign(b - a));
     else entrar(destino, 0);   // primera entrada: arranque → portada, acceso → Hoy
@@ -4859,6 +4886,8 @@ async function showRoutine() {
       }
       currentDay = st.sessionKey;
       currentWeek = st.week;
+      document.getElementById('routine-days-bar').innerHTML =
+        `<div class="session-badge pill-session">Sesión ${st.sessionNum} <span class="session-of-total ps-of">de ${st.total}</span></div>`;
       const _g = leerPaso();
       routineStep = (_g && _g.dia === currentDay) ? _g.paso : 0;
       const _f = leerFeedback();
@@ -5877,9 +5906,16 @@ function toggleNotaEjercicio(ci, nombre, btn) {
   // Con la caja abierta el texto ya está en el campo: repetirlo arriba sobra
   if (abierta) {
     const et = btn.querySelector('.nota-et');
-    if (et) et.textContent = 'Nota del ejercicio';
-    if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    if (et) et.textContent = 'Listo';
+    btn.classList.add('abierta');
+    if (ta) {
+      ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+      // Cuando el teclado termina de subir, el campo se acomoda a la vista
+      setTimeout(() => ta.scrollIntoView({ block: 'center', behavior: movReducido() ? 'auto' : 'smooth' }), 380);
+    }
+    anima(caja, [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], 'suave', 0, { fill: 'none' });
   } else {
+    btn.classList.remove('abierta');
     pintaBotonNota(btn, ta ? ta.value.trim() : '');
   }
 }
@@ -7294,12 +7330,14 @@ function entrarComoAtleta(dyn, selfToken) {
   recuerdaModo(dyn);
   currentAthlete = dyn.clientId;
   currentAthleteRecord = dyn;
-  data = {};
+  data = leerRutinaGuardada() || {};
+  _rutinaCargada = false;
   loadRoutine();
   ajustaNavAtleta();
   showGenericProfile(dyn);   // precarga los datos del perfil
   showToday(); activateNav('today');   // ...pero se entra por Hoy
   entrar(document.getElementById('today'), 0);   // la única cascada: al entrar a la app
+  setTimeout(() => { if (currentAthlete === dyn.clientId) precargaProgreso(); }, 1500);
   loadAthletePayment(currentAthlete);
   if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
 }
@@ -8588,7 +8626,7 @@ function renderTrainerTab() {
         <div class="tmeal-day-card${i === 0 ? ' open' : ''}">
           <div class="tmeal-day-header" onclick="this.parentElement.classList.toggle('open')">
             <div class="tmeal-day-header-info">
-              <div class="tmeal-day-label">${day.label}</div>
+              <div class="tmeal-day-label">${String(day.label || '').charAt(0).toUpperCase() + String(day.label || '').slice(1).toLowerCase()}</div>
               <div class="tmeal-day-date">${day.date}</div>
             </div>
             <div class="tmeal-day-count">${count} comida${count !== 1 ? 's' : ''}</div>
@@ -10033,6 +10071,12 @@ function scrollChat() {
 }
 
 /* ── LOAD ROUTINE FROM KV ── */
+let _rutinaCargada = false;   // ya llegó la rutina del servidor en esta sesión
+function leerRutinaGuardada() {
+  try { const r = JSON.parse(localStorage.getItem('rutina_' + currentAthlete) || 'null'); return r && typeof r === 'object' ? r : null; }
+  catch (e) { return null; }
+}
+
 async function loadRoutine() {
   // Sin sesión de atleta no hay nada que pedir: el backend respondería 401 y
   // ensuciaría la consola en cada carga de la app (pantalla de login incluida).
@@ -10048,6 +10092,9 @@ async function loadRoutine() {
     // borra todo explícitamente.
     if (json && json.ok) {
       data = (json.routine && typeof json.routine === 'object') ? json.routine : {};
+      _rutinaCargada = true;
+      // Copia en el teléfono: la próxima vez Hoy se pinta al instante
+      try { localStorage.setItem('rutina_' + currentAthlete, JSON.stringify(data)); } catch (e) {}
       // Migrate old day-keyed data (lunes/martes/...) to session keys (sesion1/sesion2/...)
       const dayToSession = { lunes:'sesion1', martes:'sesion2', miercoles:'sesion3', jueves:'sesion4', viernes:'sesion5' };
       if (Object.keys(data).some(k => dayToSession[k])) {
@@ -11424,6 +11471,8 @@ function pintaSemanaGuardada() {
 }
 
 async function showToday() {
+  // Sin rutina en memoria (recién abierta la app), se usa la del teléfono
+  if (!data || !Object.keys(data).length) { const g = leerRutinaGuardada(); if (g) data = g; }
   show('today');
   // Una sola vez por entrada, en paralelo con la rutina
   Promise.allSettled([loadTodayWeek(), loadAjusteSemanal()]);
@@ -11515,6 +11564,9 @@ function renderToday() {
           ${enCurso ? 'Continuar' : 'Empezar'} <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
         </button>
       </div>`;
+  } else if (!_rutinaCargada) {
+    // Todavía no llegó la rutina: un esqueleto, nunca "Sin rutina cargada"
+    entrenamiento = `<div class="sc sc-cargando" aria-label="Cargando tu entrenamiento"><i></i><i></i><i></i><i></i></div>`;
   } else {
     entrenamiento = `<div class="sc sc-vacia">
         <div class="sc-t">Sin rutina cargada</div>
@@ -11543,7 +11595,7 @@ function renderToday() {
     <button class="today-row" onclick="showResumen();activateNav('resumen')">
       <span class="today-row-ic"><svg class="ic"><use href="#i-resumen"/></svg></span>
       <span class="today-row-body">
-        <span class="today-row-title" id="today-week-n">—</span>
+        <span class="today-row-title" id="today-week-n"><span class="sk-linea"></span></span>
         <span class="today-row-sub" id="today-week-range"></span>
       </span>
       <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
@@ -11565,7 +11617,16 @@ function renderToday() {
   // renderToday corre dos veces por entrada (antes y después de la rutina).
   // Si el contenido es el mismo no se reescribe: reescribirlo reiniciaba la
   // cascada de entrada a mitad de camino.
-  if (el.__ultimo !== html) { el.innerHTML = html; el.__ultimo = html; }
+  if (el.__ultimo !== html) {
+    const antes = el.__ultimo;
+    if (antes) {
+      // Ya estaba pintada: no se repite la cascada, sólo entra lo que cambió
+      document.getElementById('today').classList.remove('entrando', 'paso');
+      const nuevaTarjeta = !antes.includes(html.slice(html.indexOf('<div class="sc '), html.indexOf('<div id="today-ajuste"')));
+      el.innerHTML = html; el.__ultimo = html;
+      if (nuevaTarjeta) anima(el.querySelector('.sc'), [{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], 'firme', 0, { fill: 'none', duration: 320 });
+    } else { el.innerHTML = html; el.__ultimo = html; }
+  }
 
   // Pintar no pide nada: lo que llegó del servidor se vuelca desde la caché.
   // Las peticiones las lanza showToday una sola vez por entrada.
@@ -11582,25 +11643,19 @@ function empezarDesdeHoy(btn) {
   _abreDesde = card && !movReducido() ? card.getBoundingClientRect() : null;
   showRoutine(); activateNav('routine');
 }
-function abreDesdeTarjeta(origen, destino, r) {
-  const shell = document.getElementById('app-shell');
-  const b = shell.getBoundingClientRect();
-  const W = shell.clientWidth || innerWidth, H = shell.clientHeight || innerHeight;
-  const x = r.left - b.left, y = r.top - b.top;
-  const recorte = (x, y, w, h, rad) => `inset(${y}px ${W - x - w}px ${H - y - h}px ${x}px round ${rad}px)`;
+function abreDesdeTarjeta(origen, destino) {
   [origen, destino].forEach(e => e.getAnimations().forEach(a => a.cancel()));
-  origen.classList.add('saliendo', 'empuje-abajo');
-  destino.classList.add('empuje-arriba', 'abre-tarjeta');
-  anima(destino, [{ clipPath: recorte(x, y, r.width, r.height, 26) }, { clipPath: recorte(0, 0, W, H, 0) }], 'firme', 0, { fill: 'none' });
-  // El contenido llega desde la altura de la tarjeta, sin aparecer de golpe
-  const cont = destino.querySelector('.r-content'), cab = destino.querySelector('.r-header');
-  [cab, cont].forEach((el, i) => el && anima(el, [{ transform: `translateY(${Math.max(0, y - 40) * 0.25}px)`, opacity: .2 }, { transform: 'none', opacity: 1 }], 'firme', i * 30, { fill: 'none' }));
-  anima(origen, [{ filter: 'brightness(1)' }, { filter: 'brightness(.88)' }], 'firme', 0, { fill: 'forwards' });
+  origen.classList.add('saliendo', 'empuje-abajo', 'hoja-detras');
+  destino.classList.add('empuje-arriba', 'hoja-sube');
+  // La hoja sube entera y opaca; detrás, Hoy se encoge un poco y se oscurece
+  anima(destino, [{ transform: 'translate3d(0,100%,0)' }, { transform: 'none' }], 'firme', 0, { fill: 'none' });
+  anima(origen, [{ transform: 'none', filter: 'brightness(1)', borderRadius: '0px' },
+                 { transform: 'scale(.93)', filter: 'brightness(.72)', borderRadius: '22px' }], 'firme', 0, { fill: 'forwards' });
   setTimeout(() => {
-    origen.classList.remove('saliendo', 'empuje-abajo');
-    destino.classList.remove('empuje-arriba', 'abre-tarjeta');
+    origen.classList.remove('saliendo', 'empuje-abajo', 'hoja-detras');
+    destino.classList.remove('empuje-arriba', 'hoja-sube');
     origen.getAnimations().forEach(a => a.cancel());
-  }, RESORTE.firme.duration + 30);
+  }, RESORTE.firme.duration + 40);
 }
 
 /* ── Ajuste semanal de la rutina ──────────────────────────────────
