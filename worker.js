@@ -1749,7 +1749,8 @@ Devolvé SOLO un JSON así, sin texto extra:
       const hoy = new Date().toISOString().slice(0, 10);
       const kIp = `registro-ip:${ip}:${hoy}`, kDia = `registro-dia:${hoy}`;
       const [nIp, nDia] = await Promise.all([env.DB.get(kIp), env.DB.get(kDia)]);
-      if ((parseInt(nIp) || 0) >= 6 || (parseInt(nDia) || 0) >= 200) {
+      // 15 por conexión: un gimnasio o una casa comparten la misma IP
+      if ((parseInt(nIp) || 0) >= 15 || (parseInt(nDia) || 0) >= 200) {
         return new Response(JSON.stringify({ ok: false, error: 'Se crearon demasiadas cuentas hoy desde aquí. Intenta mañana.' }), { headers: cors, status: 429 });
       }
 

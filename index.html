@@ -13,6 +13,10 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F2F7">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
 <meta name="color-scheme" content="light dark">
+<script>
+  // Apariencia elegida (automático si no hay): antes de pintar, sin parpadeo
+  try { var t = localStorage.getItem('apariencia'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -102,7 +106,7 @@ body.kbd-open #app-shell {
 /* ── Modo oscuro: sigue al teléfono ──
    Negro real de fondo y tarjetas en gris, como las apps de Apple. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg:  #000000;
     --s1:  #1C1C1E;
     --s2:  #2C2C2E;
@@ -136,6 +140,41 @@ body.kbd-open #app-shell {
     --barra: #3A3A3C;
   }
 }
+:root[data-theme="dark"] {
+    --bg:  #000000;
+    --s1:  #1C1C1E;
+    --s2:  #2C2C2E;
+    --b:   #38383A;
+    --b2:  #2C2C2E;
+    --b3:  #48484A;
+    --press: #2C2C2E;
+    --chev: #5A5A5F;
+    --ph:  #6C6C70;
+    --bar: rgba(22,22,24,.84);
+    --scrim: rgba(0,0,0,.55);
+    --ac-tx:  #A996FF;
+    --ac-soft: #262040;
+    --ac-soft2: #30285A;
+    --ac-press: #5A38EB;
+    --ac-busy: #4B3A99;
+    --ac-borde: #4B3D8F;
+    --sel-bg: #1D1932;
+    --t1:  #FFFFFF;
+    --t2:  #98989F;
+    --t3:  #8E8E93;
+    --tag-muscle-bg: #262040; --tag-muscle-tx: #B9A9FF;
+    --tag-drop-bg:   #3A1814; --tag-drop-tx:   #FF9C8F;
+    --tag-tri-bg:    #33270C; --tag-tri-tx:    #FFC85C;
+    --gr:  #30D158;
+    --gr-str: #248A3D;
+    --ok:  #30D158;
+    --ok-soft: #12321C;
+    --am:  #FFB340;
+    --err: #FF6961;
+    --barra: #3A3A3C;
+  }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 /* Los controles no heredan la letra por defecto: en Safari salían con serifa */
 button, input, textarea, select { font-family:inherit; }
@@ -2043,7 +2082,7 @@ button.ex-presc:active { background:var(--ac-soft2); }
   transition: width .5s var(--ease-out); }
 .reg-paso-n { font-size:13px; color:var(--t2); font-variant-numeric:tabular-nums; min-width:34px; text-align:right; }
 .reg-cuerpo {
-  flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; position:relative; -webkit-overflow-scrolling:touch;
   padding:18px var(--pad) 24px;
 }
 .reg-pie { padding:10px var(--pad) calc(var(--sab, 0px) + 18px); }
@@ -2554,13 +2593,9 @@ select.na-input {
 
 /* Pie con la acción principal */
 .blk-footer { margin-top:22px; }
-/* El botón de guardar quedaba detrás de la barra inferior del entrenador:
-   ahora flota justo encima, con el fondo desenfocado. */
-#tclient-content .blk-footer {
-  position:sticky; bottom:calc(76px + var(--sab)); z-index:5;
-  margin:22px calc(-1 * var(--pad)) 0; padding:12px var(--pad) 10px;
-  background:var(--bar); -webkit-backdrop-filter:saturate(180%) blur(18px); backdrop-filter:saturate(180%) blur(18px);
-}
+/* Guardar va al final, en su sitio; el contenido deja aire para que la
+   barra inferior nunca lo tape. (Fijarlo encima tapaba "Agregar circuito".) */
+#tclient-content .blk-footer { margin-top:26px; }
 .blk-footer-note { text-align:center; font-size:15px; color:var(--t2); margin-bottom:10px; letter-spacing:-.2px; }
 
 /* ── Editor por bloques: pantalla de un bloque ── */
@@ -3320,6 +3355,19 @@ select.na-input {
 #today-ajuste:not(:empty) { margin-top:14px; }
 .today-sec { margin:28px 0 10px; font-size:22px; letter-spacing:-.6px; }
 
+/* El empuje: la pantalla de arriba, opaca y con una sombra en su borde */
+.screen.saliendo { visibility:visible; opacity:1; pointer-events:none; }
+.screen.empuje-arriba { z-index:3; box-shadow:-10px 0 28px rgba(0,0,0,.14); }
+.screen.empuje-abajo { z-index:2; }
+.empuje-vivo { position:relative; }
+:is(.empuje-vivo, .empuje-copia).empuje-arriba { z-index:4; background:var(--bg); box-shadow:-10px 0 28px rgba(0,0,0,.14); }
+.empuje-copia { background:var(--bg); }
+
+/* Selector de apariencia: segmentado del sistema */
+.apariencia { display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; padding:2px; background:var(--s2); border-radius:12px; }
+.apar-op { border:none; background:transparent; color:var(--t1); border-radius:10px; padding:9px 4px; font-size:15px; font-weight:500; cursor:pointer; }
+.apar-op.on { background:var(--s1); font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,.14); }
+
 /* La forma que crece desde una tarjeta hasta ocupar la pantalla */
 .expande-capa { position:fixed; inset:0; z-index:180; pointer-events:none; }
 
@@ -3401,7 +3449,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .fz-anillo-f { stroke:var(--s2); }
 .fz-anillo-a { stroke:var(--ac-str); stroke-linecap:round; stroke-dashoffset:var(--fin); }
 .fz-anillo-wrap.llena .fz-anillo-a { stroke:var(--ok); }
-.entrando .fz-anillo-a { animation: cierraAnillo 1.1s var(--ease-suave) .2s both; }
+:is(.entrando, .dibuja) .fz-anillo-a { animation: cierraAnillo 1.1s var(--ease-suave) .2s both; }
 @keyframes cierraAnillo { from { stroke-dashoffset:var(--ini); } to { stroke-dashoffset:var(--fin); } }
 .fz-anillo-n {
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
@@ -3411,14 +3459,14 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .fz-linea-wrap { position:relative; margin-top:12px; }
 .fz-svg { width:100%; height:100%; display:block; overflow:visible; }
 .fz-linea { stroke:var(--ac-str); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:0; }
-.entrando .fz-linea { animation: dibujaLinea 1.1s var(--ease-out) .25s both; }
-.entrando .fz-area { animation: apareceSuave .6s ease .7s both; }
+:is(.entrando, .dibuja) .fz-linea { animation: dibujaLinea 1.1s var(--ease-out) .25s both; }
+:is(.entrando, .dibuja) .fz-area { animation: apareceSuave .6s ease .7s both; }
 @keyframes dibujaLinea { from { stroke-dashoffset:1; } to { stroke-dashoffset:0; } }
 .fz-punto {
   position:absolute; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:100px;
   background:var(--ac-str); box-shadow:0 0 0 3px var(--s1), 0 0 0 7px rgba(110,75,255,.18);
 }
-.entrando .fz-punto { animation: puntoEntra .5s var(--ease-spring) 1.1s both; }
+:is(.entrando, .dibuja) .fz-punto { animation: puntoEntra .5s var(--ease-spring) 1.1s both; }
 .fz-hero { padding:22px 20px; }
 .fz-hero-n { color:var(--ac-tx); }
 .fz-delta { background:var(--ok-soft); color:var(--ok); }
@@ -3461,6 +3509,90 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .reg-ses-barras { display:flex; align-items:flex-end; gap:2px; flex:none; }
 .reg-ses-barras i { width:4px; border-radius:2px; display:block; }
 .reg-final .reg-explica { margin-top:18px; }
+/* ══ ENTRENADOR ══ */
+/* Ninguna pantalla se desplaza de lado */
+#trainer-portal, #trainer-new-athlete, #trainer-edit-profile, #trainer-own-profile, #admin-trainer-detail,
+#admin-edit-trainer, #admin-create-trainer, #trainer-client, .tclient-content, .tportal-body { overflow-x:hidden; }
+.tportal-body form, .tportal-body form * { min-width:0; }
+
+/* Selectores de número: control segmentado */
+.na-pills { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:2px; padding:2px; background:var(--s2); border-radius:12px; }
+.na-pill {
+  background:transparent; border:none; border-radius:10px; padding:10px 0; min-width:0;
+  color:var(--t1); font-family:var(--font-r); font-size:17px; font-weight:600; cursor:pointer;
+  transition:background-color .2s ease, color .2s ease;
+}
+.na-pill-active { background:var(--s1); color:var(--ac-tx); box-shadow:0 1px 4px rgba(0,0,0,.14); }
+
+/* Formularios como Ajustes: grupos con separadores */
+.tportal-body form > .na-field, .tportal-body form > .na-row {
+  background:var(--s1); margin:0; padding:10px 16px 12px; position:relative;
+}
+.tportal-body form > :is(.na-field, .na-row) + :is(.na-field, .na-row)::before {
+  content:''; position:absolute; top:0; left:16px; right:0; height:.5px; background:var(--b);
+}
+.tportal-body form > :is(.na-field, .na-row):not(:is(.na-field, .na-row) + *) { border-radius:16px 16px 0 0; }
+.tportal-body form > :is(.na-field, .na-row):not(:has(+ :is(.na-field, .na-row))) { border-radius:0 0 16px 16px; margin-bottom:18px; }
+.tportal-body form > :is(.na-field, .na-row):not(:is(.na-field, .na-row) + *):not(:has(+ :is(.na-field, .na-row))) { border-radius:16px; }
+.tportal-body form > .na-row { display:flex; gap:12px; }
+.tportal-body form > .na-row > .na-field { margin:0; }
+.tportal-body form :is(.na-label) { font-size:13px; color:var(--t2); margin-bottom:4px; }
+.tportal-body form :is(.na-input):not(textarea) {
+  background:transparent; border:none; border-radius:0; padding:4px 0; min-height:30px;
+}
+.tportal-body form textarea.na-input { background:var(--bg); border:none; border-radius:10px; padding:10px 12px; }
+.tportal-body form select.na-input { background-position:right 2px center; padding-right:28px; }
+.tportal-body form .na-input:focus { border:none; box-shadow:none; }
+.tportal-body form .na-hint { font-size:13px; margin-top:4px; }
+.tportal-body form > .na-section-label { margin:8px 16px 8px; font-size:13px; letter-spacing:.4px; }
+.tportal-body form > .na-pdf-box { margin-bottom:22px; }
+.tportal-body form .na-pills { margin-top:6px; }
+.tportal-body form > .tlogin-btn, .tportal-body form > .tlogin-error { margin-left:0; margin-right:0; }
+/* Campos dentro de las tarjetas plegables (antropometría, notas) */
+.na-details .na-input:not(textarea) { background:var(--bg); border:none; border-radius:10px; padding:10px 12px; }
+
+/* Clientes */
+.client-avatar { color:var(--t2); }
+.client-meta { color:var(--t2); }
+
+/* Cabecera del cliente */
+.tclient-id { display:flex; align-items:center; gap:12px; min-width:0; flex:1; }
+.tclient-id-t { min-width:0; }
+.tclient-av {
+  width:44px; height:44px; border-radius:100px; flex:none; background:var(--s2); color:var(--t2);
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-r); font-weight:700; font-size:15px;
+}
+.tclient-name { font-size:22px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tclient-meta { font-size:13px; color:var(--t2); margin-top:2px; }
+.tclient-meta:empty { display:none; }
+
+/* Sesiones S1, S2… como segmentado; agregar y quitar, aparte */
+.re-day-bar { gap:8px; align-items:center; }
+.re-day-bar .day-chip { padding:9px 16px; font-size:15px; font-family:var(--font-r); border-color:transparent; background:var(--s1); }
+.re-day-bar .day-chip.active { background:var(--ac-str); color:#fff; }
+.re-day-bar .day-chip-ic { background:transparent; border:1px dashed var(--b3); padding:9px 12px; }
+
+/* Bloques del editor, cada uno con su color */
+.blk-ic-wu { background:rgba(245,163,0,.16); color:var(--am); }
+.blk-ic-cir { background:var(--ac-soft); color:var(--ac-tx); font-family:var(--font-r); font-weight:700; font-size:17px; }
+.blk-ic-cardio { background:var(--ok-soft); color:var(--ok); }
+.blk-row-empty .blk-ic { background:transparent; border:1.5px dashed var(--b3); }
+.blk-add {
+  border:1.5px dashed var(--ac-borde) !important; color:var(--ac-tx) !important; font-size:15px !important;
+  font-weight:600 !important; border-radius:16px !important; padding:14px !important;
+  display:flex !important; align-items:center; justify-content:center; gap:8px; background:transparent;
+}
+/* Series y descanso: dos columnas con la etiqueta arriba, así caben y no
+   se corta el valor ni en el iPhone más pequeño */
+.cir-settings { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; padding:12px 14px; }
+.cir-set-sep { display:none; }
+.cir-set-field { flex-direction:column; align-items:stretch; gap:4px; }
+.cir-set-label { font-size:13px; }
+.cir-set-field .re-rest-select { width:100%; min-width:0; padding-right:28px; }
+/* Pestañas del panel de admin: caben a cualquier ancho */
+.admin-tab { min-width:0; padding:10px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:360px) { .admin-tab { font-size:13px; } }
+
 /* ══ Números: SF Pro Rounded, cifras del mismo ancho ══ */
 :is(.ex-peso, .ex-reps, .met-value, .met-fila-v, .timer-num, .fz-hero-n, .fz-val, .fz-semana-n, .fz-m b,
     .prog-streak-n, .resumen-total-val, .stat-card .sv, .tpay-amount-big, .platform-pay-amount, .ex-drop-pasos b,
@@ -3895,6 +4027,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
         <textarea class="na-input" id="top-education" rows="3" placeholder="Ej.: Lic. Ciencias del Deporte, certificación NSCA"></textarea></div>
       <div class="na-field"><label class="na-label">Sobre mí</label>
         <textarea class="na-input" id="top-bio" rows="3" placeholder="Breve descripción (2-3 líneas)"></textarea></div>
+      <div class="na-field"><label class="na-label">Apariencia</label>
+        <div class="apariencia" data-apariencia></div></div>
       <div id="top-error" class="tlogin-error"></div>
       <button type="submit" class="tlogin-btn" id="top-save" style="margin-top:18px">Guardar cambios</button>
     </form>
@@ -4156,6 +4290,10 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
       </div>
     </div>
 
+    <div>
+      <h2 class="h-sec sec-title">Apariencia</h2>
+      <div class="apariencia" data-apariencia></div>
+    </div>
     <button class="pg-salir" onclick="logoutAthlete()">
       <svg class="ic ic-sm"><use href="#i-logout"/></svg> Cerrar sesión
     </button>
@@ -4166,7 +4304,13 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 <div class="screen" id="trainer-client">
   <div class="tclient-header">
     <div class="tclient-header-top">
-      <div class="tclient-name" id="tclient-name">Nicolás Saravia</div>
+      <div class="tclient-id">
+        <span class="tclient-av" id="tclient-av"></span>
+        <div class="tclient-id-t">
+          <div class="tclient-name" id="tclient-name">Nicolás Saravia</div>
+          <div class="tclient-meta" id="tclient-meta"></div>
+        </div>
+      </div>
       <div style="display:flex;gap:10px">
         <button class="btn-circle btn-circle-outline" onclick="openEditAthleteProfile()" title="Editar perfil" aria-label="Editar perfil"><svg class="ic"><use href="#i-settings"/></svg></button>
         <button class="btn-circle btn-circle-outline" onclick="openSupportChat()" title="Soporte" aria-label="Soporte"><svg class="ic"><use href="#i-chat"/></svg></button>
@@ -4507,6 +4651,96 @@ function expandeDesde(el, abrir) {
   }, Math.round(RESORTE.firme.duration * 0.62));
 }
 
+/* ── Pestañas: un fundido corto. iOS no desliza al cambiar de pestaña. ── */
+function fundePantalla(el) {
+  if (!el || !el.animate) return;
+  el.getAnimations().forEach(a => a.cancel());
+  el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: movReducido() ? 120 : 200, easing: 'ease-out' });
+}
+
+/* ── Ir más adentro / volver: el empuje de iOS ──
+   Al entrar, la nueva llega entera desde la derecha por encima y la de
+   atrás se corre un poco y se oscurece. Al volver, la de arriba se va a la
+   derecha y la de atrás regresa a su sitio. */
+function empujaPantalla(origen, destino, dir) {
+  if (!origen || !destino || !destino.animate || movReducido()) { fundePantalla(destino); return; }
+  [origen, destino].forEach(x => x.getAnimations().forEach(a => a.cancel()));
+  origen.classList.add('saliendo');
+  const arriba = dir > 0 ? destino : origen, abajo = dir > 0 ? origen : destino;
+  arriba.classList.add('empuje-arriba'); abajo.classList.add('empuje-abajo');
+  const dur = RESORTE.firme.duration;
+  if (dir > 0) {
+    anima(destino, [{ transform: 'translate3d(100%,0,0)' }, { transform: 'none' }], 'firme', 0, { fill: 'none' });
+    anima(origen, [{ transform: 'none', filter: 'brightness(1)' }, { transform: 'translate3d(-28%,0,0)', filter: 'brightness(.9)' }], 'firme', 0, { fill: 'forwards' });
+  } else {
+    anima(origen, [{ transform: 'none' }, { transform: 'translate3d(100%,0,0)' }], 'firme', 0, { fill: 'forwards' });
+    anima(destino, [{ transform: 'translate3d(-28%,0,0)', filter: 'brightness(.9)' }, { transform: 'none', filter: 'brightness(1)' }], 'firme', 0, { fill: 'none' });
+  }
+  clearTimeout(origen.__tEmpuje);
+  origen.__tEmpuje = setTimeout(() => {
+    origen.classList.remove('saliendo', 'empuje-arriba', 'empuje-abajo');
+    destino.classList.remove('empuje-arriba', 'empuje-abajo');
+    origen.getAnimations().forEach(a => a.cancel());
+  }, dur + 30);
+}
+
+/* El mismo empuje, pero sólo del contenido de una pantalla (los pasos de la
+   rutina, las preguntas del registro, los bloques del editor): lo de antes se
+   queda como copia quieta y lo nuevo entra por encima. `pintar` cambia el
+   contenido real. */
+function empujaContenido(cont, dir, pintar) {
+  if (!cont || !dir || movReducido() || !cont.animate) { pintar(); return; }
+  const padre = cont.offsetParent || cont.parentElement;
+  const r = cont.getBoundingClientRect(), pr = padre.getBoundingClientRect();
+  const copia = cont.cloneNode(true);
+  copia.removeAttribute('id');
+  copia.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+  copia.classList.add('empuje-copia');
+  copia.style.cssText = `position:absolute;left:${r.left - pr.left}px;top:${r.top - pr.top}px;width:${r.width}px;height:${r.height}px;` +
+    `margin:0;overflow:hidden;pointer-events:none;z-index:${dir > 0 ? 1 : 4}`;
+  const st = cont.scrollTop;
+  padre.appendChild(copia);
+  copia.scrollTop = st;
+  pintar();
+  cont.scrollTop = 0;
+  cont.classList.add(dir > 0 ? 'empuje-arriba' : 'empuje-abajo', 'empuje-vivo');
+  if (dir > 0) {
+    anima(cont, [{ transform: 'translate3d(100%,0,0)' }, { transform: 'none' }], 'firme', 0, { fill: 'none' });
+    anima(copia, [{ transform: 'none', filter: 'brightness(1)' }, { transform: 'translate3d(-28%,0,0)', filter: 'brightness(.9)' }], 'firme');
+  } else {
+    copia.classList.add('empuje-arriba');
+    anima(copia, [{ transform: 'none' }, { transform: 'translate3d(100%,0,0)' }], 'firme');
+    anima(cont, [{ transform: 'translate3d(-28%,0,0)', filter: 'brightness(.9)' }, { transform: 'none', filter: 'brightness(1)' }], 'firme', 0, { fill: 'none' });
+  }
+  setTimeout(() => { copia.remove(); cont.classList.remove('empuje-arriba', 'empuje-abajo', 'empuje-vivo'); }, RESORTE.firme.duration + 30);
+}
+
+/* ── Apariencia: automático (sigue al teléfono), claro u oscuro ── */
+const APARIENCIAS = [['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Oscuro']];
+function aparienciaActual() {
+  try { const t = localStorage.getItem('apariencia'); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; }
+}
+function pintaApariencia() {
+  const actual = aparienciaActual();
+  document.querySelectorAll('[data-apariencia]').forEach(c => {
+    c.innerHTML = APARIENCIAS.map(([v, t]) =>
+      `<button type="button" class="apar-op${v === actual ? ' on' : ''}" aria-pressed="${v === actual}" onclick="ponApariencia('${v}')">${t}</button>`).join('');
+  });
+}
+function ponApariencia(v) {
+  try { if (v === 'auto') localStorage.removeItem('apariencia'); else localStorage.setItem('apariencia', v); } catch (e) {}
+  const raiz = document.documentElement;
+  // Un fundido corto de toda la app al cambiar de tema
+  const cambia = () => {
+    if (v === 'auto') raiz.removeAttribute('data-theme'); else raiz.setAttribute('data-theme', v);
+    const oscuro = v === 'dark' || (v === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', oscuro ? '#000000' : '#F2F2F7'));
+    pintaApariencia();
+  };
+  if (document.startViewTransition && !movReducido()) document.startViewTransition(cambia); else cambia();
+}
+document.addEventListener('DOMContentLoaded', pintaApariencia);
+
 /* ── navigation ── */
 /* Orden de las pestañas, para saber de qué lado entra la pantalla nueva */
 const POS_PANTALLA = { today:0, routine:1, meals:2, resumen:3, 'profile-generic':4, profile:4, payments:5 };
@@ -4542,12 +4776,15 @@ const NIVEL_PANTALLA = {
 function show(id) {
   const destino = document.getElementById(id);
   const yaEstaba = !!(destino && destino.classList.contains('active'));
+  const origen = document.querySelector('.screen.active');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   destino.classList.add('active');
   if (!yaEstaba) {
-    let a = POS_PANTALLA[_pantallaActual], b = POS_PANTALLA[id];
-    if (a == null || b == null) { a = NIVEL_PANTALLA[_pantallaActual]; b = NIVEL_PANTALLA[id]; }
-    entrar(destino, (a != null && b != null && a !== b) ? Math.sign(b - a) : 0);
+    const pestana = POS_PANTALLA[_pantallaActual] != null && POS_PANTALLA[id] != null;
+    const a = NIVEL_PANTALLA[_pantallaActual], b = NIVEL_PANTALLA[id];
+    if (pestana) fundePantalla(destino);
+    else if (a != null && b != null && a !== b && origen && origen !== destino) empujaPantalla(origen, destino, Math.sign(b - a));
+    else entrar(destino, 0);   // primera entrada: arranque → portada, acceso → Hoy
   }
   _pantallaActual = id;
   if (id === 'trainer-portal' && typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
@@ -5687,8 +5924,7 @@ function setDay(d) {
 function nextStep() {
   routineStep++;
   guardarPaso();
-  entrar(document.getElementById('routine'), 1, true);
-  render();
+  empujaContenido(document.getElementById('content'), 1, render);
   document.getElementById('content').scrollTop = 0;
 }
 
@@ -5696,8 +5932,7 @@ function prevStep() {
   if (routineStep > 0) {
     routineStep--;
     guardarPaso();
-    entrar(document.getElementById('routine'), -1, true);
-    render();
+    empujaContenido(document.getElementById('content'), -1, render);
     document.getElementById('content').scrollTop = 0;
   }
 }
@@ -6609,10 +6844,19 @@ function abrirRegistro() {
   regPinta(0);
 }
 
+/* Cambiar de pregunta es un empuje, como en iOS: la pregunta nueva entra
+   entera desde un lado y la anterior se hace a un lado y se apaga. El
+   contenido de la nueva llega un poco detrás, con algo de profundidad. */
 function regPinta(dir) {
   const p = REG_PASOS[REG.paso];
   const cuerpo = document.getElementById('reg-cuerpo');
-  cuerpo.innerHTML = `<div class="reg-paso">${p.pinta()}</div>`;
+  const nuevo = document.createElement('div');
+  nuevo.className = 'reg-paso';
+  nuevo.innerHTML = p.pinta();
+  empujaContenido(cuerpo, dir || 0, () => {
+    cuerpo.innerHTML = '';
+    cuerpo.appendChild(nuevo);
+  });
   cuerpo.scrollTop = 0;
   const total = REG_PASOS.length - 1;
   document.getElementById('reg-progreso').style.width = (REG.paso / total * 100) + '%';
@@ -6624,7 +6868,6 @@ function regPinta(dir) {
   document.getElementById('reg-pie').hidden = false;
   document.getElementById('reg-atras').style.visibility = '';
   regLimpiaError();
-  if (dir) entrar(document.getElementById('registro'), dir, true);
   if (REG.paso === 1) regPintaUsuario();
 }
 
@@ -6794,7 +7037,11 @@ async function regCrear() {
 }
 
 function armaEscena(cuerpo, e) {
-  const W = cuerpo.clientWidth, H = Math.max(cuerpo.clientHeight, 460);
+  // El ancho útil es el del contenido, sin los márgenes laterales: medirlo
+  // con ellos corría toda la escena hacia la derecha.
+  const est = getComputedStyle(cuerpo);
+  const W = cuerpo.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
+  const H = Math.max(cuerpo.clientHeight, 460);
   const cx = W / 2;
   const elegidos = ORDEN_SEMANA.filter(d => e.dias.includes(d));
   const nDias = elegidos.length;
@@ -6829,8 +7076,8 @@ function armaEscena(cuerpo, e) {
     const s = $e('#esc-s'); if (!s) return;
     const viejo = s.firstElementChild, nuevo = document.createElement('span');
     nuevo.textContent = txt; s.appendChild(nuevo);
-    if (viejo) anima(viejo, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-10px)' }], 'firme').finished.then(() => viejo.remove()).catch(() => {});
-    anima(nuevo, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], 'suave', 60);
+    if (viejo) anima(viejo, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], 'firme', 0, { duration: 180 }).finished.then(() => viejo.remove()).catch(() => {});
+    anima(nuevo, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], 'suave', 140);
   };
   const columnas = [];
 
@@ -7012,6 +7259,7 @@ function entrarComoAtleta(dyn, selfToken) {
   ajustaNavAtleta();
   showGenericProfile(dyn);   // precarga los datos del perfil
   showToday(); activateNav('today');   // ...pero se entra por Hoy
+  entrar(document.getElementById('today'), 0);   // la única cascada: al entrar a la app
   loadAthletePayment(currentAthlete);
   if (typeof startInactivityTracking === 'function') { _touchActivity(); startInactivityTracking(); }
 }
@@ -7715,10 +7963,11 @@ function renderClientList() {
   container.innerHTML = list.map((a, i) => {
     const displayName = a.name || a.username || '?';
     const initials = displayName.split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
-    const plan = a.profile?.goal ? ('Plan: ' + prettyGoal(a.profile.goal)) : ('Sesiones: ' + (a.sessionsPerWeek || '—') + '/semana');
+    const dias = a.sessionsPerWeek ? `${a.sessionsPerWeek} días` : '';
+    const plan = [a.profile?.goal ? prettyGoal(a.profile.goal) : '', dias].filter(Boolean).join(' · ') || 'Sin plan definido';
     return `${i ? '<div class="group-sep"></div>' : ''}
       <div class="client-card" style="--fila:${Math.min(i, 14)}" onclick="openTrainerClient('${esc(a.clientId)}','${esc(displayName)}')">
-        <div class="client-avatar">${esc(initials)}</div>
+        <div class="client-avatar" style="${estiloAvatar(a.profile?.goal)}">${esc(initials)}</div>
         <div class="client-body">
           <div class="client-name">${esc(displayName)}</div>
           <div class="client-meta">${esc(plan)}</div>
@@ -7726,6 +7975,16 @@ function renderClientList() {
         <svg class="ic client-arrow"><use href="#i-chevron-r"/></svg>
       </div>`;
   }).join('');
+}
+
+/* El color de cada objetivo, para reconocer al cliente de un vistazo */
+const COLOR_OBJETIVO = {
+  hipertrofia: ['#A68BFF', '#6E4BFF'], fuerza: ['#7FB0FF', '#3D7BFF'], recomposicion: ['#6FDB9B', '#26A35F'],
+  'perdida-grasa': ['#FFA38F', '#F0604A'], 'perdida-de-grasa': ['#FFA38F', '#F0604A'], rendimiento: ['#FFD27A', '#E0A020'],
+};
+function estiloAvatar(goal) {
+  const c = COLOR_OBJETIVO[goal];
+  return c ? `background:linear-gradient(140deg, ${c[0]}, ${c[1]}) !important;color:#fff` : '';
 }
 
 /* Objetivo legible: "perdida-grasa" → "Pérdida de grasa" */
@@ -7915,7 +8174,7 @@ function renderEpNextSessionPills(total, currentNext) {
   if (!el) return;
   let html = '';
   for (let i = 1; i <= total; i++) {
-    html += `<button type="button" class="na-pill${i===currentNext?' na-pill-active':''}" data-val="${i}" onclick="setEpNextSession(${i})">Sesión ${i}</button>`;
+    html += `<button type="button" class="na-pill${i===currentNext?' na-pill-active':''}" data-val="${i}" onclick="setEpNextSession(${i})" aria-label="Sesión ${i}">${i}</button>`;
   }
   el.innerHTML = html;
 }
@@ -8037,8 +8296,14 @@ async function deleteCurrentAthlete() {
 async function openTrainerClient(clientId, clientName) {
   trainerClientId = clientId;
   document.getElementById('tclient-name').textContent = clientName;
+  const ficha = (_clientList || []).find(x => x.clientId === clientId) || {};
+  const av = document.getElementById('tclient-av');
+  av.textContent = String(clientName || '?').split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
+  av.style.cssText = estiloAvatar(ficha.profile?.goal);
+  document.getElementById('tclient-meta').textContent =
+    [ficha.profile?.goal ? prettyGoal(ficha.profile.goal) : '', ficha.sessionsPerWeek ? `${ficha.sessionsPerWeek} días por semana` : ''].filter(Boolean).join(' · ');
   document.getElementById('tclient-content').innerHTML =
-    '<div class="tdata-empty"><div class="tdata-empty-icon">⏳</div>Cargando datos…</div>';
+    '<div class="tdata-empty">Cargando datos…</div>';
   // Se entra a editar la rutina; el historial se consulta de vez en cuando
   activeTrainerTab = 'editar';
   document.getElementById('tab-editar').classList.add('active');
@@ -8175,7 +8440,7 @@ function setTrainerTab(tab) {
   const desde = ORDEN_TAB_ENTRENADOR.indexOf(activeTrainerTab);
   const hacia = ORDEN_TAB_ENTRENADOR.indexOf(tab);
   if (desde >= 0 && hacia >= 0 && desde !== hacia) {
-    entrar(document.getElementById('trainer-client'), Math.sign(hacia - desde), true);
+    fundePantalla(document.getElementById('tclient-content'));
   }
   activeTrainerTab = tab;
   document.getElementById('tab-rutinas').classList.toggle('active', tab === 'rutinas');
@@ -8348,7 +8613,7 @@ const POS_PROGRESO = { fuerza:0, entreno:1, comida:2 };
 function setProgressTab(t) {
   const desde = POS_PROGRESO[progressTab], hacia = POS_PROGRESO[t];
   if (t !== progressTab) {
-    entrar(document.getElementById('resumen'), Math.sign((hacia || 0) - (desde || 0)), true);
+    fundePantalla(document.getElementById('resumen-content'));
   }
   progressTab = t;
   _pestanaElegida = true;
@@ -8367,6 +8632,7 @@ function setProgressTab(t) {
 let _lastResumenData = null;
 let _historialFuerza = null;   // lo que devuelve get-progresion
 let _semanaFuerza = null;      // sesiones de la semana en curso, con sus marcas
+let _fuerzaDibujada = false;   // el anillo y las líneas se animan la primera vez
 
 /* La semana en curso: cuántas sesiones lleva y cómo marcó cada ejercicio.
    Es lo que va a mover la rutina el sábado, así que va arriba. */
@@ -8518,6 +8784,12 @@ async function renderFuerza() {
 
   const hoy = ejerciciosDeHoy();
   const serie = seriesDeFuerza(_historialFuerza, hoy);
+  // Se dibujan una vez por sesión; después ya están ahí
+  if (!_fuerzaDibujada) {
+    _fuerzaDibujada = true;
+    el.classList.add('dibuja');
+    setTimeout(() => el.classList.remove('dibuja'), 2200);
+  }
 
   // Sin ajustes todavía: se enseña el punto de partida, que ya es información
   if (!serie.size) {
@@ -9712,15 +9984,13 @@ let editorBlock = null;
 function openEditorBlock(kind, ci) {
   reordenando = false;
   editorBlock = (kind === 'circuit') ? { kind, ci } : { kind };
-  entrar(document.getElementById('trainer-client'), 1, true);
-  renderRoutineEditor();
+  empujaContenido(document.getElementById('tclient-content'), 1, renderRoutineEditor);
   const c = document.getElementById('tclient-content');
   if (c) c.scrollTop = 0;
 }
 function closeEditorBlock() {
   editorBlock = null;
-  entrar(document.getElementById('trainer-client'), -1, true);
-  renderRoutineEditor();
+  empujaContenido(document.getElementById('tclient-content'), -1, renderRoutineEditor);
   const c = document.getElementById('tclient-content');
   if (c) c.scrollTop = 0;
 }
@@ -9763,7 +10033,7 @@ function renderSessionBlocks(el, days) {
          <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
        </button>`
     : `<button class="blk-row" onclick="openEditorBlock('warmup')">
-         <span class="blk-ic"><svg class="ic ic-sm"><use href="#i-repeat"/></svg></span>
+         <span class="blk-ic blk-ic-wu"><svg class="ic ic-sm"><use href="#i-repeat"/></svg></span>
          <span class="blk-body"><span class="blk-name">Calentamiento</span>
            <span class="blk-meta">${nWu} ejercicio${nWu===1?'':'s'} · ${wuN} vuelta${wuN===1?'':'s'}</span></span>
          <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
@@ -9775,7 +10045,7 @@ function renderSessionBlocks(el, days) {
     const series = parseInt(c.series) || 4;
     const rest = parseInt(c.rest) || 60;
     html += `<button class="blk-row" onclick="openEditorBlock('circuit',${ci})">
-        <span class="blk-ic blk-ic-num">${String(ci+1).padStart(2,'0')}</span>
+        <span class="blk-ic blk-ic-num blk-ic-cir">${ci+1}</span>
         <span class="blk-body"><span class="blk-name">Circuito ${ci+1}</span>
           <span class="blk-meta">${n} ejercicio${n===1?'':'s'} · ${series} serie${series===1?'':'s'} · ${rest} s descanso</span></span>
         <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
@@ -9784,21 +10054,24 @@ function renderSessionBlocks(el, days) {
 
   html += `</div>`;   // cierra la lista de bloques de entrenamiento
 
+  // Agregar circuito va justo después de los circuitos, a la vista: al final
+  // quedaba debajo del cardio y del botón de guardar
+  html += `<button class="re-add-btn blk-add" onclick="addCircuit('${editorDay}')">
+      <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar circuito
+    </button>`;
+
+
   // Cardio: es un añadido al final de la sesión, no un bloque como los demás
   const hasCardio = day.cardio !== '' && day.cardio != null;
   html += `<div class="blk-list blk-list-extra">
     <button class="blk-row${hasCardio ? '' : ' blk-row-empty'}" onclick="openEditorBlock('cardio')">
-      <span class="blk-ic">${hasCardio
+      <span class="blk-ic${hasCardio ? ' blk-ic-cardio' : ''}">${hasCardio
         ? '<svg class="ic ic-sm"><use href="#i-rutina"/></svg>'
         : '<svg class="ic ic-sm"><use href="#i-plus"/></svg>'}</span>
       <span class="blk-body"><span class="blk-name">Cardio final</span>
         <span class="blk-meta">${hasCardio ? reEscAttr(day.cardio) : 'Sin configurar'}</span></span>
       <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
     </button></div>`;
-
-  html += `<button class="re-add-btn blk-add" onclick="addCircuit('${editorDay}')">
-      <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar circuito
-    </button>`;
 
   html += `<div class="blk-footer">
       <div class="blk-footer-note">Los cambios llegan al atleta al guardar.</div>
