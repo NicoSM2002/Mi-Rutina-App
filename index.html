@@ -85,15 +85,8 @@ body.kbd-open #app-shell {
   border-radius:4px;
 }
 
-/* Respetar "Reducir movimiento" de los ajustes de accesibilidad */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration:.01ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.01ms !important;
-    scroll-behavior:auto !important;
-  }
-}
+/* "Reducir movimiento" se atiende en el bloque MOVIMIENTO, más abajo:
+   ahí los desplazamientos pasan a disolvencias en vez de desaparecer. */
 html, body {
   height:100%; overflow:hidden;
   font-family:var(--font-b),sans-serif;
@@ -319,29 +312,164 @@ html, body {
 .today-row-sub { display:block; font-size:14px; color:var(--t2); margin-top:3px; letter-spacing:-.2px; line-height:1.35; }
 .today-row-link { font-size:14px; color:var(--t2); flex:none; letter-spacing:-.2px; }
 
-/* ── SCREENS ── */
-/* Sin fundido entre pantallas: con todas superpuestas, cruzar opacidades
-   durante 400 ms dejaba ver la nueva a través de la vieja y parecía que
-   cargaba a trozos. Se cambia al instante y lo que se anima es la entrada,
-   que es lo que da sensación de respuesta sin añadir espera. */
-.screen { position:fixed; inset:0; opacity:0; pointer-events:none; visibility:hidden; }
-.screen.active {
-  opacity:1; pointer-events:all; visibility:visible;
-  animation: pantallaEntra .2s cubic-bezier(.22,.9,.3,1);
+/* ══ MOVIMIENTO ══════════════════════════════════════════════════
+   Una curva para entrar (rápida al principio, se posa suave) y otra con
+   un rebote corto para confirmar. Sólo se anima transform y opacity, y
+   nada bloquea el toque mientras se mueve. */
+:root {
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --t-rapido: 160ms;
+  --t-medio: 300ms;
+  --t-lento: 480ms;
 }
-@keyframes pantallaEntra {
-  from { opacity:0; transform:translate3d(0,7px,0); }
+
+/* ── Pantallas ──
+   La pantalla cambia al instante y es opaca: cruzar dos pantallas
+   semitransparentes dejaba ver una a través de la otra. Lo que se anima
+   es su contenido, que entra en cascada (ver .entrando). */
+.screen { position:fixed; inset:0; opacity:0; pointer-events:none; visibility:hidden; }
+.screen.active { opacity:1; pointer-events:all; visibility:visible; }
+
+@keyframes subeEntra {
+  from { opacity:0; transform:translate3d(var(--dx, 0px), var(--dy, 18px), 0); }
+  to   { opacity:1; transform:none; }
+}
+@keyframes cabeceraEntra {
+  from { opacity:0; transform:translate3d(var(--dx, 0px), 6px, 0); }
   to   { opacity:1; transform:none; }
 }
 
-/* Lo que llega después de pintar — una tarjeta que esperaba al servidor —
-   aparece con un apagado muy corto, para que no dé un salto seco. */
-.entra-tarde { animation: apareceSuave .22s ease both; }
+/* Cabecera de cada pantalla: sólo al entrar a la pantalla, no al cambiar
+   de paso dentro de la rutina (.paso) */
+.entrando:not(.paso) :is(.r-header, .resumen-header, .profile-hero) {
+  animation: cabeceraEntra var(--t-medio) var(--ease-out) both;
+}
+
+/* El contenido, bloque a bloque */
+.entrando :is(#today-body, #resumen-content, .profile-body) > *,
+.entrando #content > :not(.ex-cards):not(.done-wrap),
+.entrando #content .ex-cards > * {
+  animation: subeEntra var(--t-lento) var(--ease-out) both;
+}
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(2) { animation-delay: 50ms; }
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(3) { animation-delay: 100ms; }
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(4) { animation-delay: 150ms; }
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(5) { animation-delay: 200ms; }
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(6) { animation-delay: 250ms; }
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(7) { animation-delay: 300ms; }
+.entrando :is(#today-body, #content, #resumen-content, .profile-body) > :nth-child(n+8) { animation-delay: 340ms; }
+/* Las tarjetas de ejercicio llegan detrás de la cabecera del circuito */
+.entrando #content .ex-cards > :nth-child(1) { animation-delay: 140ms; }
+.entrando #content .ex-cards > :nth-child(2) { animation-delay: 200ms; }
+.entrando #content .ex-cards > :nth-child(3) { animation-delay: 260ms; }
+.entrando #content .ex-cards > :nth-child(n+4) { animation-delay: 320ms; }
+
+/* Al cambiar de paso, lo que es de toda la sesión se queda quieto: la barra
+   de progreso ya anima sus segmentos sola, y reaparecerla en cada paso le
+   quitaba justo esa lectura de "avancé uno". */
+.entrando.paso #content > :is(.day-header, .prog-steps) { animation:none; }
+
+/* Lo que llega del servidor después de entrar aparece sin salto seco */
+.entra-tarde { animation: apareceSuave var(--t-medio) ease both; }
 @keyframes apareceSuave { from { opacity:0; } to { opacity:1; } }
 
+/* ── Sesión completada: el círculo entra con rebote y la palomita se dibuja ── */
+.entrando .done-wrap > * { animation: subeEntra var(--t-lento) var(--ease-out) both; }
+.entrando .done-wrap > :nth-child(2) { animation-delay: 220ms; }
+.entrando .done-wrap > :nth-child(3) { animation-delay: 270ms; }
+.entrando .done-wrap > :nth-child(4) { animation-delay: 340ms; }
+.entrando .done-wrap > :nth-child(n+5) { animation-delay: 400ms; }
+.entrando .done-wrap > .done-check { animation: checkEntra .62s var(--ease-spring) both; }
+@keyframes checkEntra { from { opacity:0; transform:scale(.55); } to { opacity:1; transform:none; } }
+.entrando .done-check .ic { stroke-dasharray:22; stroke-dashoffset:22; animation: traza .5s var(--ease-out) .32s forwards; }
+@keyframes traza { to { stroke-dashoffset:0; } }
+
+/* ── Barra inferior: un indicador que viaja a la pestaña elegida ── */
+.bnav-pill {
+  position:absolute; top:0; left:0; width:58px; height:32px; border-radius:100px;
+  background:var(--ac-soft); pointer-events:none; opacity:0;
+  transition: transform .44s var(--ease-spring), opacity .2s ease;
+}
+.bnav-pill.visible { opacity:1; }
+.bnav-item { z-index:1; }
+.bnav-item.brinca .bnav-icon { animation: brinco .46s var(--ease-spring); }
+@keyframes brinco {
+  0%   { transform:none; }
+  40%  { transform:translateY(-2px) scale(1.18); }
+  100% { transform:none; }
+}
+
+/* ── Desplegar: la técnica de un ejercicio crece en altura ── */
+.ex-panel { display:grid; grid-template-rows:0fr; transition: grid-template-rows var(--t-medio) var(--ease-out); }
+.ex-panel.show { grid-template-rows:1fr; }
+.ex-panel-in {
+  min-height:0; overflow:hidden; opacity:0; transform:translateY(-4px);
+  transition: opacity var(--t-rapido) ease, transform var(--t-medio) var(--ease-out);
+}
+.ex-panel.show .ex-panel-in { opacity:1; transform:none; transition-delay: 40ms; }
+.ex-panel .ex-panel-in > :first-child { margin-top:10px; }
+
+/* Los demás paneles que se abren aparecen bajando un poco */
+@keyframes despliega { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+:is(.met-panel.show, .nota-caja.show, .ex-photo.show, details[open] > :not(summary)) {
+  animation: despliega var(--t-medio) var(--ease-out);
+}
+
+/* ── Marcar un ejercicio: un pulso breve, porque se hace nueve veces ── */
+.fb-btn.pulso { animation: pulso .36s var(--ease-spring); }
+@keyframes pulso {
+  0%   { transform:scale(.9); }
+  55%  { transform:scale(1.05); }
+  100% { transform:none; }
+}
+
+/* ── Fuerza: las barras crecen desde abajo, semana a semana ── */
+.entrando .fz-barras i { transform-origin:50% 100%; animation: crece .7s var(--ease-out) both; }
+.entrando .fz-barras i:nth-child(1) { animation-delay: 160ms; }
+.entrando .fz-barras i:nth-child(2) { animation-delay: 210ms; }
+.entrando .fz-barras i:nth-child(3) { animation-delay: 260ms; }
+.entrando .fz-barras i:nth-child(4) { animation-delay: 310ms; }
+.entrando .fz-barras i:nth-child(5) { animation-delay: 360ms; }
+.entrando .fz-barras i:nth-child(n+6) { animation-delay: 410ms; }
+@keyframes crece { from { transform:scaleY(0); } to { transform:none; } }
+.entrando .fz-puntos i.hecho { animation: puntoEntra .5s var(--ease-spring) .36s both; }
+@keyframes puntoEntra { from { transform:scale(0); } to { transform:none; } }
+
+/* ── Al pulsar, se hunde un poco: el toque se siente ── */
+:is(.btn-primary, .step-next-btn, .complete-confirm, .complete-cancel, .today-row, .met-fila,
+    .blk-row, .done-link, .prog-tab, .chat-fab, .today-cta, .re-save-btn) {
+  transition: transform var(--t-rapido) var(--ease-out), background-color .15s ease,
+              color .15s ease, border-color .15s ease, opacity .15s ease;
+}
+:is(.btn-primary, .step-next-btn, .complete-confirm, .complete-cancel, .today-row, .met-fila,
+    .blk-row, .done-link, .prog-tab, .chat-fab, .today-cta, .re-save-btn):active {
+  transform:scale(.97);
+}
+
+/* ── Reducir movimiento ──
+   Como pide Apple: en vez de desplazamientos, disolvencias. Nada se mueve,
+   pero las cosas siguen apareciendo en lugar de saltar. Los indicadores de
+   carga siguen girando: dicen que algo está pasando. */
 @media (prefers-reduced-motion: reduce) {
-  .screen.active, .entra-tarde { animation:none; }
-  * { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+  html { scroll-behavior:auto; }
+  @keyframes subeEntra     { from { opacity:0; } to { opacity:1; } }
+  @keyframes cabeceraEntra { from { opacity:0; } to { opacity:1; } }
+  @keyframes despliega     { from { opacity:0; } to { opacity:1; } }
+  @keyframes checkEntra    { from { opacity:0; } to { opacity:1; } }
+  @keyframes crece         { from { opacity:0; } to { opacity:1; } }
+  @keyframes puntoEntra    { from { opacity:0; } to { opacity:1; } }
+  @keyframes pulso         { from { opacity:.6; } to { opacity:1; } }
+  @keyframes brinco        { from { opacity:.6; } to { opacity:1; } }
+  @keyframes splashLogo    { from { opacity:0; } to { opacity:1; } }
+  @keyframes splashUp      { from { opacity:0; } to { opacity:1; } }
+  @keyframes confettiFall  { from { opacity:0; } to { opacity:0; } }
+  .entrando .done-check .ic { animation:none; stroke-dashoffset:0; }
+  .bnav-pill { transition: opacity .2s ease; }
+  .ex-panel { transition:none; }
+  .ex-panel-in { transform:none; }
+  :is(.btn-primary, .step-next-btn, .complete-confirm, .complete-cancel, .today-row, .met-fila,
+      .blk-row, .done-link, .prog-tab, .chat-fab, .today-cta, .re-save-btn):active { transform:none; }
 }
 
 /* ── PORTRAIT LOCK ── Overlay para celulares en horizontal */
@@ -901,8 +1029,7 @@ button.ex-presc:active { background:#FBDCC9; }
 }
 
 /* Panel de la ⓘ: el GIF en grande y el texto de técnica, dentro de la fila */
-.ex-panel { display:none; margin-top:10px; }
-.ex-panel.show { display:block; }
+/* .ex-panel se despliega en altura: ver MOVIMIENTO */
 .ex-panel .ex-photo {
   display:block; margin:0 0 10px;
   border-radius:12px; overflow:hidden;
@@ -2604,6 +2731,25 @@ select.na-input {
 .fz-delta.baja { background:var(--ac-soft); color:var(--ac-tx); }
 .fz-delta.igual { background:var(--s2); color:var(--t2); }
 
+/* La semana en curso */
+.fz-semana { padding:18px 18px 16px; }
+.fz-semana-top { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.fz-semana-l { font-size:13px; color:var(--t2); text-transform:uppercase; letter-spacing:.8px; font-weight:700; }
+.fz-semana-n {
+  font-family:var(--font-d); font-size:24px; font-weight:800; color:var(--t1);
+  letter-spacing:-.8px; margin-top:4px; font-variant-numeric:tabular-nums;
+}
+.fz-puntos { display:flex; gap:6px; flex:none; }
+.fz-puntos i { width:12px; height:12px; border-radius:100px; background:var(--s2); border:1.5px solid var(--b); display:block; }
+.fz-puntos i.hecho { background:var(--ok); border-color:var(--ok); }
+.fz-marcas { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+.fz-m {
+  font-size:13.5px; color:var(--t2); background:var(--bg); border:1px solid var(--b);
+  border-radius:9px; padding:6px 10px; letter-spacing:-.1px;
+}
+.fz-m b { font-family:var(--font-d); font-size:15px; font-weight:800; color:var(--t1); margin-right:3px; font-variant-numeric:tabular-nums; }
+.fz-semana-s { font-size:14px; color:var(--t2); margin-top:12px; line-height:1.45; letter-spacing:-.2px; }
+
 /* Cada barra es una semana; la altura, la carga de esa semana */
 .fz-barras { display:flex; align-items:flex-end; gap:5px; height:54px; margin-top:12px; }
 .fz-barras i { flex:1; background:#E3DED6; border-radius:4px 4px 0 0; display:block; min-height:5px; }
@@ -3717,9 +3863,38 @@ select.na-input {
 
 <script>
 /* ── navigation ── */
+/* Orden de las pestañas, para saber de qué lado entra la pantalla nueva */
+const POS_PANTALLA = { today:0, routine:1, meals:2, resumen:3, 'profile-generic':4, profile:4, payments:5 };
+let _pantallaActual = null;
+
+/* Marca un contenedor para que su contenido entre en cascada. `dir` es -1,
+   0 o 1: de qué lado llega. Con `paso`, sólo entra el contenido (cambiar de
+   paso en la rutina no debe volver a animar la cabecera). */
+function entrar(el, dir, paso) {
+  if (!el) return;
+  let reducido = false;
+  try { reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  el.style.setProperty('--dx', reducido ? '0px' : ((dir || 0) * 22) + 'px');
+  el.classList.remove('entrando', 'paso');
+  void el.offsetWidth;                   // reinicia la animación si ya estaba
+  el.classList.add('entrando');
+  if (paso) el.classList.add('paso');
+  clearTimeout(el.__tEntrada);
+  // Pasado el tiempo de la cascada se quita, para que repintar después no
+  // vuelva a animar lo que ya está a la vista.
+  el.__tEntrada = setTimeout(() => el.classList.remove('entrando', 'paso'), 1400);
+}
+
 function show(id) {
+  const destino = document.getElementById(id);
+  const yaEstaba = !!(destino && destino.classList.contains('active'));
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  destino.classList.add('active');
+  if (!yaEstaba) {
+    const a = POS_PANTALLA[_pantallaActual], b = POS_PANTALLA[id];
+    entrar(destino, (a != null && b != null && a !== b) ? Math.sign(b - a) : 0);
+  }
+  _pantallaActual = id;
   if (id === 'trainer-portal' && typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
   // Al llegar a una pantalla de acceso se despierta el backend: el worker se
   // duerme si no hay tráfico y arrancar en frío costaba ~3 s justo al pulsar
@@ -3743,6 +3918,14 @@ async function showRoutine() {
   if (data && Object.keys(data).length) {
     try {
       const st = getSessionState(currentAthlete);
+      // Si hoy ya entrenó, lo correcto es el descanso, no la rutina: pintar
+      // la rutina y cambiarla un segundo después era el destello.
+      if (completadaHoyLocal()) {
+        document.getElementById('routine-days-bar').innerHTML =
+          `<div class="session-badge pill-session">Sesión ${st.sessionNum} <span class="session-of-total ps-of">de ${st.total}</span></div>`;
+        renderRestDay(st);
+        throw 'pintado';
+      }
       currentDay = st.sessionKey;
       currentWeek = st.week;
       const _g = leerPaso();
@@ -3751,7 +3934,7 @@ async function showRoutine() {
       feedbackSesion = _f.marcas; notasEjercicio = _f.notas;
       cambiosHoy = leerCambiosHoy();
       render();
-    } catch (e) {}
+    } catch (e) { /* 'pintado' o cualquier fallo: el camino completo lo arregla */ }
   }
 
   // Re-fetch latest routine from server (in case trainer made changes)
@@ -3809,24 +3992,49 @@ async function showRoutine() {
   render();
 }
 
+/* Para quien entrena por día de la semana, la próxima sesión es la de
+   mañana, y el fin de semana la del lunes. Antes salía la de hoy. */
+function proximaSesionFija() {
+  const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const manana = (hoy.getDay() + 1) % 7;                 // 0=domingo … 6=sábado
+  const entreSemana = manana >= 1 && manana <= 5;
+  const num = entreSemana ? manana : 1;
+  return { num, key: 'sesion' + num, esManana: entreSemana };
+}
+
+function textoProximaSesion(state) {
+  if (!seAutogestiona()) {
+    return { nombre: `Sesión ${state.sessionNum}`, cuando: 'Disponible mañana', despedida: 'Nos vemos mañana.' };
+  }
+  const p = proximaSesionFija();
+  const dia = data && data[p.key];
+  const titulo = dia && typeof deriveSessionTitle === 'function' ? deriveSessionTitle(dia, p.num) : '';
+  return {
+    nombre: titulo || `Sesión ${p.num}`,
+    cuando: (p.esManana ? 'Mañana' : 'El lunes') + ` · Sesión ${p.num}`,
+    despedida: p.esManana ? 'Nos vemos mañana.' : 'Nos vemos el lunes.',
+  };
+}
+
 function renderRestDay(state) {
   ponTituloRutina('Mi rutina');
-  document.getElementById('content').innerHTML = `
+  const prox = textoProximaSesion(state);
+  pintaContenido(`
     <div class="done-wrap">
       <div class="done-check"><svg class="ic"><use href="#i-check"/></svg></div>
       <div class="done-title">¡Sesión completada!</div>
-      <div class="done-msg">Terminaste tu entrenamiento de hoy.<br>Descansa bien. Nos vemos mañana.</div>
+      <div class="done-msg">Terminaste tu entrenamiento de hoy.<br>Descansa bien. ${prox.despedida}</div>
       <div class="group done-next">
         <div class="done-next-label">Tu próxima sesión</div>
-        <div class="done-next-name">Sesión ${state.sessionNum}</div>
+        <div class="done-next-name">${prox.nombre}</div>
         <div class="done-next-when">
-          <svg class="ic ic-sm"><use href="#i-clock"/></svg> Disponible mañana
+          <svg class="ic ic-sm"><use href="#i-clock"/></svg> ${prox.cuando}
         </div>
       </div>
       <button class="done-link" onclick="showResumen();activateNav('resumen')">
         Ver resumen <svg class="ic ic-sm"><use href="#i-chevron-r"/></svg>
       </button>
-    </div>`;
+    </div>`);
 }
 let currentAthleteRecord = null; // cache del record completo (con profile/biometría) cargado al login
 
@@ -3939,10 +4147,21 @@ function getSessionState(athlete) {
   const num    = ((idx + offset) % total) + 1;
   return { idx, total, week: 1, sessionNum: num, sessionKey: 'sesion' + num };
 }
+/* "Hoy ya entrenó", guardado en el teléfono. Es lo que permite pintar la
+   pantalla correcta al instante en vez de esperar al servidor. */
+function completadaHoyLocal(athlete) {
+  try { return localStorage.getItem('lastCompleted_' + (athlete || currentAthlete)) === new Date().toDateString(); }
+  catch (e) { return false; }
+}
+function marcaCompletadaHoy(athlete) {
+  try { localStorage.setItem('lastCompleted_' + (athlete || currentAthlete), new Date().toDateString()); } catch (e) {}
+}
+
 function advanceSession(athlete) {
   // Con rutina por día de la semana no hay contador que avanzar: mañana es
-  // mañana. Avanzarlo adelantaría la sesión un día.
-  if (ATLETAS_RUTINA_FIJA.includes(athlete)) return;
+  // mañana. Pero sí hay que anotar que hoy ya entrenó — al saltarse esto
+  // entero, la app no lo sabía hasta preguntarle al servidor.
+  if (ATLETAS_RUTINA_FIJA.includes(athlete)) { marcaCompletadaHoy(athlete); return; }
   const idx = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   localStorage.setItem('sessionIdx_' + athlete, idx + 1);
   localStorage.setItem('lastCompleted_' + athlete, new Date().toDateString());
@@ -4710,6 +4929,12 @@ function marcarEjercicio(ci, nombre, valor, btn) {
     });
     fila.classList.toggle('respondida', !!feedbackSesion[k]);
   }
+  if (feedbackSesion[k]) {
+    btn.classList.remove('pulso');
+    void btn.offsetWidth;
+    btn.classList.add('pulso');
+    btn.addEventListener('animationend', () => btn.classList.remove('pulso'), { once: true });
+  }
   // La tarjeta entera se apaga un poco cuando ya está resuelta
   const tarjeta = btn.closest('.ex-row');
   if (tarjeta) tarjeta.classList.toggle('ex-hecho', !!feedbackSesion[k]);
@@ -4754,6 +4979,7 @@ function setDay(d) {
 function nextStep() {
   routineStep++;
   guardarPaso();
+  entrar(document.getElementById('routine'), 1, true);
   render();
   document.getElementById('content').scrollTop = 0;
 }
@@ -4762,6 +4988,7 @@ function prevStep() {
   if (routineStep > 0) {
     routineStep--;
     guardarPaso();
+    entrar(document.getElementById('routine'), -1, true);
     render();
     document.getElementById('content').scrollTop = 0;
   }
@@ -4890,10 +5117,10 @@ function renderExCard(ex, ci, ei, w) {
        </button>`
     : '';
   const panelHtml = hasInfo
-    ? `<div class="ex-panel" id="exp_${uid}">
+    ? `<div class="ex-panel" id="exp_${uid}"><div class="ex-panel-in">
          ${currentImg ? `<div class="ex-photo" id="${pid}"></div>` : ''}
          ${currentTip ? `<div class="ex-panel-tip">${currentTip}</div>` : ''}
-       </div>`
+       </div></div>`
     : '';
 
   const abrir = hasInfo
@@ -4952,12 +5179,12 @@ function render() {
   // Guard: sesión sin contenido todavía (warmup null, sin circuitos, sin cardio)
   if (!day || (!Array.isArray(day.warmup) && !Array.isArray(day.warmupHombro) && (!day.circuits || !day.circuits.length) && !day.cardio)) {
     ponTituloRutina('Mi rutina');
-    document.getElementById('content').innerHTML = `
+    pintaContenido(`
       <div class="rest-card">
         <div class="rest-emoji"><svg class="ic ic-lg" style="color:#B4B4AF"><use href="#i-doc"/></svg></div>
         <div class="rest-title">Sin rutina cargada</div>
         <div class="rest-msg">Tu entrenador aún no cargó esta sesión. Apenas lo haga, vas a verla acá.</div>
-      </div>`;
+      </div>`);
     return;
   }
   const hasWarmup = Array.isArray(day.warmup) || Array.isArray(day.warmupHombro);
@@ -5088,9 +5315,10 @@ function render() {
       ${nextLabel ? `<div class="next-hint">Siguiente: ${nextLabel}</div>` : ''}`;
   }
 
-  document.getElementById('content').innerHTML = html;
-  preloadVisibleGifs();
-  hydrateThumbGifs();
+  if (pintaContenido(html)) {
+    preloadVisibleGifs();
+    hydrateThumbGifs();
+  }
 }
 
 /* Cómo fue cada ejercicio. De esto sale la progresión de la semana que viene:
@@ -5143,6 +5371,18 @@ const CARDIO_ICONOS = [
 function cardioIcon(txt) {
   const hit = CARDIO_ICONOS.find(([re]) => re.test(String(txt || '')));
   return hit ? hit[1] : 'i-c-pulso';
+}
+
+/* Escribe el contenido de Rutina sólo si cambia. El pintado rápido desde
+   memoria y el que llega con el servidor suelen ser idénticos, y reescribirlo
+   reiniciaba los GIF y la animación de entrada sin que cambiara nada. */
+function pintaContenido(html) {
+  const el = document.getElementById('content');
+  if (!el) return false;
+  if (el.__ultimo === html) return false;
+  el.innerHTML = html;
+  el.__ultimo = html;
+  return true;
 }
 
 /* La cabecera fija muestra la sesión que se está haciendo en vez de un
@@ -5224,8 +5464,9 @@ function toggleExInfo(uid, src) {
   }
   if (!open) return;
   if (src) loadGifInto(document.getElementById('photo_' + uid), src);
-  // Si el panel queda fuera de pantalla parece que el toque no hizo nada
-  setTimeout(() => panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
+  // Si el panel queda fuera de pantalla parece que el toque no hizo nada.
+  // Se espera a que termine de crecer: antes no se sabe cuánto mide.
+  setTimeout(() => panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 320);
 }
 
 /* Los GIFs de las miniaturas se cargan de a uno: cuatro a la vez (≈250 KB
@@ -6652,8 +6893,15 @@ function ajustaPestanasProgreso() {
   if (f) f.hidden = !mio;
   const c = document.getElementById('prog-tab-comida');
   if (c) c.hidden = mio;
-  // Si estaba en una pestaña que ya no existe, se vuelve a una que sí
+  // Abre en la primera pestaña visible: para él es Fuerza, y si estaba en
+  // una que ya no existe se vuelve a una que sí.
+  if (mio && !_pestanaElegida) progressTab = 'fuerza';
   if (mio && progressTab === 'comida') progressTab = 'fuerza';
+  document.getElementById('prog-tab-fuerza')?.classList.toggle('active', progressTab === 'fuerza');
+  document.getElementById('prog-tab-entreno')?.classList.toggle('active', progressTab === 'entreno');
+  document.getElementById('prog-tab-comida')?.classList.toggle('active', progressTab === 'comida');
+  const nav = document.getElementById('resumen-week-nav');
+  if (nav) nav.hidden = (progressTab === 'fuerza');
   if (!mio && progressTab === 'fuerza') progressTab = 'entreno';
 }
 
@@ -6661,6 +6909,7 @@ function ajustaPestanasProgreso() {
 function ajustaNavAtleta() {
   const b = document.getElementById('bnav-meals');
   if (b) b.hidden = seAutogestiona();
+  muevePildora();   // con una pestaña menos, las demás se reparten de nuevo
 }
 
 async function showResumen(weekOf) {
@@ -6704,8 +6953,15 @@ async function renderTrainerResumen(weekOf) {
 /* Pestaña activa en Progreso: entrenamiento o alimentación.
    Antes todo iba junto y la pantalla mezclaba macros con sesiones. */
 let progressTab = 'entreno';
+let _pestanaElegida = false;   // si ya eligió una pestaña, no se le cambia
+const POS_PROGRESO = { fuerza:0, entreno:1, comida:2 };
 function setProgressTab(t) {
+  const desde = POS_PROGRESO[progressTab], hacia = POS_PROGRESO[t];
+  if (t !== progressTab) {
+    entrar(document.getElementById('resumen'), Math.sign((hacia || 0) - (desde || 0)), true);
+  }
   progressTab = t;
+  _pestanaElegida = true;
   document.getElementById('prog-tab-fuerza')?.classList.toggle('active', t === 'fuerza');
   document.getElementById('prog-tab-entreno')?.classList.toggle('active', t === 'entreno');
   document.getElementById('prog-tab-comida')?.classList.toggle('active', t === 'comida');
@@ -6713,10 +6969,54 @@ function setProgressTab(t) {
   const nav = document.getElementById('resumen-week-nav');
   if (nav) nav.hidden = (t === 'fuerza');
   if (t === 'fuerza') { renderFuerza(); return; }
+  // Si se entró por Fuerza, el resumen semanal todavía no se pidió: sin esto,
+  // pasar a Constancia dejaba la pantalla vacía.
   if (_lastResumenData) renderResumenContent(_lastResumenData, 'resumen-week-nav', 'resumen-content', false);
+  else showResumen();
 }
 let _lastResumenData = null;
 let _historialFuerza = null;   // lo que devuelve get-progresion
+let _semanaFuerza = null;      // sesiones de la semana en curso, con sus marcas
+
+/* La semana en curso: cuántas sesiones lleva y cómo marcó cada ejercicio.
+   Es lo que va a mover la rutina el sábado, así que va arriba. */
+function bloqueEstaSemana() {
+  const comps = (_semanaFuerza && _semanaFuerza.completions) || [];
+  const meta = (currentAthleteRecord && parseInt(currentAthleteRecord.sessionsPerWeek)) || 5;
+  const cuenta = { facil: 0, justo: 0, fallo: 0 };
+  let notas = 0;
+  for (const c of comps) {
+    for (const f of (Array.isArray(c.feedback) ? c.feedback : [])) {
+      if (f && cuenta[f.resp] !== undefined) cuenta[f.resp]++;
+      if (f && String(f.nota || '').trim()) notas++;
+    }
+  }
+  const marcadas = cuenta.facil + cuenta.justo + cuenta.fallo;
+  const puntos = Array.from({ length: meta }, (_, i) =>
+    `<i class="${i < comps.length ? 'hecho' : ''}"></i>`).join('');
+
+  const marcasHtml = marcadas
+    ? `<div class="fz-marcas">
+         ${cuenta.facil ? `<span class="fz-m facil"><b>${cuenta.facil}</b> fácil</span>` : ''}
+         ${cuenta.justo ? `<span class="fz-m justo"><b>${cuenta.justo}</b> justo</span>` : ''}
+         ${cuenta.fallo ? `<span class="fz-m fallo"><b>${cuenta.fallo}</b> no llegué</span>` : ''}
+       </div>
+       <div class="fz-semana-s">${notas ? `Y ${notas} nota${notas === 1 ? '' : 's'}. ` : ''}Con esto se ajusta tu rutina el sábado por la noche.</div>`
+    : comps.length
+      ? `<div class="fz-semana-s">No marcaste ejercicios todavía. Sin marcas, el peso se queda igual.</div>`
+      : `<div class="fz-semana-s">Cuando completes tu primera sesión, aquí verás cómo te fue.</div>`;
+
+  return `<div class="group fz-semana entra-tarde">
+      <div class="fz-semana-top">
+        <div>
+          <div class="fz-semana-l">Esta semana</div>
+          <div class="fz-semana-n">${comps.length} de ${meta} sesiones</div>
+        </div>
+        <div class="fz-puntos" aria-hidden="true">${puntos}</div>
+      </div>
+      ${marcasHtml}
+    </div>`;
+}
 
 /* ══ REGISTRO DE FUERZA ══════════════════════════════════════════
    La serie de cada ejercicio se reconstruye del historial de ajustes:
@@ -6789,16 +7089,15 @@ function barrasHtml(valores) {
 async function renderFuerza() {
   const el = document.getElementById('resumen-content');
   if (!el) return;
-  if (!_historialFuerza) {
+  if (!_historialFuerza || !_semanaFuerza) {
     el.innerHTML = `<div class="fz-cargando">Cargando tu registro…</div>`;
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get-progresion', client: currentAthlete, selfToken: getSelfToken() })
-      });
-      const d = await res.json();
-      _historialFuerza = d.historial || [];
-    } catch (e) { _historialFuerza = []; }
+    const pide = (action) => fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, client: currentAthlete, selfToken: getSelfToken() })
+    }).then(r => r.json()).catch(() => ({}));
+    const [h, w] = await Promise.all([pide('get-progresion'), pide('get-weekly-summary')]);
+    _historialFuerza = h.historial || [];
+    _semanaFuerza = { completions: w.completions || [] };
     if (progressTab !== 'fuerza') return;
   }
 
@@ -6808,7 +7107,7 @@ async function renderFuerza() {
   // Sin ajustes todavía: se enseña el punto de partida, que ya es información
   if (!serie.size) {
     const principales = [...hoy.values()].filter(e => e.principal && e.actual !== null);
-    el.innerHTML = `
+    el.innerHTML = bloqueEstaSemana() + `
       <div class="group fz-vacio">
         <div class="fz-vacio-t">Tu punto de partida</div>
         <div class="fz-vacio-s">Aquí vas a ver cuánto sube cada ejercicio. Aparece en cuanto
@@ -6836,7 +7135,7 @@ async function renderFuerza() {
   const sumado = Math.round(lifts.reduce((a, l) => a + Math.max(0, l.delta), 0));
   const semanas = _historialFuerza.length;
 
-  el.innerHTML = `
+  el.innerHTML = bloqueEstaSemana() + `
     <div class="group fz-hero">
       <div class="fz-hero-l">Lo que has sumado</div>
       <div class="fz-hero-n">+${sumado}<span> lbs</span></div>
@@ -7499,6 +7798,7 @@ async function confirmComplete() {
       olvidarPaso();       // la sesion quedo cerrada: no hay nada que retomar
       olvidarFeedback();
       olvidarCambiosHoy();
+      _semanaFuerza = null;   // la próxima vez que abra Fuerza, que traiga la sesión nueva
       setTimeout(() => {
         closeComplete();
         renderRestDay(getSessionState(currentAthlete));
@@ -9247,10 +9547,54 @@ const ATHLETE_SCREENS = ['today','profile','profile-msaravia','profile-generic',
 const NAV_MAP = { today:'today', profile:'profile', 'profile-msaravia':'profile', 'profile-generic':'profile', routine:'routine', meals:'meals', resumen:'resumen', payments:'payments' };
 
 function activateNav(tab) {
+  const antes = document.querySelector('.bnav-item.active');
   document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('bnav-' + tab);
   if (el) el.classList.add('active');
+  if (el && el !== antes) {
+    el.classList.remove('brinca');
+    void el.offsetWidth;
+    el.classList.add('brinca');
+    el.addEventListener('animationend', () => el.classList.remove('brinca'), { once: true });
+  }
+  muevePildora();
 }
+
+/* El indicador detrás del icono activo viaja hasta la pestaña nueva. La
+   primera vez se coloca sin animar: si no, entraría deslizándose desde la
+   izquierda al abrir la app. */
+function muevePildora(intento) {
+  intento = intento || 0;
+  const nav = document.getElementById('bottom-nav');
+  if (!nav) return;
+  let pill = nav.querySelector('.bnav-pill');
+  if (!pill) {
+    pill = document.createElement('span');
+    pill.className = 'bnav-pill';
+    pill.setAttribute('aria-hidden', 'true');
+    nav.prepend(pill);
+  }
+  const act = nav.querySelector('.bnav-item.active');
+  const ic = act && act.querySelector('.bnav-icon');
+  const rn = nav.getBoundingClientRect();
+  // La barra puede estar oculta todavía (pantalla de acceso): se reintenta
+  if (!ic || !rn.width) {
+    if (intento < 12) requestAnimationFrame(() => muevePildora(intento + 1));
+    return;
+  }
+  const ri = ic.getBoundingClientRect();
+  const x = ri.left - rn.left + ri.width / 2 - 29;
+  const y = ri.top - rn.top + ri.height / 2 - 16;
+  const primera = !pill.classList.contains('visible');
+  if (primera) pill.style.transition = 'none';
+  pill.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  if (primera) {
+    void pill.offsetWidth;
+    pill.style.transition = '';
+    pill.classList.add('visible');
+  }
+}
+window.addEventListener('resize', () => muevePildora());
 
 /* ── Pantalla Hoy ──
    Punto de entrada del atleta: qué toca entrenar, si falta registrar comidas,
@@ -9306,7 +9650,7 @@ function renderToday() {
           <span class="today-done-ic"><svg class="ic"><use href="#i-check"/></svg></span>
           <div>
             <div class="today-title">Sesión completada</div>
-            <div class="today-sub">Descansa bien. Nos vemos mañana.</div>
+            <div class="today-sub">Descansa bien. ${textoProximaSesion(state || {}).despedida}</div>
           </div>
         </div>
       </div>`;
@@ -9369,7 +9713,7 @@ function renderToday() {
       <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
     </button>`;
 
-  el.innerHTML = `
+  const html = `
     <div class="today-head">
       <div class="today-head-text">
         <div class="today-date">${fecha}</div>
@@ -9382,6 +9726,11 @@ function renderToday() {
     </div>
     <div id="today-ajuste"></div>
     ${entrenamiento}${comidas}${semana}`;
+
+  // renderToday corre dos veces por entrada (antes y después de la rutina).
+  // Si el contenido es el mismo no se reescribe: reescribirlo reiniciaba la
+  // cascada de entrada a mitad de camino.
+  if (el.__ultimo !== html) { el.innerHTML = html; el.__ultimo = html; }
 
   // Pintar no pide nada: lo que llegó del servidor se vuelca desde la caché.
   // Las peticiones las lanza showToday una sola vez por entrada.
@@ -9408,8 +9757,9 @@ const AJUSTE_CLASE = {
 };
 
 async function loadAjusteSemanal() {
-  const el = document.getElementById('today-ajuste');
-  if (!el || !currentAthlete) return;
+  // Se pide aunque la tarjeta no esté pintada todavía: showToday lanza esto
+  // antes del primer renderToday, y salirse aquí dejaba la caché vacía.
+  if (!currentAthlete) return;
   let ultima = null;
   try {
     const res = await fetch(WORKER_URL, {
@@ -9453,7 +9803,8 @@ async function loadAjusteSemanal() {
       </details>` : ''}
     </div>`;
   _ajusteGuardado = htmlAjuste;
-  el.innerHTML = htmlAjuste;
+  const destino = document.getElementById('today-ajuste');
+  if (destino) destino.innerHTML = htmlAjuste;
 }
 
 function cerrarAjuste(semana) {
@@ -9464,22 +9815,31 @@ function cerrarAjuste(semana) {
 }
 
 async function loadTodayWeek() {
-  const nEl = document.getElementById('today-week-n');
-  const rEl = document.getElementById('today-week-range');
-  if (!nEl) return;
+  // Se pide aunque la fila no esté pintada todavía (ver loadAjusteSemanal)
+  if (!currentAthlete) return;
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'get-weekly-summary', client: currentAthlete, selfToken: getSelfToken() })
     });
     const d = await res.json();
-    const n = (d.completions || []).length;
+    const comps = d.completions || [];
+    const n = comps.length;
     // El plural de "sesión" pierde la tilde: sesiones, no sesiónes
     const txt = `${n} ${n === 1 ? 'sesión' : 'sesiones'} completada${n === 1 ? '' : 's'}`;
     _semanaGuardada = { n: txt, rango: d.weekLabel || '' };   // para repintar sin volver a pedir
-    nEl.textContent = txt;
-    if (rEl) rEl.textContent = _semanaGuardada.rango;
-  } catch { nEl.textContent = 'Sin datos esta semana'; }
+
+    // Si el servidor sabe que hoy ya entrenó y el teléfono no (otro aparato,
+    // datos borrados), se anota y la tarjeta de entrenamiento se corrige ya,
+    // sin tener que pasar por Rutina.
+    if (comps.some(c => c.day === hoyISO()) && !completadaHoyLocal()) {
+      marcaCompletadaHoy();
+      if (document.getElementById('today')?.classList.contains('active')) renderToday();
+    }
+  } catch (e) {
+    _semanaGuardada = { n: 'Sin datos esta semana', rango: '' };
+  }
+  pintaSemanaGuardada();
 }
 
 function showPayments() {
