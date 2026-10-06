@@ -1308,10 +1308,20 @@ export default {
           <table width="100%" cellpadding="0" cellspacing="0">${rows}</table>
         </td></tr>`;
       };
+      // Cómo marcó cada ejercicio y qué anotó: es lo que el entrenador necesita
+      // para ajustar, ahora que el atleta lo registra en la app
+      const MARCA = { facil: ['Fácil', '#30D158'], justo: ['Justo', '#A996FF'], fallo: ['No llegué', '#FF6961'] };
+      const fbDe = (idx, nombre) => (entry.feedback || []).find(f => f.name === nombre && f.ci === idx)
+                                  || (entry.feedback || []).find(f => f.name === nombre);
       const renderCircuitBlock = (c, idx) => {
         const nSeries = parseInt(c.series) || 4;
         const restSec = parseInt(c.rest) || 60;
         const exRows = (c.exercises || []).map(ex => {
+          const f = fbDe(idx, ex.name);
+          const marcaHtml = f && MARCA[f.resp]
+            ? `<span style="display:inline-block;font-size:11px;font-weight:700;color:${MARCA[f.resp][1]};border:1px solid ${MARCA[f.resp][1]};border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle">${MARCA[f.resp][0]}</span>` : '';
+          const notaAtletaHtml = f && f.nota
+            ? `<div style="margin-top:6px;padding:6px 10px;background:rgba(169,150,255,.10);border-left:2px solid #A996FF;border-radius:4px;font-size:12px;color:#ddd6fe;line-height:1.4">✍️ ${esc(f.nota)}</div>` : '';
           const st = ex.setType || 'normal';
           let wrHtml;
           if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
@@ -1327,8 +1337,9 @@ export default {
             ? `<span style="display:inline-block;font-size:10px;color:#94a3b8;background:#0f1117;border:1px solid #2d3148;border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle">${esc(muscleLabel(ex.muscle))}</span>`
             : '';
           return `<tr><td style="padding:10px 0;border-bottom:1px solid #2d3148">
-            <div style="font-size:14px;font-weight:600;color:#e2e8f0">${esc(ex.name)}${muscleChip}</div>
+            <div style="font-size:14px;font-weight:600;color:#e2e8f0">${esc(ex.name)}${muscleChip}${marcaHtml}</div>
             ${wrHtml}
+            ${notaAtletaHtml}
             ${noteHtml}
           </td></tr>`;
         }).join('');

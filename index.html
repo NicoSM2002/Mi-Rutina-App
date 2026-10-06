@@ -3611,6 +3611,21 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .resumen-cuerpo > * { flex-shrink:0; }
 #resumen-scroll > .resumen-week-nav { padding-bottom:4px; }
 
+/* ══ Marcas del atleta en el historial ══ */
+.rs-cab-izq { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.rs-marcas { font-size:13px; color:var(--t2); }
+.rs-marcas.con-fallo { color:var(--err); }
+.rs-ex-fila { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.rs-marca { flex:none; font-size:13px; font-weight:600; padding:3px 10px; border-radius:100px; }
+.rs-marca.m-facil { background:var(--ok-soft); color:var(--ok); }
+.rs-marca.m-justo { background:var(--ac-soft); color:var(--ac-tx); }
+.rs-marca.m-fallo { background:rgba(215,38,61,.12); color:var(--err); }
+.rs-ex-nota-atleta {
+  margin-top:7px; padding:9px 12px; border-radius:10px; background:var(--s1);
+  font-size:15px; color:var(--t1); line-height:1.45; display:flex; gap:8px; align-items:flex-start;
+}
+.rs-ex-nota-atleta .ic { flex:none; color:var(--ac-tx); margin-top:2px; }
+
 /* ══ Números: SF Pro Rounded, cifras del mismo ancho ══ */
 :is(.ex-peso, .ex-reps, .met-value, .met-fila-v, .timer-num, .fz-hero-n, .fz-val, .fz-semana-n, .fz-m b,
     .prog-streak-n, .resumen-total-val, .stat-card .sv, .tpay-amount-big, .platform-pay-amount, .ex-drop-pasos b,
@@ -6247,7 +6262,8 @@ function render() {
       <div class="ex-cards">`;
     html += `<div class="fb-aviso" id="fb-aviso">${(vueltasHoy[ci] || 0) >= nSeries
       ? 'Circuito completo. Marca cómo te fue en cada ejercicio.'
-      : 'Al terminar la última vuelta, marca cómo te fue: de ahí sale tu próxima semana.'}</div>`;
+      : seAutogestiona() ? 'Al terminar la última vuelta, marca cómo te fue: de ahí sale tu próxima semana.'
+        : 'Al terminar la última vuelta, marca cómo te fue: tu entrenador lo ve para ajustar tu rutina.'}</div>`;
     c.exercises.forEach((ex, ei) => { html += renderExCard(ex, ci, ei, w); });
     html += `</div>`;
 
@@ -8388,9 +8404,27 @@ function muscleNameLabel(m) {
   return map[m] || (m.charAt(0).toUpperCase() + m.slice(1));
 }
 
+/* Cómo marcó el atleta cada ejercicio y qué anotó, para quien lo entrena */
+const MARCA_TXT = { facil: 'Fácil', justo: 'Justo', fallo: 'No llegué' };
+function marcasDeSesion(c) {
+  const lista = Array.isArray(c.feedback) ? c.feedback : [];
+  const porEj = (ci, nombre) => lista.find(f => f && f.name === nombre && (f.ci === ci || f.ci === undefined))
+                               || lista.find(f => f && f.name === nombre);
+  const cuenta = { facil: 0, justo: 0, fallo: 0 };
+  lista.forEach(f => { if (f && cuenta[f.resp] !== undefined) cuenta[f.resp]++; });
+  const notas = lista.filter(f => f && String(f.nota || '').trim()).length;
+  const resumen = [cuenta.facil ? `${cuenta.facil} fácil` : '', cuenta.justo ? `${cuenta.justo} justo` : '',
+                   cuenta.fallo ? `${cuenta.fallo} no llegó` : '', notas ? `${notas} nota${notas === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+  return { porEj, resumen, hayFallo: cuenta.fallo > 0 };
+}
+
 function renderCompletionCard(c) {
+  const marcas = marcasDeSesion(c);
   const header = `<div class="resumen-session-header">
-    <span class="resumen-session-day">${escHtmlText(c.dayLabel || c.day)}</span>
+    <span class="rs-cab-izq">
+      <span class="resumen-session-day">${escHtmlText(c.dayLabel || c.day)}</span>
+      ${marcas.resumen ? `<span class="rs-marcas${marcas.hayFallo ? ' con-fallo' : ''}">${escHtmlText(marcas.resumen)}</span>` : ''}
+    </span>
     <span class="resumen-session-date">${escHtmlText(c.date || '')}</span>
   </div>`;
   const athleteNotes = c.notes ? `<div class="resumen-session-notes">${escHtmlText(c.notes)}</div>` : '';
@@ -8419,6 +8453,10 @@ function renderCompletionCard(c) {
     const nSeries = parseInt(c2.series) || 4;
     const restSec = parseInt(c2.rest) || 60;
     const exHtml = (c2.exercises || []).map(ex => {
+      const f = marcas.porEj(idx, ex.name);
+      const marca = f && f.resp ? `<span class="rs-marca m-${f.resp}">${MARCA_TXT[f.resp]}</span>` : '';
+      const notaAtleta = f && String(f.nota || '').trim()
+        ? `<div class="rs-ex-nota-atleta"><svg class="ic ic-sm"><use href="#i-pencil"/></svg><span>${escHtmlText(f.nota)}</span></div>` : '';
       const st = ex.setType || 'normal';
       let wrHtml;
       if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
@@ -8431,7 +8469,8 @@ function renderCompletionCard(c) {
       const note = ex.trainerNote ? `<div class="rs-ex-note"><svg class="ic ic-sm"><use href="#i-pin"/></svg><span>${escHtmlText(ex.trainerNote)}</span></div>` : '';
       return `<div class="rs-ex">
         <div class="rs-ex-name">${escHtmlText(ex.name)}${muscleChip}</div>
-        ${wrHtml}
+        <div class="rs-ex-fila">${wrHtml}${marca}</div>
+        ${notaAtleta}
         ${note}
       </div>`;
     }).join('');
