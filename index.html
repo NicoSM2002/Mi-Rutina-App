@@ -5070,6 +5070,12 @@ window.addEventListener('load', () => {
         return;
       }
     }
+    // Desde la landing: "Crear mi plan" llega con ?crear y abre el registro
+    if (new URLSearchParams(location.search).has('crear')) {
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      abrirRegistro();
+      return;
+    }
     show('role-select');
   }, 2600);
 });
@@ -9347,7 +9353,7 @@ async function handlePhotoSelected(slot, input) {
       previewEl.classList.add('show');
       removeEl.classList.add('show');
     } else {
-      alert('Error al subir la foto, intentá de nuevo.');
+      alert('Error al subir la foto, inténtalo de nuevo.');
     }
   } catch {
     alert('Error de conexión al subir la foto.');
@@ -9418,7 +9424,7 @@ async function sendMeal(slot) {
         setTimeout(() => showNutritionSummary(dayLabel, { [slot]: data.analysis }, { [slot]: text }), 400);
       }
     } else {
-      btn.textContent = 'Error, intentá de nuevo';
+      btn.textContent = 'Error, inténtalo de nuevo';
       btn.disabled = false;
     }
   } catch {
@@ -9629,7 +9635,7 @@ async function confirmComplete() {
         renderRestDay(getSessionState(currentAthlete));
       }, 2500);
     } else {
-      btn.textContent = 'Error, intentá de nuevo';
+      btn.textContent = 'Error, inténtalo de nuevo';
       btn.disabled = false;
     }
   } catch {
@@ -9965,12 +9971,12 @@ async function sendChat() {
       if (data.accion && data.accion.tipo === 'sustituir') aplicarSustitucion(data.accion);
       if (data.accion && data.accion.tipo === 'peso') aplicarPeso(data.accion);
     } else {
-      typing.textContent = 'No pude obtener respuesta, intentá de nuevo.';
+      typing.textContent = 'No pude obtener respuesta, inténtalo de nuevo.';
       typing.classList.remove('typing');
       chatHistory.pop(); // remove user msg so the conversation stays clean
     }
   } catch(err) {
-    typing.textContent = 'Error de conexión. Verificá tu internet.';
+    typing.textContent = 'Error de conexión. Revisa tu internet.';
     typing.classList.remove('typing');
     chatHistory.pop();
   }
@@ -11977,7 +11983,7 @@ async function handleTrainerPhoto(event) {
       subEl.textContent = 'Tocá para cambiar';
     } else {
       titleEl.textContent = 'Error';
-      subEl.textContent = 'Reintentá';
+      subEl.textContent = 'Reintentar';
     }
   } catch {
     titleEl.textContent = 'Error de red';
@@ -12079,7 +12085,7 @@ async function handleEditTrainerPhoto(event) {
       subEl.textContent = 'Tocá para cambiar';
     } else {
       titleEl.textContent = 'Error';
-      subEl.textContent = 'Reintentá';
+      subEl.textContent = 'Reintentar';
     }
   } catch {
     titleEl.textContent = 'Error de red';
