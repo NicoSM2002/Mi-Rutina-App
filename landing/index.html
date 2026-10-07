@@ -41,6 +41,7 @@
       "applicationCategory": "HealthApplication", "operatingSystem": "iOS, Android, Web", "inLanguage": "es-CO",
       "description": "Plan de gimnasio hecho con IA que se ajusta cada semana según cómo te fue. También conecta a entrenadores con sus atletas.",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "COP" },
+      "author": { "@type": "Person", "name": "Juan Nicolás Saravia", "url": "https://juansaravia.com/p-mi-rutina" },
       "featureList": ["Plan de entrenamiento con IA a partir de una encuesta", "Progresión automática de pesos y repeticiones", "Más de 170 ejercicios con GIF y técnica", "Descanso cronometrado", "Asistente para dudas en plena sesión", "Registro de fuerza y constancia", "Portal para entrenadores y panel para gimnasios"]
     },
     {
@@ -451,6 +452,7 @@ button { font: inherit; }
 .foot .brand { color: #fff; }
 .foot nav { display: flex; gap: 20px; flex-wrap: wrap; margin-left: auto; }
 .foot a:hover { color: #fff; }
+.foot .autor { color: #CFCADB; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255,255,255,.25); }
 
 .reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s ease, transform 1.1s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
@@ -765,7 +767,7 @@ button { font: inherit; }
 <footer class="foot" style="margin-top:0">
   <div class="wrap">
     <a href="#" class="brand"><svg><use href="#logo"/></svg>Mi Rutina</a>
-    <span>Hecho en Bogotá · © 2026</span>
+    <span>Hecho en Bogotá por <a href="https://juansaravia.com/p-mi-rutina" class="autor">Juan Nicolás Saravia</a> · © 2026</span>
     <nav aria-label="Pie de página">
       <a href="/?crear=1">Crear mi plan</a>
       <a href="/">Entrar</a>
