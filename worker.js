@@ -531,11 +531,12 @@ Responde SOLO un JSON array, vacío si no hay nada:
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
-                 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1500,
-                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
-                             // encendido se gastaba los tokens y no devolvía texto.
-                             thinking: { type: 'disabled' },
+                 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 1500,
+                             // Respuesta corta en JSON o texto: sin razonamiento extendido
+                             // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                             thinking: { type: 'between_tools' }, output_config: { effort: 'low' },
+                             fallbacks: 'default',
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -602,11 +603,12 @@ El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternat
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
-                 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1800,
-                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
-                             // encendido se gastaba los tokens y no devolvía texto.
-                             thinking: { type: 'disabled' },
+                 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 1800,
+                             // Respuesta corta en JSON o texto: sin razonamiento extendido
+                             // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                             thinking: { type: 'between_tools' }, output_config: { effort: 'medium' },
+                             fallbacks: 'default',
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -712,6 +714,9 @@ Reglas:
 - "rango": sólo si se queja de las repeticiones ("6 es poco", "12 es poco para pantorrilla"): el rango
   nuevo que tiene sentido para lo que hace, p. ej. [10, 14]. Mínimo 3, máximo 30.
 - Una máquina distinta para el mismo movimiento cuenta igual (seated leg curl = curl femoral sentado).
+- Lo que hizo en el CALENTAMIENTO no cuenta: no es su carga de trabajo.
+- No confundas ejercicios parecidos: una extensión de tríceps con soga en polea no es un curl de
+  bíceps en polea con cuerda. Si no estás seguro de a qué ejercicio de la lista se refiere, no lo incluyas.
 - No inventes: sensaciones, molestias o la máquina ocupada no son declaraciones.
 
 Devuelve SOLO un JSON array, vacío si no hay nada:
@@ -732,11 +737,12 @@ async function pideDeclaraciones(env, prompt, enRutina) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
-                 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 2400,
-                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
-                             // encendido se gastaba los tokens y no devolvía texto.
-                             thinking: { type: 'disabled' },
+                 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 2400,
+                             // Respuesta corta en JSON o texto: sin razonamiento extendido
+                             // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                             thinking: { type: 'between_tools' }, output_config: { effort: 'medium' },
+                             fallbacks: 'default',
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -868,11 +874,12 @@ Responde solo el texto.`;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
-                 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1500,
-                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
-                             // encendido se gastaba los tokens y no devolvía texto.
-                             thinking: { type: 'disabled' },
+                 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 1500,
+                             // Respuesta corta en JSON o texto: sin razonamiento extendido
+                             // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                             thinking: { type: 'between_tools' }, output_config: { effort: 'low' },
+                             fallbacks: 'default',
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -1064,11 +1071,13 @@ ejercicio (fácil, justo, no llegué). Español de Colombia, tuteando: "entrenas
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
-                 'anthropic-version': '2023-06-01' },
+                 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
       // Elegir entre candidatos ya filtrados no necesita razonamiento largo:
       // con el modelo que piensa primero, el razonamiento se comía los
       // tokens y la respuesta llegaba vacía.
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000,
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 3000,
+                             thinking: { type: 'between_tools' }, output_config: { effort: 'medium' },
+                             fallbacks: 'default',
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -1591,11 +1600,13 @@ export default {
             method: 'POST',
             headers: {
               'x-api-key': env.ANTHROPIC_API_KEY,
-              'anthropic-version': '2023-06-01',
+              'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01',
               'content-type': 'application/json'
             },
             body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
+              model: 'claude-sonnet-5-5',
+              thinking: { type: 'between_tools' }, output_config: { effort: 'low' },
+              fallbacks: 'default',
               max_tokens: 300,
               messages: [{
                 role: 'user',
@@ -1608,7 +1619,7 @@ export default {
           });
 
           const claudeData = await claudeRes.json();
-          const rawText = claudeData.content?.[0]?.text || '';
+          const rawText = textoDeRespuesta(claudeData);
           analysis = rawText.replace(/\*\*/g, '').replace(/^#+\s*/gm, '');
         } catch(e) {
           analysis = 'No se pudo analizar la foto.';
@@ -1743,8 +1754,10 @@ export default {
             if (ex.name !== nombre) continue;
             const actual = numeroDePeso(ex.w1);
             // Un salto fuera de la cuarta parte o el cuádruple es un error,
-            // no una decisión de entrenamiento.
-            if (actual && (peso < actual * 0.25 || peso > actual * 4)) {
+            // no una decisión de entrenamiento. Salvo bajar una carga que ya
+            // era desproporcionada: ahí bajar mucho es lo correcto.
+            const desproporcionada = cargaDesproporcionada(PorNombre[ex.name] || ex, ex.w1, perfilDeCarga(await getAthlete(env, client)));
+            if (actual && (peso > actual * 4 || (peso < actual * 0.25 && !desproporcionada))) {
               tocado = { rechazado: true, actual };
               continue;
             }
@@ -1823,7 +1836,7 @@ export default {
           return { key: k, exercises: exs };
         }).filter(s => s.exercises.length > 0);
         if (summary.length && env.ANTHROPIC_API_KEY) {
-          const prompt = `Analizá estas sesiones de entrenamiento y para cada una devolvé un JSON con el grupo muscular principal (title) y un subtítulo breve listando los ejercicios separados por " · " (sub). title debe ser corto (1-3 palabras, ej: "Cuádriceps", "Pecho + Tríceps", "Espalda + Bíceps", "Hombros", "Full Body"). sub es la lista de ejercicios principales tal cual.
+          const prompt = `Analiza estas sesiones de entrenamiento y para cada una devuelve un JSON con el grupo muscular principal (title) y un subtítulo breve listando los ejercicios separados por " · " (sub). title debe ser corto (1-3 palabras, ej: "Cuádriceps", "Pecho + Tríceps", "Espalda + Bíceps", "Hombros", "Full Body"). sub es la lista de ejercicios principales tal cual.
 
 Sesiones:
 ${summary.map(s => `${s.key}: ${s.exercises.join(', ')}`).join('\n')}
@@ -1834,17 +1847,19 @@ Devolvé SOLO un JSON así, sin texto extra:
             method: 'POST',
             headers: {
               'x-api-key': env.ANTHROPIC_API_KEY,
-              'anthropic-version': '2023-06-01',
+              'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01',
               'content-type': 'application/json'
             },
             body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
+              model: 'claude-sonnet-5-5',
+              thinking: { type: 'between_tools' }, output_config: { effort: 'low' },
+              fallbacks: 'default',
               max_tokens: 600,
               messages: [{ role: 'user', content: prompt }]
             })
           });
           const cd = await claudeRes.json();
-          const raw = cd.content?.[0]?.text || '';
+          const raw = textoDeRespuesta(cd);
           const m = raw.match(/\{[\s\S]*\}/);
           if (m) {
             const parsed = JSON.parse(m[0]);
@@ -2234,11 +2249,13 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
           method: 'POST',
           headers: {
             'x-api-key': env.ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01',
+            'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01',
             'content-type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'claude-haiku-4-5-20251001',
+            model: 'claude-sonnet-5-5',
+              thinking: { type: 'between_tools' }, output_config: { effort: 'low' },
+              fallbacks: 'default',
             max_tokens: 800,
             messages: [{
               role: 'user',
@@ -2250,7 +2267,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
           })
         });
         const claudeData = await claudeRes.json();
-        const raw = claudeData.content?.[0]?.text || '';
+        const raw = textoDeRespuesta(claudeData);
         let parsed = null;
         try {
           const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -2719,11 +2736,13 @@ ${JSON.stringify(fichas, null, 1)}`;
       method: 'POST',
       headers: {
         'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01',
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-5-5',
+              thinking: { type: 'between_tools' }, output_config: { effort: 'low' },
+              fallbacks: 'default',
         max_tokens: 900,   // con 500 la respuesta se cortaba antes de la línea final
         system: sistema,
         messages: body.messages || []
@@ -2749,12 +2768,17 @@ ${JSON.stringify(fichas, null, 1)}`;
       const actual = enHoy ? numeroDePeso(enHoy.w1) : null;
       if (!enHoy)                     console.log(`[CHAT] "${nombre}" no está en la sesión de hoy`);
       else if (!isFinite(peso) || peso <= 0) console.log(`[CHAT] peso inválido para "${nombre}"`);
-      else if (actual && (peso < actual * 0.25 || peso > actual * 4))
+      else if (actual && (peso > actual * 4 || (peso < actual * 0.25 &&
+               !cargaDesproporcionada(PorNombre[nombre] || enHoy, enHoy.w1, perfilDeCarga(athleteRecord)))))
                                       console.log(`[CHAT] salto raro en "${nombre}": ${peso} contra ${actual}`);
       else {
         accion = { tipo: 'peso', ci: enHoy.ci, ei: enHoy.ei, name: nombre, peso };
         console.log(`[CHAT] propone carga: ${nombre} ${enHoy.w1} → ${peso}`);
       }
+      // Si el cambio no se pudo aplicar, no se promete
+      if (!accion) content += `
+
+(No pude dejar ese peso guardado. Si quieres cambiarlo, anótalo en la nota del ejercicio y se ajusta el sábado.)`;
     }
 
     const m = !accion && content.match(/@@CAMBIAR:\s*(.+?)\s*>>\s*(.+?)\s*$/m);
