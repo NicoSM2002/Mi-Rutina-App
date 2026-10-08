@@ -277,7 +277,7 @@ function progresarEjercicio(ex, resp, perfil) {
 
   if (resp === 'facil') {
     // Fácil es por el peso: sube. Sólo cuando el escalón del aparato es
-    // grande frente a la carga (más de un 10 %, como pasar de 15 a 20 lbs en
+    // grande frente a la carga (más de un 15 %, como pasar de 15 a 20 lbs en
     // una mancuerna) van primero las repeticiones; en el tope del rango, el
     // peso igual. Las repeticiones se quedan donde estaban.
     fallos = 0;
@@ -286,7 +286,7 @@ function progresarEjercicio(ex, resp, perfil) {
       const cat = PorNombre[ex.name] || ex;
       const total = cargaTotal(cat, ex.w1);
       const salto = total ? (ex.unit === 'lado' ? paso * 2 : paso) / total : 0;
-      if (salto > 0.10 && reps < hi) { reps = Math.min(hi, reps + 2); motivo = 'iba sobrado; el salto de peso sería muy grande, primero repeticiones'; }
+      if (salto > 0.15 && reps < hi) { reps = Math.min(hi, reps + 2); motivo = 'iba sobrado; el salto de peso sería muy grande, primero repeticiones'; }
       else { peso = peso + paso; motivo = 'iba sobrado'; }
     }
 
@@ -513,7 +513,10 @@ Responde SOLO un JSON array, vacío si no hay nada:
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
                  'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 700,
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1500,
+                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
+                             // encendido se gastaba los tokens y no devolvía texto.
+                             thinking: { type: 'disabled' },
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -581,7 +584,10 @@ El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternat
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
                  'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 900,
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1800,
+                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
+                             // encendido se gastaba los tokens y no devolvía texto.
+                             thinking: { type: 'disabled' },
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -698,7 +704,10 @@ Omite los campos que no declare.`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
                  'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1200,
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 2400,
+                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
+                             // encendido se gastaba los tokens y no devolvía texto.
+                             thinking: { type: 'disabled' },
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
@@ -827,7 +836,10 @@ Responde solo el texto.`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
                  'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 400,
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1500,
+                             // Respuesta corta en JSON o texto: sin pensar. Con el pensamiento
+                             // encendido se gastaba los tokens y no devolvía texto.
+                             thinking: { type: 'disabled' },
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
