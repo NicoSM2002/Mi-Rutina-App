@@ -454,6 +454,24 @@ function rangoDeReps(nombre) {
   return [8, 12];
 }
 
+/* Si un ejercicio cambió por lo que anotó y además por su marca, se cuenta
+   como un solo cambio: de lo que tenía antes a lo que queda. */
+function unirCambios(lista) {
+  const out = [], idx = new Map();
+  for (const c of lista) {
+    const k = (c.sesion || '') + '|' + c.name;
+    if (!idx.has(k)) { idx.set(k, out.length); out.push({ ...c }); continue; }
+    const a = out[idx.get(k)];
+    a.pesoDespues = c.pesoDespues; a.repsDespues = c.repsDespues;
+    a.resp = c.resp || a.resp;
+    a.motivo = [a.motivo, c.motivo].filter(Boolean).join('; ');
+    const pa = numeroDePeso(a.pesoAntes), pd = numeroDePeso(a.pesoDespues);
+    a.cambio = Math.round(pd) !== Math.round(pa) ? (pd > pa ? 'sube carga' : 'baja carga')
+             : a.repsDespues !== a.repsAntes ? (a.repsDespues > a.repsAntes ? 'sube reps' : 'baja reps') : 'sin cambio';
+  }
+  return out;
+}
+
 /* El chat queda guardado para el ajuste semanal: lo que pregunta y lo que
    cambia ahí también es información. Últimos 60 días, máximo 150. */
 async function guardaEnChatLog(env, clientId, entrada) {
@@ -502,7 +520,8 @@ ${enRutina.join('\n')}
 
 ¿Menciona algún ejercicio que le diera problema — dolor, molestia, se sintió mal, no lo pudo hacer
 bien? Si lo menciona de forma indirecta ("el press de hombro me dejó el hombro raro"), cuenta.
-No incluyas un ejercicio sólo porque le costó o pesó mucho: eso ya lo cubren otros datos.
+No incluyas un ejercicio sólo porque le costó, pesó mucho o tuvo que bajarle el peso para terminar
+las repeticiones: eso es la carga, no el ejercicio, y ya lo cubren otros datos.
 
 Responde SOLO un JSON array, vacío si no hay nada:
 [{"nombre":"nombre EXACTO de la lista","detalle":"qué dijo, en pocas palabras","dolor":true|false}]
@@ -815,7 +834,7 @@ async function resumenSemana(env, cambios, rotaciones, notas, señalados, correg
   const prompt = `Eres el entrenador de ${nombre} (${p.goal || 'hipertrofia'}, ${p.level || 'intermedio'}). Estos son los ajustes que el
 sistema hizo a su rutina para la semana que viene, a partir de cómo marcó cada ejercicio:
 
-${JSON.stringify(cambios.slice(0, 40), null, 1)}
+${JSON.stringify(cambios.filter(c => c.cambio !== 'sin cambio').slice(0, 40).map(c => ({ ejercicio: c.name, marca: c.resp, peso: c.pesoAntes + ' → ' + c.pesoDespues, reps: c.repsAntes + ' → ' + c.repsDespues, cambio: c.cambio, porque: c.motivo })), null, 1)}
 ${rotaciones && rotaciones.length ? 'Ejercicios cambiados:\n' + JSON.stringify(rotaciones, null, 1) : ''}
 ${(notas || []).length ? 'Lo que escribió al terminar cada sesión:\n' + notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n') : ''}
 ${(señalados || []).some(x => x.dolor) ? 'Reportó molestia física en: ' + señalados.filter(x => x.dolor).map(x => x.name).join(', ') : ''}
@@ -823,6 +842,9 @@ ${(corregidos || []).length ? 'Anotó que usó otra carga, y se tomó la suya co
 
 Escríbele 2 o 3 frases diciéndole qué cambió y por qué. Directo y concreto, sin motivación de
 cartel ni emojis. Si bajó carga en algo, dilo sin dramatizar: es parte del plan.
+Habla SOLO de lo que está en la lista de ajustes y en sus notas, con el "porque" de cada uno. No
+inventes razones ni cambios (nada de "llegaste al tope" si no lo dice), y no hables del
+calentamiento.
 
 Si escribió notas, tenlas en cuenta y menciónalo cuando hayan cambiado algo — que vea que
 sirvieron de algo. Si reportó una molestia física, dilo en una frase y dile que si sigue, lo mire
@@ -900,12 +922,13 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   }
 
   const perfil = perfilDeCarga(atleta);
-  const cambios = [...cambiosDeclarados, ...progresarRutina(rutina, marcas, perfil, fijados)];
+  const cambios = unirCambios([...cambiosDeclarados, ...progresarRutina(rutina, marcas, perfil, fijados)]);
 
   // Lo que escribió esta semana puede pedir un cambio ya, sin esperar ciclo
   const notasYChat = [...notas, ...chat.filter(x => x.q).map(x => ({ dia: 'en el chat', texto: String(x.q).slice(0, 400) }))];
   const señalados = await ejerciciosSeñaladosEnNotas(env, rutina, notasYChat);
-  const candidatos = señalados.map(x => ({ name: x.name, razon: 'molestia', detalle: x.detalle }));
+  // Sólo se cambia un ejercicio por una molestia física de verdad
+  const candidatos = señalados.filter(x => x.dolor).map(x => ({ name: x.name, razon: 'molestia', detalle: x.detalle }));
 
   // Y cada 6 semanas, cambiar lo que lleva tiempo sin moverse
   const toca = historial.length > 0 && historial.length % SEMANAS_ENTRE_ROTACIONES === 0;
