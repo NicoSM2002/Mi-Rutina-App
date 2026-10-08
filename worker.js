@@ -276,16 +276,25 @@ function progresarEjercicio(ex, resp, perfil) {
   let motivo = '';
 
   if (resp === 'facil') {
+    // Fácil es por el peso: sube. Sólo cuando el escalón del aparato es
+    // grande frente a la carga (más de un 10 %, como pasar de 15 a 20 lbs en
+    // una mancuerna) van primero las repeticiones; en el tope del rango, el
+    // peso igual. Las repeticiones se quedan donde estaban.
     fallos = 0;
-    if (reps < hi)       { reps = Math.min(hi, reps + 2); motivo = 'iba sobrado'; }
-    else if (corporal)   { reps = reps + 2;               motivo = 'iba sobrado'; }
-    else                 { peso = peso + paso; reps = lo; motivo = 'llegó al tope del rango sobrado'; }
+    if (corporal) { reps = reps + 2; motivo = 'iba sobrado'; }
+    else {
+      const cat = PorNombre[ex.name] || ex;
+      const total = cargaTotal(cat, ex.w1);
+      const salto = total ? (ex.unit === 'lado' ? paso * 2 : paso) / total : 0;
+      if (salto > 0.10 && reps < hi) { reps = Math.min(hi, reps + 2); motivo = 'iba sobrado; el salto de peso sería muy grande, primero repeticiones'; }
+      else { peso = peso + paso; motivo = 'iba sobrado'; }
+    }
 
   } else if (resp === 'justo') {
+    // Justo nunca mueve el peso: una repetición más hasta el tope, y ahí se queda
     fallos = 0;
-    if (reps < hi)       { reps = reps + 1;               motivo = 'subiendo dentro del rango'; }
-    else if (corporal)   { reps = reps + 1;               motivo = 'subiendo dentro del rango'; }
-    else                 { peso = peso + paso; reps = lo; motivo = 'completó el rango'; }
+    if (reps < hi)       { reps = reps + 1; motivo = 'subiendo dentro del rango'; }
+    else                 { motivo = 'en el tope del rango con esta carga'; }
 
   } else if (resp === 'fallo') {
     fallos = fallos + 1;
@@ -338,7 +347,7 @@ function progresarEjercicio(ex, resp, perfil) {
 
 /* Recorre la rutina aplicando las marcas de la semana.
    `marcas` viene indexado por "sesionN|Nombre del ejercicio". */
-function progresarRutina(rutina, marcas, perfil) {
+function progresarRutina(rutina, marcas, perfil, fijados) {
   const cambios = [];
   for (const clave of Object.keys(rutina || {})) {
     const dia = rutina[clave];
@@ -348,7 +357,9 @@ function progresarRutina(rutina, marcas, perfil) {
       let fallosDelCircuito = 0;
       for (const ex of exs) {
         const resp = marcas[clave + '|' + ex.name];
-        const r = progresarEjercicio(ex, resp, perfil);
+        // Si anotó con qué carga lo hizo de verdad, esa ya es su progresión
+        // de la semana: no se le suma nada encima.
+        const r = fijados && fijados.has(ex.name) ? null : progresarEjercicio(ex, resp, perfil);
         if (r) { r.sesion = clave; r.circuito = c.label || ''; cambios.push(r); }
         if (resp === 'fallo') fallosDelCircuito++;
       }
@@ -441,6 +452,18 @@ function rangoDeReps(nombre) {
   if (/press de banca|press inclinado|press militar|press de hombro|sentadilla|peso muerto|dominada|remo con barra|remo en barra|remo pendlay|hack|prensa|hip thrust|zancada/.test(n)) return [6, 10];
   if (/curl|extension|elevacion|apertura|cruce|cable|pajaro|vuelo|face ?pull|peck deck|patada|encogimiento|skull|jm press|press frances|fondos/.test(n)) return [10, 15];
   return [8, 12];
+}
+
+/* El chat queda guardado para el ajuste semanal: lo que pregunta y lo que
+   cambia ahí también es información. Últimos 60 días, máximo 150. */
+async function guardaEnChatLog(env, clientId, entrada) {
+  try {
+    const k = `chatlog:${clientId}`;
+    const lista = await env.DB.get(k, 'json') || [];
+    const corte = Date.now() - 60 * 86400000;
+    lista.push({ ts: Date.now(), ...entrada });
+    await env.DB.put(k, JSON.stringify(lista.filter(x => (x.ts || 0) >= corte).slice(-150)));
+  } catch (e) { console.log('[CHATLOG] ' + e.message); }
 }
 
 /* Ejercicios que llevan varias semanas sin subir ni carga ni repeticiones */
@@ -623,8 +646,9 @@ function aplicarRotacion(rutina, propuestas, perfil) {
 /* Si la nota dice qué peso usó de verdad, ese manda sobre lo prescrito.
    El modelo lo lee; el código comprueba que el ejercicio esté en la rutina
    y que el número no sea un disparate antes de tocarlo. */
-async function pesosDeclaradosEnNotas(env, rutina, notasEj) {
-  if (!notasEj.length || !env.ANTHROPIC_API_KEY) return [];
+async function declaracionesDeLaSemana(env, rutina, notasEj, notasGen, chat) {
+  const hayAlgo = notasEj.some(x => /\d/.test(x.nota)) || notasGen.some(x => /\d/.test(x.texto)) || chat.length;
+  if (!hayAlgo || !env.ANTHROPIC_API_KEY) return [];
 
   const enRutina = new Map();
   for (const k of Object.keys(rutina)) {
@@ -632,70 +656,124 @@ async function pesosDeclaradosEnNotas(env, rutina, notasEj) {
       for (const e of (c.exercises || [])) enRutina.set(e.name, e);
     }
   }
-  const candidatos = notasEj.filter(x => enRutina.has(x.name) && /\d/.test(x.nota));
-  if (!candidatos.length) return [];
+  const ejercicios = [...enRutina.values()].map(e =>
+    `- ${e.name}: prescrito ${e.w1 || 'sin peso'} × ${parseInt(e.repNow) || parseInt(e.reps) || '?'} reps (rango ${e.repMin || '?'}-${e.repMax || '?'})`).join('\n');
+  const deEjercicio = notasEj.map(x => `- [${x.name}] "${x.nota}"`).join('\n') || '(ninguna)';
+  const generales = notasGen.map(x => `- (${x.dia}) "${x.texto}"`).join('\n') || '(ninguna)';
+  const delChat = chat.map(x => x.tipo === 'peso'
+      ? `- (cambio de peso hecho desde el chat) ${x.name}: ${x.de || '?'} → ${x.a}`
+      : `- Atleta: "${x.q}"${x.a ? `\n  Asistente: "${String(x.a).slice(0, 300)}"` : ''}`).join('\n') || '(nada)';
 
-  const prompt = `Un atleta anota al terminar cada ejercicio. A veces dice qué carga usó en realidad,
-porque cambió la prescrita. Sácalo sólo cuando lo diga de forma clara.
+  const prompt = `Un atleta registra cómo le fue en el gimnasio. Lee TODO lo que escribió esta semana y saca,
+por ejercicio, lo que declara de forma clara: con qué carga lo hizo de verdad y cuántas repeticiones.
 
-${candidatos.map(x => `- ${x.name} (prescrito: ${enRutina.get(x.name).w1 || 'sin peso'}): "${x.nota}"`).join('\n')}
+Ejercicios de su rutina (usa estos nombres exactos):
+${ejercicios}
 
-Devuelve SOLO un JSON array, vacío si ninguna nota declara una carga:
-[{"nombre":"nombre exacto","peso":110}]
-"peso" es el número que usó, en la misma unidad que el prescrito (si el prescrito dice "90 lbs",
-y él escribe "lo hice con 110", peso es 110). No inventes: si la nota habla de sensaciones,
-de la máquina ocupada o de repeticiones, no la incluyas.`;
+Notas en cada ejercicio:
+${deEjercicio}
+
+Notas generales al cerrar la sesión (pueden mencionar cualquier ejercicio, con otras palabras):
+${generales}
+
+Lo que habló con el asistente:
+${delChat}
+
+Reglas:
+- "peso": el número que usó, en la misma unidad que el prescrito. "Le subí a 80" → 80. "Le subí 15 a
+  cada lado" con prescrito 90 lbs/lado → 105. Si hizo varias series con cargas distintas, la más alta
+  con la que completó una serie de trabajo. Si sólo dice que bajó, el número al que bajó.
+- "reps": las repeticiones que hizo con esa carga, si las dice.
+- "rango": sólo si se queja de las repeticiones ("6 es poco", "12 es poco para pantorrilla"): el rango
+  nuevo que tiene sentido para lo que hace, p. ej. [10, 14]. Mínimo 3, máximo 30.
+- Una máquina distinta para el mismo movimiento cuenta igual (seated leg curl = curl femoral sentado).
+- No inventes: sensaciones, molestias o la máquina ocupada no son declaraciones.
+
+Devuelve SOLO un JSON array, vacío si no hay nada:
+[{"nombre":"nombre exacto","peso":110,"reps":10,"rango":[10,14]}]
+Omite los campos que no declare.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
                  'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 600,
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 1200,
                              messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
     if (!res.ok || data.error) {
-      console.log(`[NOTA-PESO] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
+      console.log(`[DECLARA] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
       return [];
     }
     const txt = textoDeRespuesta(data);
     const m = txt.match(/\[[\s\S]*\]/);
     if (!m) return [];
-    return JSON.parse(m[0]).filter(p => {
-      if (!p || !p.nombre || typeof p.peso !== 'number' || !isFinite(p.peso) || p.peso <= 0) return false;
+    return JSON.parse(m[0]).map(p => {
+      if (!p || !p.nombre) return null;
       const ex = enRutina.get(p.nombre);
-      if (!ex) return false;
-      const actual = numeroDePeso(ex.w1);
-      // Sin peso prescrito no hay con qué contrastar; con él, un salto fuera
-      // de la cuarta parte o el cuádruple es un error de lectura, no un dato.
-      if (actual && (p.peso < actual * 0.25 || p.peso > actual * 4)) {
-        console.log(`[NOTA-PESO] descartado ${p.nombre}: ${p.peso} contra ${actual} prescrito`);
-        return false;
+      if (!ex) return null;
+      const out = { nombre: p.nombre };
+      if (typeof p.peso === 'number' && isFinite(p.peso) && p.peso > 0) {
+        const actual = numeroDePeso(ex.w1);
+        // Un salto fuera de la cuarta parte o el cuádruple es un error de lectura
+        if (actual && (p.peso < actual * 0.25 || p.peso > actual * 4)) console.log(`[DECLARA] peso descartado ${p.nombre}: ${p.peso} contra ${actual}`);
+        else out.peso = p.peso;
       }
-      return true;
-    });
+      if (Number.isInteger(p.reps) && p.reps >= 1 && p.reps <= 50) out.reps = p.reps;
+      if (Array.isArray(p.rango) && p.rango.length === 2) {
+        const [r1, r2] = p.rango.map(n => parseInt(n));
+        if (r1 >= 3 && r2 <= 30 && r2 - r1 >= 2 && r2 - r1 <= 10) out.rango = [r1, r2];
+      }
+      return (out.peso || out.reps || out.rango) ? out : null;
+    }).filter(Boolean);
   } catch (e) {
-    console.log('[NOTA-PESO] falló: ' + e.message);
+    console.log('[DECLARA] falló: ' + e.message);
     return [];
   }
 }
 
-function aplicarPesosDeclarados(rutina, declarados) {
-  const hechos = [];
+/* Aplica lo declarado. Devuelve lo que cambió (para el resumen y el
+   registro de fuerza) y qué ejercicios ya no deben progresar solos. */
+function aplicarDeclaraciones(rutina, declarados) {
+  const corregidos = [], cambios = [], fijados = new Set();
   for (const d of declarados) {
     for (const k of Object.keys(rutina)) {
       for (const c of (rutina[k].circuits || [])) {
         for (const ex of (c.exercises || [])) {
           if (ex.name !== d.nombre) continue;
-          const antes = ex.w1;
-          ex.w1 = escribePeso(d.peso, ex.unit);
-          hechos.push({ name: ex.name, de: antes, a: ex.w1 });
+          const antes = ex.w1, pesoAntes = numeroDePeso(ex.w1), repsAntes = parseInt(ex.repNow) || parseInt(ex.reps) || 0;
+          if (d.rango) { ex.repMin = d.rango[0]; ex.repMax = d.rango[1]; }
+          if (d.reps) {
+            ex.repNow = d.reps;
+            // Lo que hace manda sobre el rango: si se sale, el rango lo sigue
+            if (!d.rango && ex.repMax && d.reps > ex.repMax) ex.repMax = d.reps;
+            if (!d.rango && ex.repMin && d.reps < ex.repMin) ex.repMin = d.reps;
+          } else if (d.rango) {
+            ex.repNow = Math.min(Math.max(repsAntes || d.rango[0], d.rango[0]), d.rango[1]);
+          }
+          ex.reps = (parseInt(ex.repNow) || repsAntes) + ' reps';
+          if (d.peso && Math.round(d.peso) !== Math.round(pesoAntes || 0)) {
+            ex.w1 = escribePeso(d.peso, ex.unit);
+            ex.fallos = 0;
+            fijados.add(ex.name);
+          }
+          const repsDespues = parseInt(ex.repNow) || repsAntes;
+          corregidos.push({ name: ex.name, de: antes, a: ex.w1, repsDe: repsAntes, repsA: repsDespues,
+                            rango: d.rango ? d.rango.join('-') : null });
+          const pesoDespues = numeroDePeso(ex.w1);
+          cambios.push({
+            name: ex.name, resp: null, motivo: 'lo anotaste tú', sesion: k, circuito: c.label || '',
+            pesoAntes: escribePeso(pesoAntes, ex.unit), pesoDespues: escribePeso(pesoDespues, ex.unit),
+            repsAntes, repsDespues,
+            cambio: Math.round(pesoDespues) !== Math.round(pesoAntes) ? (pesoDespues > pesoAntes ? 'sube carga' : 'baja carga')
+                  : repsDespues !== repsAntes ? (repsDespues > repsAntes ? 'sube reps' : 'baja reps') : 'sin cambio',
+          });
         }
       }
     }
   }
-  return hechos;
+  return { corregidos, cambios, fijados };
 }
 
 /* ── Resumen de la semana ─────────────────────────────────────────────
@@ -767,13 +845,13 @@ Responde solo el texto.`;
 
 /* Orquesta la semana: lee, progresa, guarda y deja registro.
    `motivo` sólo sirve para el log: 'viernes' o 'cron'. */
-async function correrProgresion(env, clientId, motivo, completionsEnMano, rutinaEnMano) {
+async function correrProgresion(env, clientId, motivo, completionsEnMano, rutinaEnMano, simular = false) {
   const atleta = await getAthlete(env, clientId);
   if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
 
   const semana = claveSemana(Date.now());
   const historial = await env.DB.get(`progresion:${clientId}`, 'json') || [];
-  if (historial.some(h => h.semana === semana)) {
+  if (!simular && historial.some(h => h.semana === semana)) {
     return { ok: false, razon: 'ya se corrió esta semana', semana };
   }
 
@@ -797,19 +875,24 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
     return { ok: false, razon: 'ninguna sesión marcada esta semana', semana };
   }
 
-  // Primero lo que de verdad levantó: si anotó otra carga, esa es la base
-  // sobre la que se interpreta su "Fácil" o "Justo".
-  const declarados = await pesosDeclaradosEnNotas(env, rutina, notasEj);
-  const corregidos = declarados.length ? aplicarPesosDeclarados(rutina, declarados) : [];
+  // Lo que habló con el asistente esta semana cuenta como sus notas
+  const chatLog = await env.DB.get(`chatlog:${clientId}`, 'json') || [];
+  const chat = chatLog.filter(x => (x.ts || 0) >= hace7dias);
+
+  // Primero lo que de verdad hizo: si declaró otra carga o otras repeticiones
+  // (en el ejercicio, en la nota general o en el chat), esa es la base.
+  const declarados = await declaracionesDeLaSemana(env, rutina, notasEj, notas, chat);
+  const { corregidos, cambios: cambiosDeclarados, fijados } = aplicarDeclaraciones(rutina, declarados);
   if (corregidos.length) {
-    console.log(`[NOTA-PESO] ${clientId}: ${corregidos.map(c => c.name + ' ' + c.de + '→' + c.a).join(', ')}`);
+    console.log(`[DECLARA] ${clientId}: ${corregidos.map(c => c.name + ' ' + c.de + '→' + c.a + ' ' + c.repsDe + '→' + c.repsA + 'r').join(', ')}`);
   }
 
   const perfil = perfilDeCarga(atleta);
-  const cambios = progresarRutina(rutina, marcas, perfil);
+  const cambios = [...cambiosDeclarados, ...progresarRutina(rutina, marcas, perfil, fijados)];
 
   // Lo que escribió esta semana puede pedir un cambio ya, sin esperar ciclo
-  const señalados = await ejerciciosSeñaladosEnNotas(env, rutina, notas);
+  const notasYChat = [...notas, ...chat.filter(x => x.q).map(x => ({ dia: 'en el chat', texto: String(x.q).slice(0, 400) }))];
+  const señalados = await ejerciciosSeñaladosEnNotas(env, rutina, notasYChat);
   const candidatos = señalados.map(x => ({ name: x.name, razon: 'molestia', detalle: x.detalle }));
 
   // Y cada 6 semanas, cambiar lo que lleva tiempo sin moverse
@@ -831,13 +914,14 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   for (const k of Object.keys(rutina)) {
     if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits));
   }
-  await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
+  if (!simular) await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
 
-  const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos, atleta);
+  const resumen = await resumenSemana(env, cambios, rotaciones, notasYChat, señalados, corregidos, atleta);
   const entrada = { semana, fecha: new Date().toISOString(), motivo, cambios, rotaciones, resumen,
                     notas: notas.length, corregidos,
                     molestias: señalados.filter(x => x.dolor).map(x => x.name) };
   historial.unshift(entrada);
+  if (simular) return { ok: true, simulado: true, semana, declarados, cambios, rotaciones, resumen, chat: chat.length, rutina };
   await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial.slice(0, 60)));
 
   console.log(`[PROGRESION] ${clientId} semana=${semana} motivo=${motivo} cambios=${cambios.length} rotaciones=${rotaciones.length}`);
@@ -1618,8 +1702,9 @@ export default {
               tocado = { rechazado: true, actual };
               continue;
             }
+            const de = ex.w1;
             ex.w1 = escribePeso(peso, ex.unit);
-            tocado = { name: ex.name, w1: ex.w1 };
+            tocado = { name: ex.name, w1: ex.w1, de };
           }
         }
       }
@@ -1631,11 +1716,20 @@ export default {
         return new Response(JSON.stringify({ ok: false, error: 'Ese salto no cuadra con tu carga actual' }), { headers: cors });
       }
       await env.DB.put(`routine:${client}`, JSON.stringify(rutina));
+      await guardaEnChatLog(env, client, { tipo: 'peso', name: nombre, de: tocado.de || '', a: tocado.w1 });
       console.log(`[PESO] ${client}: ${nombre} → ${tocado.w1}`);
       return new Response(JSON.stringify({ ok: true, w1: tocado.w1 }), { headers: cors });
     }
 
     // Último ajuste semanal, para que el atleta vea qué cambió y por qué
+    // Ensayo del ajuste semanal con los datos reales: qué cambiaría, sin
+    // guardar nada. Sólo el administrador.
+    if (body.action === 'simular-progresion') {
+      if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      const r = await correrProgresion(env, client, 'simulacion', null, null, true);
+      return new Response(JSON.stringify(r), { headers: cors });
+    }
+
     if (body.action === 'get-progresion') {
       const authErr = await authorizeReadForClient(env, body, client, cors);
       if (authErr) return authErr;
@@ -2140,7 +2234,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       if (body.hard) {
         // Hard delete secuencial: si alguno falla, loggeamos y seguimos los
         // otros (sin Promise.all para que un error no deje huérfanos los otros).
-        const keys = [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `meals:${id}`, `payment:${id}`, `support-chat:${id}`, `progresion:${id}`];
+        const keys = [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `meals:${id}`, `payment:${id}`, `support-chat:${id}`, `progresion:${id}`, `chatlog:${id}`];
         for (const k of keys) {
           try { await env.DB.delete(k); }
           catch (err) { console.error(`[delete-athlete] failed to delete ${k}:`, err?.message); }
@@ -2645,6 +2739,14 @@ ${JSON.stringify(fichas, null, 1)}`;
         };
         console.log(`[CHAT] sustitución de hoy: ${de} → ${a}`);
       }
+    }
+
+    // Se guarda lo que preguntó y lo que se le respondió, sólo si es él
+    if (content && client && body.selfToken && await verifySelfToken(env, client, body.selfToken)) {
+      const ultima = [...(body.messages || [])].reverse().find(m => m && m.role === 'user');
+      const q = ultima ? String(typeof ultima.content === 'string' ? ultima.content : '').slice(0, 600) : '';
+      if (q) await guardaEnChatLog(env, client, { q, a: content.slice(0, 900),
+        accion: accion ? { tipo: accion.tipo, name: accion.name || accion.de, a: accion.peso || (accion.nuevo && accion.nuevo.name) } : null });
     }
 
     return new Response(JSON.stringify({

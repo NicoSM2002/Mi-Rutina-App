@@ -9963,7 +9963,7 @@ async function sendChat() {
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat(), client: currentAthlete })
+      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat(), client: currentAthlete, selfToken: getSelfToken() })
     });
     const data = await res.json();
     if (data.content) {
