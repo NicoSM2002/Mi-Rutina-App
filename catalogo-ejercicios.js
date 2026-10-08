@@ -121,6 +121,22 @@ export const CATALOGO = [
   "tip": "Mantén cuerpo alineado de cabeza a talones con abdomen y glúteos activos. No dejes caer la cadera ni eleves demasiado la pelvis."
  },
  {
+  "name": "Pallof press en polea",
+  "muscle": "abdomen",
+  "unit": "placa",
+  "step": 5,
+  "img": "./gifs/abdomen/Pallof press en polea/Pallof press en polea.gif",
+  "tip": "De lado a la polea, con la manija en el pecho. Estira los brazos al frente sin dejar que el cable te gire el tronco y vuelve despacio. El abdomen trabaja resistiendo la rotación."
+ },
+ {
+  "name": "Dead bug",
+  "muscle": "abdomen",
+  "unit": "corporal",
+  "step": 0,
+  "img": "./gifs/abdomen/Dead bug/Dead bug.gif",
+  "tip": "Boca arriba, brazos al techo y rodillas a 90°. Baja el brazo y la pierna contrarios sin que la espalda baja se despegue del piso y vuelve. Alterna lado a lado, lento."
+ },
+ {
   "name": "Curl de muñeca con mancuerna",
   "muscle": "antebrazo",
   "unit": "mancuerna",
@@ -505,6 +521,30 @@ export const CATALOGO = [
   "tip": "Da un paso que te permita bajar casi en vertical. Mantén la tibia estable, controla la bajada y empuja con la pierna delantera sin balancearte."
  },
  {
+  "name": "Prensa horizontal",
+  "muscle": "cuadriceps",
+  "unit": "placa",
+  "step": 10,
+  "img": "./gifs/cuadriceps/Prensa horizontal/Prensa horizontal.gif",
+  "tip": "Espalda bien apoyada y pies al ancho de la cadera en la plataforma. Empuja hasta casi estirar las rodillas, sin bloquearlas, y vuelve lento sin que la cadera se despegue del asiento."
+ },
+ {
+  "name": "Sentadilla con cinturón",
+  "muscle": "cuadriceps",
+  "unit": "lado",
+  "step": 10,
+  "img": "./gifs/cuadriceps/Sentadilla con cinturón/Sentadilla con cinturón.gif",
+  "tip": "Con el cinturón en la cadera y el peso colgando, los pies al ancho de los hombros. Baja con el torso erguido hasta donde mantengas la técnica y sube empujando con todo el pie. No carga la espalda."
+ },
+ {
+  "name": "Zancada hacia atrás con mancuernas",
+  "muscle": "cuadriceps",
+  "unit": "mancuerna",
+  "step": 5,
+  "img": "./gifs/cuadriceps/Zancada hacia atrás con mancuernas/Zancada hacia atrás con mancuernas.gif",
+  "tip": "Da un paso largo hacia atrás y baja hasta que la rodilla de atrás casi toque el piso. Empuja con el talón de la pierna de adelante para volver. Es más amable con la rodilla que la zancada hacia adelante."
+ },
+ {
   "name": "Dominadas asistidas en máquina",
   "muscle": "espalda",
   "unit": "corporal",
@@ -679,6 +719,30 @@ export const CATALOGO = [
   "step": 10,
   "img": "./gifs/espalda/Remo unilateral en polea/Remo unilateral en polea.gif",
   "tip": "Trabaja un brazo a la vez con cadera y torso firmes. Jala hacia la cintura, pausa un instante y evita rotar el cuerpo para hacer trampa."
+ },
+ {
+  "name": "Remo con pecho apoyado en banco inclinado",
+  "muscle": "espalda",
+  "unit": "mancuerna",
+  "step": 5,
+  "img": "./gifs/espalda/Remo con pecho apoyado en banco inclinado/Remo con pecho apoyado en banco inclinado.gif",
+  "tip": "Boca abajo en un banco a 45°, con el pecho apoyado todo el tiempo. Lleva las mancuernas hacia la cadera juntando las escápulas y baja lento con los brazos estirados. No despegues el pecho del banco."
+ },
+ {
+  "name": "Remo alto en máquina Hammer",
+  "muscle": "espalda",
+  "unit": "lado",
+  "step": 5,
+  "img": "./gifs/espalda/Remo alto en máquina Hammer/Remo alto en máquina Hammer.gif",
+  "tip": "Ajusta el asiento para que las manijas queden a la altura de los hombros. Jala hacia abajo y atrás llevando los codos pegados al cuerpo y aprieta la espalda. Vuelve controlado sin encoger los hombros."
+ },
+ {
+  "name": "Jalón unilateral en polea",
+  "muscle": "espalda",
+  "unit": "placa",
+  "step": 5,
+  "img": "./gifs/espalda/Jalón unilateral en polea/Jalón unilateral en polea.gif",
+  "tip": "Sentado y estable, toma la manija con un brazo estirado. Jala llevando el codo hacia la cadera, como metiéndolo en el bolsillo, y aprieta el dorsal. Sube lento hasta estirar del todo."
  },
  {
   "name": "Abducción de cadera en polea",
@@ -945,6 +1009,22 @@ export const CATALOGO = [
   "tip": "Sentado en banco con respaldo, mancuernas al costado. Eleva lateral sin balanceo (el respaldo lo evita). Baja controlado."
  },
  {
+  "name": "Elevación lateral en máquina",
+  "muscle": "hombros",
+  "unit": "placa",
+  "step": 10,
+  "img": "./gifs/hombros/Elevación lateral en máquina/Elevación lateral en máquina.gif",
+  "tip": "Ajusta el asiento para que el hombro quede alineado con el eje de la máquina. Sube los brazos hacia los lados hasta la altura del hombro, sin encogerte, y baja lento sin soltar la tensión."
+ },
+ {
+  "name": "Press de hombro de pie con mancuernas",
+  "muscle": "hombros",
+  "unit": "mancuerna",
+  "step": 5,
+  "img": "./gifs/hombros/Press de hombro de pie con mancuernas/Press de hombro de pie con mancuernas.gif",
+  "tip": "De pie, abdomen y glúteos apretados. Empuja las mancuernas desde los hombros hasta arriba sin arquear la zona lumbar y baja con control hasta la altura de las orejas."
+ },
+ {
   "name": "Buenos días con barra",
   "muscle": "isquio",
   "unit": "lado",
@@ -1017,6 +1097,14 @@ export const CATALOGO = [
   "tip": "Empuja la cadera hacia atras con rodillas apenas flexionadas y espalda neutra. Baja hasta sentir estiramiento en isquios y sube pegando la barra al cuerpo."
  },
  {
+  "name": "Hiperextensión a 45°",
+  "muscle": "isquio",
+  "unit": "corporal",
+  "step": 0,
+  "img": "./gifs/isquiotibiales/Hiperextensión a 45°/Hiperextensión a 45°.gif",
+  "tip": "Cadera apoyada en el borde del banco y pies fijos. Baja el tronco con la espalda recta y sube contrayendo glúteos e isquios hasta quedar en línea con las piernas, sin echarte hacia atrás."
+ },
+ {
   "name": "Elevación de talones burro (donkey)",
   "muscle": "pantorrilla",
   "unit": "placa",
@@ -1063,6 +1151,14 @@ export const CATALOGO = [
   "step": 10,
   "img": "./gifs/pantorrilla/Elevación de talones unilateral de pie/Elevación de talones unilateral de pie.gif",
   "tip": "Trabaja una pierna a la vez manteniendo equilibrio y rango completo. Sube alto, pausa arriba y baja lento hasta sentir el estiramiento."
+ },
+ {
+  "name": "Elevación de talones en hack",
+  "muscle": "pantorrilla",
+  "unit": "lado",
+  "step": 10,
+  "img": "./gifs/pantorrilla/Elevación de talones en hack/Elevación de talones en hack.gif",
+  "tip": "En la máquina hack, apoya solo la parte delantera del pie en el borde de la plataforma. Baja los talones hasta sentir el estiramiento y sube lo más alto que puedas, con una pausa arriba."
  },
  {
   "name": "Aperturas con mancuernas en banco plano",
@@ -1439,6 +1535,14 @@ export const CATALOGO = [
   "step": 5,
   "img": "./gifs/triceps/Tate press con mancuernas/Tate press con mancuernas.gif",
   "tip": "Acostado con mancuernas arriba. Dobla los codos llevando las pesas al centro del pecho en forma de V. Extiende arriba contrayendo tríceps."
+ },
+ {
+  "name": "Extensión de tríceps sobre la cabeza en polea con cuerda",
+  "muscle": "triceps",
+  "unit": "placa",
+  "step": 10,
+  "img": "./gifs/triceps/Extensión de tríceps sobre la cabeza en polea con cuerda/Extensión de tríceps sobre la cabeza en polea con cuerda.gif",
+  "tip": "De espaldas a la polea, con la cuerda detrás de la cabeza y los codos apuntando al frente. Estira los brazos por encima de la cabeza sin mover los codos y baja lento sintiendo el estiramiento del tríceps."
  }
 ];
 

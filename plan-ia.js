@@ -63,7 +63,7 @@ const DIFICILES = /pendlay|pistol|nordico|glute-ham|wheel|rollout|dominadas pron
 const POR_MOLESTIA = {
   hombro: /press militar|press de hombro|press arnold|cuban|remo al menton|fondos|landmine|abiertas y cerradas|pull ?over|declinado|dominadas pronas|colgado|elevacion frontal con barra/,
   rodilla: /pistol|sissy|zancada|bulgara|step-up|wall sit|estatica|sentadilla frontal|sentadilla trasera|box squat|hack|pendulo|talones elevados|sumo en multipower/,
-  lumbar: /peso muerto|buenos dias|remo con barra|pendlay|barra t|sentadilla trasera|sentadilla frontal|kettlebell|giros rusos|wheel|rollout|good/,
+  lumbar: /peso muerto|buenos dias|hiperextension|remo con barra|pendlay|barra t|sentadilla trasera|sentadilla frontal|kettlebell|giros rusos|wheel|rollout|good/,
   codo: /skull|press frances|jm press|curl de biceps con barra|curl de muneca|curl inverso|barra plana|predicador barra|arana con barra|zottman|tate|flexion diamante|fondos en banco|waiter/,
 };
 
@@ -196,6 +196,16 @@ export function rangoDeRepsPara(nombre, enc) {
    Proporción de la carga TOTAL de trabajo (8-12 reps) respecto al peso
    corporal en un hombre intermedio. Mancuerna: por mancuerna. */
 const PROPORCION = [
+  // Los nuevos (oct 2026) van primero: sus nombres caen en reglas más generales
+  [/talones en hack/, 0.8],
+  [/prensa horizontal/, 1.1],
+  [/sentadilla con cinturon/, 0.8],
+  [/remo con pecho apoyado/, 0.18],
+  [/jalon unilateral/, 0.28],
+  [/zancada hacia atras/, 0.13],
+  [/elevacion lateral en maquina/, 0.2],
+  [/press de hombro de pie con mancuernas/, 0.15],
+  [/pallof/, 0.15],
   // Las pantorrillas primero: "talones en prensa" no es una prensa de piernas
   [/talones en prensa/, 0.8],
   [/talones unilateral/, 0.2],
@@ -485,7 +495,7 @@ export function calentamientoDelDia(circuits) {
   const warmupHombro = superior ? [
     { text: 'Elevaciones laterales', w: '5 lbs', reps: '15 reps', img: img('Elevaciones laterales con mancuernas') },
     { text: 'Elevaciones frontales', w: '5 lbs', reps: '15 reps', img: img('Elevaciones frontales alternas con mancuernas') },
-    { text: 'Press de hombro con mancuernas, de pie', w: '5 lbs', reps: '15 reps', img: img('Press de hombro sentado con mancuernas') },
+    { text: 'Press de hombro con mancuernas, de pie', w: '5 lbs', reps: '15 reps', img: img('Press de hombro de pie con mancuernas') },
   ].map(p => { if (!p.img) delete p.img; return p; }) : [];
   // Lo que el bloque de hombro ya calienta, y el abdomen, no llevan paso propio
   const cubiertos = new Set(['abdomen', ...(superior ? ['hombros', 'trapecio'] : [])]);
