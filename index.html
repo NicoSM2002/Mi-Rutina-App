@@ -2810,7 +2810,7 @@ select.na-input {
 .expicker-item { background:var(--s1); border:none; border-radius:0; padding:14px 16px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:background .15s; }
 .expicker-item:active { background:var(--press); }
 .expicker-item-body { flex:1; min-width:0; }
-.expicker-gif { width:62px; height:62px; border-radius:10px; object-fit:cover; background:var(--bg); border:1px solid var(--b2); flex-shrink:0; }
+.expicker-gif { width:62px; height:62px; border-radius:10px; object-fit:cover; background:#fff; border:1px solid var(--b2); flex-shrink:0; }
 .expicker-name { font-family:var(--font-b); font-size:17px; font-weight:500; color:var(--t1); letter-spacing:-.3px; line-height:1.3; }
 .expicker-muscle { font-size:15px; color:var(--t2); margin-top:3px; text-transform:capitalize; }
 .expicker-item-chev { color:var(--chev); width:20px; height:20px; stroke-width:2; flex:none; }
@@ -2832,7 +2832,9 @@ select.na-input {
   font-size:15px; color:var(--t2); margin-bottom:10px; letter-spacing:-.2px;
 }
 .expicker-cat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
-.expicker-cat-card { background:var(--s1); border:none; border-radius:16px; padding:18px 6px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:132px; transition:background .15s; overflow:hidden; }
+.expicker-cat-card { background:var(--s1); border:none; border-radius:16px; padding:6px 6px 12px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:6px; transition:background .15s; overflow:hidden; }
+/* La ilustración del grupo: un ejercicio del catálogo, con el músculo en rojo */
+.expicker-cat-img { width:100%; height:auto; aspect-ratio:1; object-fit:cover; border-radius:12px; background:#fff; margin-bottom:4px; }
 .expicker-cat-card:active { background:var(--press); }
 .expicker-cat-emoji { font-size:28px; line-height:1; color:var(--t1); }
 .expicker-cat-emoji .ic { width:38px; height:38px; stroke-width:1.5; }
@@ -11193,6 +11195,10 @@ function backToMuscleCategories() {
   renderPickerList('');
 }
 
+/* Cada GIF del catálogo tiene al lado una miniatura fija (mini.webp, unos
+   3 KB): la lista carga eso y no el GIF animado de 300 KB. */
+function miniDe(img) { return String(img || '').replace(/[^/]+\.gif$/, 'mini.webp'); }
+
 function renderPickerList(query) {
   const list = document.getElementById('expicker-list');
   const fullCatalog = buildExerciseCatalog('');
@@ -11208,7 +11214,7 @@ function renderPickerList(query) {
       ${idx ? '<div class="group-sep"></div>' : ''}
       <div class="expicker-item${_pickerMulti && _pickerChosen.some(c=>c.name===ex.name) ? ' chosen' : ''}"
            onclick="${_pickerMulti ? `togglePickerChoice(${idx})` : `selectExerciseByIdx(${idx})`}">
-        <img class="expicker-gif" src="${ex.img}" alt="${ex.name}">
+        <img class="expicker-gif" src="${miniDe(ex.img)}" alt="" width="62" height="62" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${ex.img.replace(/'/g, "\\'")}'">
         <div class="expicker-item-body">
           <div class="expicker-name">${ex.name}</div>
           <div class="expicker-muscle">${MUSC_LABELS[ex.muscle]||ex.muscle}</div>
@@ -11231,7 +11237,7 @@ function renderPickerList(query) {
       <div class="expicker-cat-grid">
         ${muscles.map(m => `
           <div class="expicker-cat-card" onclick="selectMuscleCategory('${m}')">
-            <div class="expicker-cat-emoji">${muscleIcon(m)}</div>
+            <img class="expicker-cat-img" src="./gifs/_grupos/${m}.webp" alt="" width="288" height="288" decoding="async">
             <div class="expicker-cat-label">${MUSC_LABELS[m]||m}</div>
             <div class="expicker-cat-count">${counts[m]} ejercicio${counts[m]===1?'':'s'}</div>
           </div>`).join('')}
@@ -11253,7 +11259,7 @@ function renderPickerList(query) {
       ${idx ? '<div class="group-sep"></div>' : ''}
       <div class="expicker-item${_pickerMulti && _pickerChosen.some(c=>c.name===ex.name) ? ' chosen' : ''}"
            onclick="${_pickerMulti ? `togglePickerChoice(${idx})` : `selectExerciseByIdx(${idx})`}">
-        <img class="expicker-gif" src="${ex.img}" alt="${ex.name}">
+        <img class="expicker-gif" src="${miniDe(ex.img)}" alt="" width="62" height="62" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${ex.img.replace(/'/g, "\\'")}'">
         <div class="expicker-item-body">
           <div class="expicker-name">${ex.name}</div>
           <div class="expicker-muscle">${label}</div>
