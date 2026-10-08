@@ -6285,7 +6285,8 @@ function render() {
     } else if (wuN > 1) {
       html += `<div class="wu-loop-note">
         <svg class="ic ic-sm"><use href="#i-repeat"/></svg>
-        Repite ${totalWu === 2 ? 'ambos ejercicios' : `los ${totalWu} ejercicios`} ${wuN} veces.
+        Repite ${totalWu === 2 ? 'ambos ejercicios' : `los ${totalWu} ejercicios`} ${wuN} veces.${[...hombroItems, ...warmupItems].some(it => /→/.test(it.w || ''))
+          ? ' Donde ves →, la segunda vuelta va con un poco más de peso.' : ''}
       </div>`;
     }
 

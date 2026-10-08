@@ -1,6 +1,7 @@
 import { CATALOGO, PorMusculo, PorNombre } from './catalogo-ejercicios.js';
 import { armarRutina, fichasParaIA, validarEncuesta, explicacionDeRespaldo, resumenDelPlan,
-         filtroDelAtleta, ordenaDias } from './plan-ia.js';
+         filtroDelAtleta, ordenaDias, calentamientoDelDia, perfilDeCarga, techoDe, cargaTotal,
+         cargaDesproporcionada, cargaSugerida, convierteCarga } from './plan-ia.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
 // is missing or the trainer record has no email. Real routing uses
@@ -236,7 +237,7 @@ function progresarDropset(ex, delta) {
 
 /* Aplica una respuesta a un ejercicio. Devuelve qué cambió, o null si no
    había nada que marcar. Muta el ejercicio. */
-function progresarEjercicio(ex, resp) {
+function progresarEjercicio(ex, resp, perfil) {
   // Los drop sets y las pirámides llevan su carga en los escalones
   const esEscalonado = (ex.setType === 'dropset' || ex.setType === 'piramidal')
                     && Array.isArray(ex.steps1) && ex.steps1.length > 1;
@@ -302,6 +303,18 @@ function progresarEjercicio(ex, resp) {
     return null;   // sin marcar
   }
 
+  // Tope de sentido común: si subir deja la carga fuera de lo razonable para
+  // este ejercicio, se queda donde está. Mejor estancarse que lesionarse.
+  if (perfil && !corporal && peso > pesoAntes) {
+    const cat = PorNombre[ex.name] || ex;
+    const techo = techoDe(cat, perfil);
+    const total = cargaTotal(cat, escribePeso(peso, ex.unit));
+    if (techo && total && total > techo) {
+      peso = pesoAntes; reps = repsAntes;
+      motivo = 'ya está en lo máximo razonable para este ejercicio';
+    }
+  }
+
   ex.repNow = reps;
   ex.reps = reps + ' reps';
   ex.fallos = fallos;
@@ -325,7 +338,7 @@ function progresarEjercicio(ex, resp) {
 
 /* Recorre la rutina aplicando las marcas de la semana.
    `marcas` viene indexado por "sesionN|Nombre del ejercicio". */
-function progresarRutina(rutina, marcas) {
+function progresarRutina(rutina, marcas, perfil) {
   const cambios = [];
   for (const clave of Object.keys(rutina || {})) {
     const dia = rutina[clave];
@@ -335,7 +348,7 @@ function progresarRutina(rutina, marcas) {
       let fallosDelCircuito = 0;
       for (const ex of exs) {
         const resp = marcas[clave + '|' + ex.name];
-        const r = progresarEjercicio(ex, resp);
+        const r = progresarEjercicio(ex, resp, perfil);
         if (r) { r.sesion = clave; r.circuito = c.label || ''; cambios.push(r); }
         if (resp === 'fallo') fallosDelCircuito++;
       }
@@ -575,7 +588,7 @@ El campo "nuevo" debe ser EXACTAMENTE uno de los strings de su lista de alternat
 }
 
 /* Aplica las rotaciones validadas sobre la rutina */
-function aplicarRotacion(rutina, propuestas) {
+function aplicarRotacion(rutina, propuestas, perfil) {
   const hechas = [];
   for (const p of propuestas) {
     const nuevo = PorNombre[p.nuevo];
@@ -586,15 +599,17 @@ function aplicarRotacion(rutina, propuestas) {
           if (exs[i].name !== p.actual) continue;
           const anterior = exs[i];
           const [lo, hi] = rangoDeReps(nuevo.name);
-          // El peso sólo se hereda si se lee igual en el aparato; si no,
-          // se deja en blanco y el atleta lo fija el primer día.
-          const heredaPeso = anterior.unit === nuevo.unit && nuevo.unit !== 'corporal';
+          // La carga se pasa por proporción entre los dos ejercicios: el mismo
+          // número en otro aparato puede ser un disparate. La primera marca la
+          // calibra.
+          const w1 = convierteCarga(PorNombre[anterior.name] || anterior, anterior.w1, nuevo, perfil);
+          const heredaPeso = !!w1 && w1 === anterior.w1;
           exs[i] = {
             name: nuevo.name, muscle: nuevo.muscle, unit: nuevo.unit, step: nuevo.step,
             img: nuevo.img, tip: nuevo.tip,
-            w1: heredaPeso ? anterior.w1 : '',
+            w1,
             reps: lo + ' reps', repMin: lo, repMax: hi, repNow: lo, fallos: 0,
-            calibrar: !heredaPeso && nuevo.unit !== 'corporal',
+            calibrar: nuevo.unit !== 'corporal',
           };
           hechas.push({ sesion: k, circuito: c.label || '', de: p.actual, a: nuevo.name,
                         porque: String(p.porque || '').slice(0, 200), heredaPeso });
@@ -790,7 +805,8 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
     console.log(`[NOTA-PESO] ${clientId}: ${corregidos.map(c => c.name + ' ' + c.de + '→' + c.a).join(', ')}`);
   }
 
-  const cambios = progresarRutina(rutina, marcas);
+  const perfil = perfilDeCarga(atleta);
+  const cambios = progresarRutina(rutina, marcas, perfil);
 
   // Lo que escribió esta semana puede pedir un cambio ya, sin esperar ciclo
   const señalados = await ejerciciosSeñaladosEnNotas(env, rutina, notas);
@@ -807,10 +823,14 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   let rotaciones = [];
   if (candidatos.length) {
     const propuestas = await proponerRotacion(env, rutina, candidatos.slice(0, 3), atleta);
-    rotaciones = aplicarRotacion(rutina, propuestas);
+    rotaciones = aplicarRotacion(rutina, propuestas, perfil);
     console.log(`[ROTACION] ${clientId}: ${candidatos.length} candidatos (${señalados.length} por notas), ${rotaciones.length} cambiados`);
   }
 
+  // El calentamiento sale de los circuitos: si cambiaron, cambia con ellos
+  for (const k of Object.keys(rutina)) {
+    if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits));
+  }
   await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
 
   const resumen = await resumenSemana(env, cambios, rotaciones, notas, señalados, corregidos, atleta);
@@ -2502,6 +2522,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     if (sesionHoy.length) {
       const yaEstan = new Set(sesionHoy.map(e => e.name));
       const valeChat = filtroDelAtleta(athleteRecord && athleteRecord.encuesta);
+      const perfilChat = perfilDeCarga(athleteRecord);
       const fichas = sesionHoy.map(e => {
         const cat = PorNombre[e.name];
         if (!cat) return null;
@@ -2509,8 +2530,13 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
           .filter(x => !yaEstan.has(x.name) && valeChat(x))
           .slice(0, 14)
           .map(x => x.name);
-        return { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso',
-                 saltoDelAparato: cat.step || null, alternativas: alt };
+        const ficha = { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso',
+                        saltoDelAparato: cat.step || null, alternativas: alt };
+        if (cargaDesproporcionada(cat, e.w1, perfilChat)) {
+          ficha.cargaAlta = true;
+          ficha.cargaRazonable = cargaSugerida(cat, perfilChat);
+        }
+        return ficha;
       }).filter(Boolean);
 
       if (fichas.length) {
@@ -2536,6 +2562,13 @@ la carga actual. Un salto de uno o dos escalones es lo normal; si te pide más, 
 pases de ahí. A diferencia del cambio de ejercicio, ESTE SÍ SE QUEDA: avísale que a partir de
 ahora esa es su carga y que de ahí sigue la progresión.
 Una sola línea por respuesta, @@CAMBIAR o @@PESO, nunca las dos.
+
+CARGAS CON SENTIDO.
+Antes de decir que una carga está bien, piensa si es lógica para ESE ejercicio y esa persona
+(un press militar de pie con barra no se carga como una banca ni como una prensa). Si un ejercicio
+trae "cargaAlta": true, esa carga es desproporcionada y peligrosa: NUNCA le digas que está bien.
+Díselo claro, explícale el riesgo en una frase y propón bajarla con @@PESO a algo cercano a
+"cargaRazonable" (puede ser un poco más si te cuenta que la maneja con buena técnica).
 
 Ejercicios de hoy y sus alternativas:
 ${JSON.stringify(fichas, null, 1)}`;
@@ -2597,16 +2630,17 @@ ${JSON.stringify(fichas, null, 1)}`;
       else if (sesionHoy.some(e => e.name === a))
                         console.log(`[CHAT] "${a}" ya está en la sesión`);
       else {
-        // El peso sólo se hereda si el aparato se lee igual
-        const heredaPeso = viejo.unit === nuevo.unit && nuevo.unit !== 'corporal';
+        // La carga se pasa por proporción: el mismo número en otro aparato
+        // puede ser un disparate
+        const w1 = convierteCarga(viejo, enHoy.w1 || '', nuevo, perfilDeCarga(athleteRecord));
         accion = {
           tipo: 'sustituir', ci: enHoy.ci, ei: enHoy.ei, de,
           nuevo: {
             name: nuevo.name, muscle: nuevo.muscle, unit: nuevo.unit, step: nuevo.step,
             img: nuevo.img, tip: nuevo.tip,
-            w1: heredaPeso ? (enHoy.w1 || '') : '',
+            w1,
             reps: enHoy.reps || '', repMin: enHoy.repMin, repMax: enHoy.repMax,
-            repNow: enHoy.repNow, calibrar: !heredaPeso && nuevo.unit !== 'corporal',
+            repNow: enHoy.repNow, calibrar: nuevo.unit !== 'corporal',
           },
         };
         console.log(`[CHAT] sustitución de hoy: ${de} → ${a}`);

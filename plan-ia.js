@@ -271,12 +271,16 @@ const BASE_REFERENCIA = {
   jalon: 'Jalón al pecho agarre ancho',
 };
 
+function proporcionDe(ex) {
+  const n = sinTilde(ex.name);
+  const regla = PROPORCION.find(([re]) => re.test(n));
+  return regla ? regla[1] : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'lado' ? 0.6 : 0.3;
+}
+
 function cargaEstimada(ex, enc, factores) {
   if (ex.unit === 'corporal' || !ex.step) return '';
   const n = sinTilde(ex.name);
-  const regla = PROPORCION.find(([re]) => re.test(n));
-  const prop = regla ? regla[1]
-    : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'lado' ? 0.6 : 0.3;
+  const prop = proporcionDe(ex);
   const kgCuerpo = Number(enc.peso) || 70;
   const lbs = kgCuerpo * 2.2046;
   const nivel = { principiante: 0.6, intermedio: 0.9, avanzado: 1.2 }[enc.nivel] || 0.75;
@@ -294,6 +298,86 @@ function cargaEstimada(ex, enc, factores) {
   }
   const v = Math.max(ex.step, redondea(total, ex.step));
   return ex.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+}
+
+/* ── Cargas con sentido ───────────────────────────────────────────────
+   Lo que pesa de verdad un "w1": total levantado (por mancuerna, en
+   mancuernas). Con él se compara contra un techo razonable y se pasa una
+   carga de un ejercicio a otro. */
+export function cargaTotal(ex, w1) {
+  if (!ex || ex.unit === 'corporal') return null;
+  const t = sinTilde(w1);
+  const barra = pesoBarra(sinTilde(ex.name));
+  if (/barra sola/.test(t)) return barra || null;
+  const m = t.match(/[\d.,]+/);
+  if (!m) return null;
+  const v = parseFloat(m[0].replace(',', '.'));
+  if (!isFinite(v) || v <= 0) return null;
+  return ex.unit === 'lado' ? v * 2 + barra : v;
+}
+
+/* Lo contrario: un total escrito como se carga en ese aparato */
+function escribeCarga(ex, total) {
+  const paso = ex.step || 5, barra = pesoBarra(sinTilde(ex.name));
+  if (ex.unit === 'lado') {
+    const lado = (total - barra) / 2;
+    if (lado < paso) return barra ? 'barra sola' : `${paso} lbs/lado`;
+    return `${redondea(lado, paso)} lbs/lado`;
+  }
+  const v = Math.max(paso, redondea(total, paso));
+  return ex.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+}
+
+/* Peso corporal y sexo de quien entrena: de la encuesta, del perfil o de su
+   última medición. Sin dato, un adulto promedio. */
+export function perfilDeCarga(atleta) {
+  const enc = (atleta && atleta.encuesta) || {};
+  const prof = (atleta && atleta.profile) || {};
+  const meds = Array.isArray(atleta && atleta.measurements) ? atleta.measurements : [];
+  const med = meds.length ? meds[meds.length - 1] : null;
+  const peso = Number(enc.peso) || Number(prof.weight) || Number(med && med.weight) || 75;
+  const sexo = enc.sexo || prof.sex || 'm';
+  return { peso, sexo };
+}
+
+/* Lo máximo razonable para ese ejercicio: más del doble de lo de un
+   intermedio. Por encima, la carga es un error (un dato mal puesto, un
+   ejercicio confundido con otro), no una marca, y quien la ve escrita se
+   lesiona. Sólo en los compuestos con peso libre: es donde un número absurdo
+   hace daño, y en máquinas y poleas el número cambia de un gimnasio a otro,
+   así que ahí no hay proporción en la que confiar. */
+export function techoDe(ex, perfil) {
+  if (!ex || ex.unit === 'corporal' || ex.unit === 'placa' || !ex.step) return null;
+  if (tipoDe(ex) !== 'C') return null;
+  return cargaIntermedia(ex, perfil) * 2.2;
+}
+function cargaIntermedia(ex, perfil) {
+  const lbs = (Number(perfil && perfil.peso) || 75) * 2.2046;
+  const mujer = perfil && perfil.sexo === 'f' ? (TREN_INFERIOR.has(ex.muscle) ? 0.75 : 0.55) : 1;
+  return lbs * proporcionDe(ex) * 0.9 * mujer;
+}
+
+export function cargaDesproporcionada(ex, w1, perfil) {
+  const t = cargaTotal(ex, w1), techo = techoDe(ex, perfil);
+  return t !== null && techo !== null && t > techo;
+}
+
+/* Una carga razonable de arranque para ese ejercicio y esa persona */
+export function cargaSugerida(ex, perfil) {
+  return ex && ex.unit !== 'corporal' && ex.step ? escribeCarga(ex, cargaIntermedia(ex, perfil)) : '';
+}
+
+/* Pasa la carga de un ejercicio a otro por su proporción. Heredar el número
+   tal cual es lo que convierte 70 lbs/lado de una máquina en 70 lbs/lado de
+   press militar con barra. Nunca arranca cerca del techo. */
+export function convierteCarga(de, w1, a, perfil) {
+  if (!a || a.unit === 'corporal' || !de) return '';
+  const t = cargaTotal(de, w1);
+  if (t === null) return '';
+  let total = t * proporcionDe(a) / proporcionDe(de);
+  const techo = techoDe(a, perfil);
+  if (techo && total > techo * 0.6) total = techo * 0.6;
+  return escribeCarga(a, total);
 }
 
 /* Si dio pesos de referencia, cuánto se separa de lo estimado. Acotado:
@@ -375,36 +459,45 @@ function elegirTodo(sesiones, eleccionesIA) {
 }
 
 /* ── Calentamiento ────────────────────────────────────────────────────
-   Específico y corto: activación + rampa sobre el primer compuesto del
-   día. Una sola vuelta. */
-function calentamiento(primero, enc, musculoPrincipal) {
-  const casa = enc.lugar === 'casa';
-  const inferior = TREN_INFERIOR.has(musculoPrincipal);
-  const img = n => (PorNombre[n] && PorNombre[n].img) || undefined;
-  const pasos = [];
-  if (inferior) {
-    pasos.push({ text: casa ? 'Marcha en el sitio o saltos suaves' : 'Bicicleta o caminadora, ritmo suave', w: '', reps: casa ? '3 min' : '5 min' });
-    pasos.push({ text: 'Sentadilla sin peso, profunda y controlada', w: 'sin peso', reps: '15 reps', img: img('Sentadilla sin peso') });
-  } else {
-    pasos.push({ text: 'Movilidad de hombro: círculos y pasadas con banda', w: '', reps: '60 seg' });
-    if (!casa && PorNombre['Face Pull con cuerda en polea']) {
-      pasos.push({ text: 'Face pull con cuerda, suave', w: 'muy ligero', reps: '15 reps', img: img('Face Pull con cuerda en polea') });
-    } else {
-      pasos.push({ text: 'Elevaciones laterales muy ligeras', w: 'muy ligero', reps: '15 reps', img: img('Elevaciones laterales con mancuernas') });
-    }
+   La regla de siempre, dos vueltas:
+     · Tren superior: bloque de hombro (laterales, frontales y press de pie
+       con 5 lbs, 15 reps). En día de hombro ya lo cubre: no se repite.
+     · Del día: un ejercicio por cada grupo que se va a trabajar, el mismo de
+       la rutina y con poco peso. La segunda vuelta, un poco más ("a → b").
+   Sale de los circuitos, así que se rehace cada vez que la rutina cambia. */
+const img = n => (PorNombre[n] && PorNombre[n].img) || undefined;
+function pasoDeCalentamiento(ex) {
+  const paso = { text: ex.name, reps: '15 reps' };
+  if (ex.img) paso.img = ex.img;
+  if (ex.unit === 'corporal') return { ...paso, w: 'sin peso', reps: '8 reps' };
+  const t = cargaTotal(ex, ex.w1);
+  if (!t) return { ...paso, w: 'muy ligero' };
+  const barra = ex.unit === 'lado' ? pesoBarra(sinTilde(ex.name)) : 0;
+  const v1 = barra ? 'barra sola' : escribeCarga(ex, t * 0.4);
+  const v2 = escribeCarga(ex, Math.max(barra, t * (barra ? 0.5 : 0.6)));
+  return { ...paso, w: v1 === v2 ? v1 : `${v1} → ${v2}` };
+}
+
+export function calentamientoDelDia(circuits) {
+  const exs = (circuits || []).flatMap(c => c.exercises || []).filter(e => e && e.name);
+  const musculos = [...new Set(exs.map(e => e.muscle))];
+  const superior = musculos.some(m => !TREN_INFERIOR.has(m) && m !== 'abdomen');
+  const warmupHombro = superior ? [
+    { text: 'Elevaciones laterales', w: '5 lbs', reps: '15 reps', img: img('Elevaciones laterales con mancuernas') },
+    { text: 'Elevaciones frontales', w: '5 lbs', reps: '15 reps', img: img('Elevaciones frontales alternas con mancuernas') },
+    { text: 'Press de hombro con mancuernas, de pie', w: '5 lbs', reps: '15 reps', img: img('Press de hombro sentado con mancuernas') },
+  ].map(p => { if (!p.img) delete p.img; return p; }) : [];
+  // Lo que el bloque de hombro ya calienta, y el abdomen, no llevan paso propio
+  const cubiertos = new Set(['abdomen', ...(superior ? ['hombros', 'trapecio'] : [])]);
+  const warmup = [];
+  for (const m of musculos) {
+    if (cubiertos.has(m)) continue;
+    const delGrupo = exs.filter(e => e.muscle === m);
+    // Mejor uno con carga: una dominada no se calienta "con poco peso"
+    const ex = delGrupo.find(e => e.unit !== 'corporal' && cargaTotal(e, e.w1) !== null) || delGrupo[0];
+    if (ex) warmup.push(pasoDeCalentamiento(ex));
   }
-  if (primero && primero.unit !== 'corporal') {
-    const num = parseFloat(primero.w1) || 0;
-    if (primero.unit === 'lado' && pesoBarra(sinTilde(primero.name))) {
-      pasos.push({ text: `${primero.name} · solo la barra`, w: 'barra sola', reps: '12 reps', img: primero.img });
-      if (num >= 20) pasos.push({ text: `${primero.name} · aproximación`, w: `${redondea(num * 0.5, 5)} lbs/lado`, reps: '6 reps', img: primero.img });
-    } else if (num) {
-      const suf = primero.unit === 'lado' ? ' lbs/lado' : primero.unit === 'mancuerna' ? ' lbs c/u' : ' lbs';
-      pasos.push({ text: `${primero.name} · aproximación`, w: Math.max(primero.step || 5, redondea(num * 0.5, primero.step || 5)) + suf, reps: '10 reps', img: primero.img });
-      pasos.push({ text: `${primero.name} · última antes de empezar`, w: Math.max(primero.step || 5, redondea(num * 0.75, primero.step || 5)) + suf, reps: '4 reps', img: primero.img });
-    }
-  }
-  return pasos.map(p => { if (!p.img) delete p.img; return p; });
+  return { warmupHombro, warmup, warmupSeries: 2 };
 }
 
 /* Días de entreno en orden de la semana: lunes primero, domingo al final */
@@ -453,15 +546,12 @@ export function armarRutina(enc, eleccionesIA) {
       }
     }
 
-    const primero = circuits[0] && circuits[0].exercises[0];
     const diaSemana = dias[si];
     rutina['sesion' + (si + 1)] = {
       title: ses.titulo,
       dia: diaSemana !== undefined ? NOMBRE_DIA[diaSemana] : '',
       sub: '',
-      warmup: calentamiento(primero, enc, primero && primero.muscle),
-      warmupHombro: null,
-      warmupSeries: 1,
+      ...calentamientoDelDia(circuits),
       cardio: enc.objetivo === 'recomposicion'
         ? 'Cardio al final: 15 min a ritmo moderado (caminadora inclinada o bicicleta)' : '',
       circuits,
