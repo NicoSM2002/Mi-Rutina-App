@@ -718,6 +718,16 @@ Devuelve SOLO un JSON array, vacío si no hay nada:
 [{"nombre":"nombre exacto","peso":110,"reps":10,"rango":[10,14]}]
 Omite los campos que no declare.`;
 
+  // Es lo que hace respetar lo que anotó: si la respuesta llega rota, se pregunta otra vez
+  for (let intento = 1; intento <= 2; intento++) {
+    const r = await pideDeclaraciones(env, prompt, enRutina);
+    if (r) return r;
+    console.log(`[DECLARA] intento ${intento} sin respuesta válida`);
+  }
+  return [];
+}
+
+async function pideDeclaraciones(env, prompt, enRutina) {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -732,11 +742,11 @@ Omite los campos que no declare.`;
     const data = await res.json();
     if (!res.ok || data.error) {
       console.log(`[DECLARA] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
-      return [];
+      return null;
     }
     const txt = textoDeRespuesta(data);
     const m = txt.match(/\[[\s\S]*\]/);
-    if (!m) return [];
+    if (!m) { console.log('[DECLARA] respuesta sin JSON: ' + txt.slice(0, 200)); return null; }
     return JSON.parse(m[0]).map(p => {
       if (!p || !p.nombre) return null;
       const ex = enRutina.get(p.nombre);
@@ -757,7 +767,7 @@ Omite los campos que no declare.`;
     }).filter(Boolean);
   } catch (e) {
     console.log('[DECLARA] falló: ' + e.message);
-    return [];
+    return null;
   }
 }
 
