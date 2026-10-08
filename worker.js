@@ -854,7 +854,8 @@ Escríbele 2 o 3 frases diciéndole qué cambió y por qué. Directo y concreto,
 cartel ni emojis. Si bajó carga en algo, dilo sin dramatizar: es parte del plan.
 Habla SOLO de lo que está en la lista de ajustes y en sus notas, con el "porque" de cada uno. No
 inventes razones ni cambios (nada de "llegaste al tope" si no lo dice), y no hables del
-calentamiento.
+calentamiento. Las reglas son: Fácil sube el peso; Justo suma una repetición y NUNCA sube el peso;
+No llegué repite la carga.
 
 Si escribió notas, tenlas en cuenta y menciónalo cuando hayan cambiado algo — que vea que
 sirvieron de algo. Si reportó una molestia física, dilo en una frase y dile que si sigue, lo mire

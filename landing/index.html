@@ -566,12 +566,12 @@ button { font: inherit; }
     <div class="reveal sube-top">
       <div><span class="kick">Se ajusta sola</span>
       <h2 class="d h2" style="margin-top:16px">Tú marcas.<br><span class="v">La semana siguiente, sube.</span></h2></div>
-      <p class="sub">Al terminar cada ejercicio tocas <b>Fácil</b>, <b>Justo</b> o <b>No llegué</b>. Primero suben las repeticiones y, cuando llegas al tope, sube el peso.</p>
+      <p class="sub">Al terminar cada ejercicio tocas <b>Fácil</b>, <b>Justo</b> o <b>No llegué</b>. Si fue fácil, sube el peso; si fue justo, sumas una repetición con el mismo peso.</p>
     </div>
     <div class="semanas reveal" id="semanas">
       <div class="sm-top">
         <div><b>Hip thrust con barra</b><small>Seis semanas de Catalina · rango de 8 a 12 repeticiones</small></div>
-        <div class="sm-ley"><span><i style="background:var(--ok-hi)"></i>Fácil: +2 reps</span><span><i style="background:var(--violet-hi)"></i>Justo: +1 rep</span><span><i style="background:var(--err-hi)"></i>No llegué: repites</span></div>
+        <div class="sm-ley"><span><i style="background:var(--ok-hi)"></i>Fácil: sube el peso</span><span><i style="background:var(--violet-hi)"></i>Justo: +1 rep</span><span><i style="background:var(--err-hi)"></i>No llegué: repites</span></div>
       </div>
       <div class="sm-cols" id="smCols"></div>
     </div>
@@ -797,7 +797,7 @@ button { font: inherit; }
   const hero = $('.hero');
   requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add('in')));
   const cfA = $('#cfA'), cfB = $('#cfB'), dotsA = [...document.querySelectorAll('#cfAd i')];
-  const HERO = [['Hip thrust con barra', 15, 20, '+5 lbs'], ['Press inclinado con mancuernas', 12, 15, '+3 lbs'], ['Sentadilla en multipower', 30, 35, '+5 lbs']];
+  const HERO = [['Hip thrust con barra', 15, 20, '+5 lbs'], ['Press inclinado con mancuernas', 25, 30, '+5 lbs'], ['Sentadilla en multipower', 30, 35, '+5 lbs']];
   let hk = 0;
   const heroCiclo = async () => {
     const [n, a, b, m] = HERO[hk++ % HERO.length];
@@ -838,13 +838,13 @@ button { font: inherit; }
   }), { threshold: .35 }).observe(wk);
 
   // ─── Cómo sube: seis semanas del mismo ejercicio, con las reglas reales
-  // Fácil +2 reps; en el tope (12) sube el peso y vuelve a 8. Justo +1. No llegué repite.
+  // Fácil sube el peso; Justo suma una repetición con el mismo peso; No llegué repite.
   const SEM = [
-    { p: 15, r: 8, m: 'facil' }, { p: 15, r: 10, m: 'facil' }, { p: 15, r: 12, m: 'facil' },
-    { p: 20, r: 8, m: 'justo', sube: true }, { p: 20, r: 9, m: 'fallo' }, { p: 20, r: 9, m: 'facil' },
+    { p: 40, r: 8, m: 'facil' }, { p: 45, r: 8, m: 'justo', sube: true }, { p: 45, r: 9, m: 'facil' },
+    { p: 50, r: 9, m: 'fallo', sube: true }, { p: 50, r: 9, m: 'justo' }, { p: 50, r: 10, m: 'facil' },
   ];
   const TXT = { facil: 'Fácil', justo: 'Justo', fallo: 'No llegué' };
-  const altura = s => Math.round(((s.p - 10) / 10) * 70 + (s.r - 8) * 3.2 + 12);  // % del alto: el peso manda, las reps suman poco
+  const altura = s => Math.round(((s.p - 35) / 15) * 70 + (s.r - 8) * 3.2 + 14);  // % del alto: el peso manda, las reps suman poco
   $('#smCols').innerHTML = SEM.map((s, i) => `
     <div class="sm-col${s.sube ? ' sube5' : ''}">
       <span class="sm-marca m-${s.m}">${TXT[s.m]}</span>
