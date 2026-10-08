@@ -98,6 +98,9 @@ body.kbd-open #app-shell {
   --pad: 20px;
   --r-group: 22px;
 
+  /* Hojas que suben desde abajo: en oscuro, el gris elevado de iOS */
+  --hoja: var(--bg); --hoja-celda: var(--s1); --hoja-campo: var(--bg); --hoja-seg: #E3E3E8; --seg-on: var(--s1);
+
   /* ── Tipografía: la del iPhone. Los números, redondeados (SF Pro Rounded) ── */
   --font-d: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
   --font-b: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
@@ -139,6 +142,7 @@ body.kbd-open #app-shell {
     --am:  #FFB340;
     --err: #FF6961;
     --barra: #3A3A3C;
+    --hoja: #1C1C1E; --hoja-celda: #2C2C2E; --hoja-campo: #1C1C1E; --hoja-seg: #2C2C2E; --seg-on: #636366;
   }
 }
 :root[data-theme="dark"] {
@@ -173,6 +177,7 @@ body.kbd-open #app-shell {
     --am:  #FFB340;
     --err: #FF6961;
     --barra: #3A3A3C;
+    --hoja: #1C1C1E; --hoja-celda: #2C2C2E; --hoja-campo: #1C1C1E; --hoja-seg: #2C2C2E; --seg-on: #636366;
   }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
@@ -3614,6 +3619,305 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .admin-tab { min-width:0; padding:10px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 @media (max-width:360px) { .admin-tab { font-size:13px; } }
 
+/* ══════════════════════════════════════════════════════════════
+   ENTRENADOR · rediseño (oct 2026)
+   Lista de clientes con su estado, sesión con los ejercicios a la vista,
+   circuito con controles de iOS, hoja para editar un ejercicio y
+   calentamiento con el bloque de hombro. Todo se guarda solo.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Lista de clientes ── */
+#trainer-portal .tportal-body { padding-top:calc(var(--sat) + 18px); }
+.cli-cab { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.cli-cab .h-page { margin:0; }
+.cli-cab-acc { display:flex; gap:10px; flex:none; }
+.cli-cab-btn { width:44px; height:44px; }
+.cli-cab-btn.new-athlete-btn .ic { width:20px; height:20px; stroke-width:2.4; }
+.cli-search-wrap { margin-bottom:12px; }
+.cli-filters { margin-bottom:6px; }
+.cli-chip { border:none; background:var(--s1); padding:8px 14px; font-weight:400; }
+.cli-chip.active { background:var(--ac-str); color:#fff; font-weight:600; }
+.cli-chip-n { font-variant-numeric:tabular-nums; }
+.cli-sec { font-size:13px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; color:var(--t2); margin:16px 16px 8px; }
+#trainer-extra-clients { margin-bottom:12px; }
+#trainer-extra-clients .client-card { border-radius:0; padding:12px 16px; gap:12px; align-items:center; }
+#trainer-extra-clients .group-sep { margin-left:72px; margin-right:0; height:.5px; background:var(--b); }
+#trainer-extra-clients .client-avatar { width:44px; height:44px; font-size:15px; font-family:var(--font-r); }
+.cli-fila-nom { display:flex; align-items:center; gap:8px; min-width:0; }
+.cli-fila-nom .client-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.cli-notas { flex:none; padding:2px 8px; border-radius:100px; background:var(--ac-soft); color:var(--ac-tx); font-size:12px; font-weight:600; }
+#trainer-extra-clients .client-meta { font-size:13px; margin-top:1px; }
+.cli-semana { display:flex; gap:4px; margin-top:6px; }
+.cli-dia {
+  width:20px; height:20px; border-radius:100px; flex:none; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; background:var(--s2); color:var(--t2); font-family:var(--font-r);
+}
+.cli-dia.hecho { background:var(--ac-str); color:#fff; }
+.cli-dia.hoy { background:var(--s1); box-shadow:inset 0 0 0 1.5px var(--b3); color:var(--t1); }
+.cli-dia.hecho.hoy { background:var(--ac-str); box-shadow:none; color:#fff; }
+/* Nombre y plan a la izquierda, cuándo entrenó a la derecha, la semana abajo */
+#trainer-extra-clients .client-body { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:10px; align-items:baseline; }
+#trainer-extra-clients .cli-fila-nom { grid-column:1; grid-row:1; }
+#trainer-extra-clients .client-meta { grid-column:1; grid-row:2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#trainer-extra-clients .cli-semana { grid-column:1 / -1; grid-row:3; }
+.cli-estado { display:contents; }
+.cli-estado-t { grid-column:2; grid-row:1; justify-self:end; font-size:13px; font-weight:600; color:var(--t1); white-space:nowrap; }
+.cli-estado-d { grid-column:2; grid-row:2; justify-self:end; font-size:12px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:118px; }
+.cli-estado.hoy .cli-estado-t { color:var(--ok); }
+.cli-estado.inactivo .cli-estado-t { color:var(--err); }
+.cli-estado.sin-rutina .cli-estado-t, .cli-estado.sin-rutina .cli-estado-d { color:var(--ac-tx); }
+.cli-estado.cargando .cli-estado-t { width:44px; height:12px; border-radius:6px; background:var(--s2); }
+.top-salir {
+  display:block; width:100%; margin:14px 0 calc(30px + var(--sab)); padding:15px; border:none; border-radius:16px;
+  background:var(--s1); color:var(--err); font-size:17px; font-weight:400; cursor:pointer;
+}
+.top-salir:active { background:var(--press); }
+
+/* ── Cabecera del cliente: barra de navegación + identidad ── */
+.tclient-header { flex-direction:column; align-items:stretch; gap:8px; padding:calc(var(--sat) + 6px) var(--pad) 8px; }
+.tc-nav { display:flex; align-items:center; gap:10px; min-height:44px; }
+.tc-back {
+  display:flex; align-items:center; gap:0; min-width:0; flex:0 1 auto; margin-left:-8px; padding:8px 8px 8px 0;
+  background:none; border:none; color:var(--ac-tx); font-size:17px; cursor:pointer; white-space:nowrap;
+}
+.tc-back .ic { width:26px; height:26px; stroke-width:2.2; }
+.tc-back span { overflow:hidden; text-overflow:ellipsis; }
+.tc-back:active { opacity:.5; }
+.re-estado {
+  margin-left:auto; display:flex; align-items:center; gap:4px; font-size:13px; color:var(--t2);
+  white-space:nowrap; opacity:0; transition:opacity .3s ease;
+}
+.re-estado.ver { opacity:1; }
+.re-estado.ok { color:var(--ok); }
+.re-estado.error { color:var(--err); }
+.re-estado .ic { width:14px; height:14px; stroke-width:3; }
+.tc-acciones { display:flex; gap:8px; flex:none; }
+.re-estado:not(.ver) + .tc-acciones { margin-left:auto; }
+.tc-circ {
+  width:40px; height:40px; border-radius:100px; border:none; background:var(--s2); color:var(--t1);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;
+}
+.tc-circ .ic { width:20px; height:20px; }
+.tc-circ:active { background:var(--b); }
+.tc-circ[hidden] { display:none; }
+#trainer-client.en-bloque #tc-identidad { display:none; }
+.tclient-content { padding-top:4px; }
+
+/* ── Sesión: chips de día, título y bloques ── */
+.ses-chips { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin:2px calc(-1 * var(--pad)) 16px; padding:0 var(--pad); }
+.ses-chips::-webkit-scrollbar { display:none; }
+.ses-chip {
+  flex:none; height:36px; padding:0 14px; border-radius:100px; border:none; background:var(--s1); color:var(--t1);
+  font-size:15px; white-space:nowrap; cursor:pointer;
+}
+.ses-chip.on { background:var(--ac-str); color:#fff; font-weight:600; }
+.ses-chip-add { background:transparent; box-shadow:inset 0 0 0 1.5px var(--b3); color:var(--t2); width:36px; padding:0; display:flex; align-items:center; justify-content:center; }
+.ses-chip:active { opacity:.7; }
+.ses-cab { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.ses-titulo { font-family:var(--font-d); font-size:28px; font-weight:700; letter-spacing:-.6px; color:var(--t1); line-height:1.15; margin:0; }
+.ses-sub { font-size:15px; color:var(--t2); margin-top:2px; }
+.ses-cab .tc-circ { background:var(--s1); }
+.ses-bloques { display:flex; flex-direction:column; gap:12px; }
+.ses-fila {
+  display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border:none; border-radius:16px;
+  background:var(--s1); color:var(--t1); text-align:left; cursor:pointer;
+}
+.ses-fila:active, .ses-cir:active { background:var(--press); }
+.ses-ic { width:36px; height:36px; border-radius:10px; flex:none; display:flex; align-items:center; justify-content:center; }
+.ses-ic .ic { width:20px; height:20px; }
+.ses-ic-wu { background:rgba(245,163,0,.16); color:var(--am); }
+.ses-ic-vacio { box-shadow:inset 0 0 0 1.5px var(--b3); color:var(--t2); }
+.ses-fila-t { flex:1; min-width:0; display:flex; flex-direction:column; }
+.ses-fila-n { font-size:17px; font-weight:600; letter-spacing:-.3px; }
+.ses-fila-m { font-size:13px; color:var(--t2); margin-top:1px; }
+.ses-fila .blk-chev { width:18px; height:18px; }
+.ses-cir { display:block; width:100%; padding:0 0 6px; border:none; border-radius:16px; background:var(--s1); color:var(--t1); text-align:left; cursor:pointer; }
+.ses-cir-cab { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px 6px; }
+.ses-cir-n { font-size:17px; font-weight:700; letter-spacing:-.3px; }
+.ses-cir-m { font-size:13px; color:var(--t2); white-space:nowrap; }
+.ses-ej { display:flex; align-items:center; gap:12px; padding:7px 14px; }
+.ses-ej-t { flex:1; min-width:0; display:flex; flex-direction:column; }
+.ses-ej-n { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ses-ej-p { font-size:13px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.ses-cir-vacio { padding:4px 14px 10px; font-size:15px; color:var(--t2); }
+.ses-cardio { padding:4px 0; }
+.ses-cardio-fila { display:flex; align-items:center; gap:12px; padding:10px 14px; }
+.ses-cardio-in { margin:0 14px 10px; width:calc(100% - 28px); }
+.ses-pie { text-align:center; font-size:13px; color:var(--t2); margin-top:18px; }
+
+/* Miniatura del ejercicio (la imagen del GIF, en pequeño) */
+.ej-mini { flex:none; border-radius:10px; background:#fff; box-shadow:inset 0 0 0 .5px var(--b); object-fit:contain; display:block; }
+.ej-mini.m40 { width:40px; height:40px; border-radius:9px; }
+.ej-mini.m44 { width:44px; height:44px; }
+.ej-mini.m56 { width:56px; height:56px; border-radius:12px; }
+.ej-mini-vacia { display:flex; align-items:center; justify-content:center; background:var(--s2); color:var(--t2); }
+
+/* Etiquetas: tipo de serie y nota */
+.ej-tag { flex:none; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:600; background:var(--ac-soft); color:var(--ac-tx); white-space:nowrap; }
+.ej-tag-nota { background:var(--s2); color:var(--t2); font-weight:400; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── Controles de iOS: paso a paso, segmentado e interruptor ── */
+.paso { display:flex; align-items:center; gap:14px; flex:none; }
+.paso-b {
+  width:36px; height:36px; border-radius:100px; border:none; background:var(--s2); color:var(--ac-tx);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;
+}
+.paso-b .ic { width:18px; height:18px; stroke-width:2.4; }
+.paso-b:active { background:var(--b); }
+.paso-b:disabled { opacity:.35; cursor:default; }
+.paso-v { min-width:20px; text-align:center; font-family:var(--font-r); font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--t1); }
+.seg { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:2px; padding:2px; border-radius:10px; background:var(--s2); }
+.seg-op { height:34px; border:none; border-radius:8px; background:transparent; color:var(--t1); font-size:15px; cursor:pointer; padding:0 4px; white-space:nowrap; }
+.seg-op.on { background:var(--seg-on); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.sw { position:relative; width:51px; height:31px; flex:none; display:inline-block; }
+.sw input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; z-index:1; }
+.sw-pista { position:absolute; inset:0; border-radius:100px; background:var(--s2); transition:background .25s ease; }
+.sw-bola { position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:100px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:transform .3s var(--ease-spring); }
+.sw input:checked ~ .sw-pista { background:var(--gr); }
+.sw input:checked ~ .sw-bola { transform:translateX(20px); }
+.sw input:focus-visible ~ .sw-pista { box-shadow:0 0 0 3px var(--ac-borde); }
+
+/* ── Circuito ── */
+.cir-ajustes { background:var(--s1); border-radius:16px; padding:2px 14px; margin-bottom:18px; }
+.cir-aj-fila { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; }
+.cir-aj-fila + .cir-aj-col { border-top:.5px solid var(--b); }
+.cir-aj-col { padding:10px 0 12px; }
+.cir-aj-l { font-size:17px; color:var(--t1); }
+.cir-aj-s { display:block; font-size:13px; color:var(--t2); }
+.cir-aj-col .cir-aj-l { display:block; margin-bottom:10px; }
+.cir-lista-cab { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:0 4px 8px; }
+.cir-lista-t { font-size:13px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; color:var(--t2); }
+.cir-lista-h { font-size:13px; color:var(--t2); }
+.cir-ejs { display:flex; flex-direction:column; gap:10px; }
+.cir-ej {
+  display:flex; align-items:center; gap:12px; padding:10px 6px 10px 12px; border-radius:16px; background:var(--s1);
+  cursor:pointer; position:relative; touch-action:pan-y;
+}
+.cir-ej:active:not(.arrastrando) { background:var(--press); }
+.cir-ej-t { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.cir-ej-n { font-size:17px; font-weight:600; letter-spacing:-.3px; color:var(--t1); line-height:1.25; }
+.cir-ej-p { font-size:15px; color:var(--t1); opacity:.82; font-variant-numeric:tabular-nums; }
+.cir-ej-tags { display:flex; gap:6px; flex-wrap:wrap; min-width:0; }
+.cir-ej-tags:empty { display:none; }
+.cir-asa {
+  width:40px; height:44px; flex:none; border:none; background:none; color:var(--chev); cursor:grab;
+  display:flex; align-items:center; justify-content:center; touch-action:none; border-radius:10px;
+}
+.cir-asa .ic { width:22px; height:22px; stroke-width:2.2; }
+.cir-asa:focus-visible { box-shadow:0 0 0 2px var(--ac-borde); }
+.cir-ej.arrastrando { z-index:5; box-shadow:0 12px 30px rgba(0,0,0,.18); transform:scale(1.02); transition:box-shadow .2s ease; }
+.cir-ej.arrastrando .cir-asa { cursor:grabbing; color:var(--ac-tx); }
+.cir-ej.corre { transition:transform .25s var(--ease-out); }
+.ent-add {
+  display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:50px; margin-top:12px;
+  border:1.5px dashed var(--ac-borde); border-radius:16px; background:transparent; color:var(--ac-tx);
+  font-size:17px; font-weight:600; cursor:pointer;
+}
+.ent-add .ic { width:18px; height:18px; stroke-width:2.4; }
+.ent-add:active { background:var(--ac-soft); }
+.ent-quitar { display:block; margin:22px auto 0; padding:10px 16px; border:none; background:none; color:var(--err); font-size:15px; cursor:pointer; }
+
+/* ── Calentamiento ── */
+.wu-grupo { background:var(--s1); border-radius:16px; overflow:hidden; margin-bottom:14px; }
+.wu-cab { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; }
+.wu-cab + .wu-it, .wu-it + .wu-it { border-top:.5px solid var(--b); }
+.wu-cab-t { min-width:0; }
+.wu-cab-n { display:block; font-size:17px; font-weight:600; letter-spacing:-.3px; }
+.wu-cab-s { display:block; font-size:13px; color:var(--t2); margin-top:1px; }
+.wu-it { display:flex; align-items:center; gap:12px; width:100%; padding:9px 14px; border:none; background:none; color:var(--t1); text-align:left; cursor:pointer; }
+.wu-it:active { background:var(--press); }
+.wu-it-t { flex:1; min-width:0; display:flex; flex-direction:column; }
+.wu-it-n { font-size:15px; font-weight:500; }
+.wu-it-p { font-size:13px; color:var(--t2); }
+.wu-texto { font-size:15px; color:var(--t2); line-height:1.4; padding:0 14px 12px; margin:0; }
+.wu-sugerir {
+  display:flex; align-items:center; justify-content:center; gap:8px; margin:4px 14px 14px; width:calc(100% - 28px); height:44px;
+  border-radius:12px; border:1.5px solid var(--ac-borde); background:var(--s1); color:var(--ac-tx); font-size:15px; font-weight:600; cursor:pointer;
+}
+.wu-sugerir .ic { width:16px; height:16px; }
+.wu-sugerir:active { background:var(--ac-soft); }
+
+/* ── Hoja de un ejercicio ── */
+.ejh-fondo {
+  position:fixed; inset:0; z-index:300; background:var(--scrim); opacity:0; pointer-events:none;
+  transition:opacity .3s ease; display:flex; align-items:flex-end; justify-content:center;
+}
+.ejh-fondo.ver { opacity:1; pointer-events:auto; }
+.ejh {
+  width:100%; max-width:560px; max-height:calc(100% - var(--sat) - 24px); display:flex; flex-direction:column;
+  background:var(--hoja); border-radius:22px 22px 0 0; transform:translateY(100%);
+  transition:transform .5s var(--ease-suave); overflow:hidden;
+}
+.ejh-fondo.ver .ejh { transform:none; }
+.ejh-cuerpo {
+  flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  padding:8px 16px 16px; display:flex; flex-direction:column; gap:14px;
+}
+.ejh-asa { width:36px; height:5px; border-radius:3px; background:var(--b3); align-self:center; flex:none; }
+.ejh-cab { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.ejh-nom { font-family:var(--font-d); font-size:22px; font-weight:700; letter-spacing:-.4px; line-height:1.15; color:var(--t1); margin:0; }
+.ejh-sub { display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap; }
+.ejh-musc { padding:3px 9px; border-radius:8px; background:var(--tag-muscle-bg); color:var(--tag-muscle-tx); font-size:12px; font-weight:600; }
+.ejh-cambiar { border:none; background:none; padding:4px 0; color:var(--ac-tx); font-size:15px; cursor:pointer; }
+.ejh-cerrar { width:32px; height:32px; flex:none; border-radius:100px; border:none; background:var(--hoja-seg); color:var(--t2); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.ejh-cerrar .ic { width:16px; height:16px; stroke-width:2.6; }
+.ejh-img { height:168px; flex:none; border-radius:16px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.ejh-img img { height:100%; width:auto; max-width:100%; object-fit:contain; display:block; background:center/contain no-repeat; }
+.ejh-tabla { background:var(--hoja-celda); border-radius:16px; padding:4px 14px 2px; }
+.ejh .seg { background:var(--hoja-seg); }
+.ejh .seg-op.on { background:var(--seg-on); }
+.ejh-fila { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:center; padding:8px 0; }
+.ejh-tabla.escalones .ejh-fila { grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 28px; gap:8px; }
+.ejh-fila + .ejh-fila { border-top:.5px solid var(--b); }
+.ejh-fila.cab { font-size:13px; color:var(--t2); padding:8px 0 2px; }
+.ejh-num { font-family:var(--font-r); font-size:15px; font-weight:700; color:var(--t2); }
+.ejh-quita { width:28px; height:28px; border:none; background:none; color:var(--t2); padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.ejh-quita .ic { width:16px; height:16px; }
+.ejh-quita:disabled { visibility:hidden; }
+.ejh-mas { width:100%; height:44px; border:none; border-top:.5px solid var(--b); background:none; color:var(--ac-tx); font-size:15px; font-weight:600; cursor:pointer; }
+/* Paso a paso de peso o reps: menos · número que se puede escribir · más */
+.pz { display:flex; align-items:center; height:44px; border-radius:10px; background:var(--hoja-campo); padding:0 2px; min-width:0; }
+.pz-b { width:34px; height:40px; flex:none; border:none; border-radius:8px; background:none; color:var(--ac-tx); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.pz-b .ic { width:16px; height:16px; stroke-width:2.6; }
+.pz-b:active { background:var(--s2); }
+.pz-v { flex:1; min-width:0; display:flex; align-items:baseline; justify-content:center; gap:3px; }
+.pz-v input {
+  width:3.4ch; flex:0 1 auto; min-width:2ch; border:none; background:transparent; padding:0; text-align:right; outline:none;
+  font-family:var(--font-r); font-size:17px; font-weight:700; color:var(--t1); font-variant-numeric:tabular-nums; -webkit-appearance:none;
+}
+.pz-v input::placeholder { color:var(--ph); font-weight:500; }
+.pz-u { flex:none; border:none; background:none; padding:6px 0; font-size:13px; color:var(--t2); cursor:pointer; white-space:nowrap; }
+.pz-u.fijo { cursor:default; }
+.ejh-tabla.escalones .pz-u { display:none; }
+.ejh-tabla.escalones .pz-v input { text-align:center; }
+.ejh-tabla.escalones .pz-b { width:30px; }
+.ejh-cab-u { border:none; background:none; padding:0; font-size:13px; color:var(--ac-tx); cursor:pointer; }
+.ejh-nota { display:flex; flex-direction:column; gap:6px; background:var(--hoja-celda); border-radius:16px; padding:12px 14px; }
+.ejh-nota-l { font-size:13px; color:var(--t2); }
+.ejh-nota input { border:none; outline:none; padding:0; background:transparent; font:inherit; font-size:17px; color:var(--t1); }
+.ejh-nota input::placeholder { color:var(--ph); }
+.ejh-pie { display:flex; gap:10px; padding:10px 16px calc(12px + var(--sab)); flex:none; background:var(--hoja); }
+.ejh-quitar { flex:1; height:50px; border:none; border-radius:14px; background:var(--hoja-celda); color:var(--err); font-size:17px; font-weight:600; cursor:pointer; }
+.ejh-listo { flex:2; height:50px; border:none; border-radius:14px; background:var(--ac-str); color:#fff; font-size:17px; font-weight:600; cursor:pointer; }
+.ejh-quitar:active { background:var(--press); }
+.ejh-listo:active { background:var(--ac-press); }
+
+/* ── Menú de acciones (•••) ── */
+.menu-fondo { position:fixed; inset:0; z-index:320; background:var(--scrim); opacity:0; transition:opacity .25s ease; display:flex; align-items:flex-end; justify-content:center; padding:0 10px calc(10px + var(--sab)); }
+.menu-fondo.ver { opacity:1; }
+.menu { width:100%; max-width:540px; display:flex; flex-direction:column; gap:8px; transform:translateY(110%); transition:transform .45s var(--ease-suave); }
+.menu-fondo.ver .menu { transform:none; }
+.menu, .ejh { outline:none; }
+.menu-grupo { background:var(--hoja-celda); border-radius:14px; overflow:hidden; }
+.menu-op { display:block; width:100%; min-height:56px; border:none; background:none; color:var(--ac-tx); font-size:17px; cursor:pointer; }
+.menu-op + .menu-op { border-top:.5px solid var(--b); }
+.menu-op.peligro { color:var(--err); }
+.menu-op.cancelar { font-weight:600; }
+.menu-op:active { background:var(--press); }
+
+/* Barra inferior del entrenador con cuatro pestañas */
+.trainer-bottom-nav .tbnav-item { min-width:0; }
+
 /* ══ Progreso: segmentado con pieza deslizante ══ */
 .prog-tabs { position:relative; background:var(--s2); border-radius:12px; padding:3px; gap:0; }
 .prog-tab { position:relative; z-index:1; min-height:38px; padding:8px; border-radius:10px; background:transparent !important;
@@ -3723,6 +4027,11 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4a8.5 8.5 0 1 0 10.3 10.3z"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
+  <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-llama" viewBox="0 0 24 24"><path d="M12 3c2 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-7.5z"/></symbol>
+  <symbol id="i-asa" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"/></symbol>
+  <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></symbol>
 
   <!-- Grupos musculares (picker de ejercicios) -->
   <symbol id="m-abdomen" viewBox="0 0 24 24"><path d="M6 4c-.6 2.6-.8 5.4-.4 8 .4 2.9 1.6 5.8 3.2 8M18 4c.6 2.6.8 5.4.4 8-.4 2.9-1.6 5.8-3.2 8M12 6v11M7.4 9.5h9.2M7.6 13h8.8"/></symbol>
@@ -3930,26 +4239,23 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 
 <!-- ══ TRAINER PORTAL ══ -->
 <div class="screen" id="trainer-portal">
-  <div class="tportal-header tportal-header-plain">
-    <!-- "Salir" arriba: al final de la lista quedaba enterrado tras 20+ clientes -->
-    <button class="pill-back" onclick="logoutTrainer(); show('role-select')">
-      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg>Salir
-    </button>
-    <div style="display:flex;gap:10px">
-      <button class="btn-circle btn-circle-outline" onclick="openTrainerOwnProfile()" title="Mi perfil" aria-label="Mi perfil"><svg class="ic"><use href="#i-settings"/></svg></button>
-      <button class="new-athlete-btn" onclick="openNewAthleteForm()" title="Nuevo atleta" aria-label="Nuevo atleta">+</button>
-    </div>
-  </div>
   <div class="tportal-body">
-    <h1 class="h-page">Mis clientes</h1>
-    <div class="tportal-subtitle">Portal entrenador</div>
+    <!-- Título grande con sus acciones, como una lista de iOS. "Cerrar
+         sesión" está en Ajustes (el engranaje). -->
+    <div class="cli-cab">
+      <h1 class="h-page">Clientes</h1>
+      <div class="cli-cab-acc">
+        <button class="tc-circ cli-cab-btn" onclick="openTrainerOwnProfile()" aria-label="Ajustes"><svg class="ic"><use href="#i-settings"/></svg></button>
+        <button class="new-athlete-btn cli-cab-btn" onclick="openNewAthleteForm()" aria-label="Nuevo cliente"><svg class="ic"><use href="#i-plus"/></svg></button>
+      </div>
+    </div>
     <div class="cli-search-wrap">
       <svg class="ic cli-search-ic"><use href="#i-search"/></svg>
       <input class="cli-search" id="cli-search" type="search" placeholder="Buscar por nombre"
         autocomplete="off" autocapitalize="none" oninput="renderClientList()">
     </div>
     <div class="cli-filters" id="cli-filters"></div>
-    <button class="cli-sort" id="cli-sort" onclick="toggleClientSort()"></button>
+    <div class="cli-sec" id="cli-sec">Esta semana</div>
     <div class="group" id="trainer-extra-clients"></div>
   </div>
 </div>
@@ -4095,6 +4401,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
       <div id="top-error" class="tlogin-error"></div>
       <button type="submit" class="tlogin-btn" id="top-save" style="margin-top:18px">Guardar cambios</button>
     </form>
+    <!-- Salir vive en Ajustes, como en iOS: en la lista de clientes estorbaba -->
+    <button class="top-salir" onclick="logoutTrainer(); show('role-select')">Cerrar sesión</button>
   </div>
 </div>
 
@@ -4366,17 +4674,26 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 <!-- ══ TRAINER CLIENT DASHBOARD ══ -->
 <div class="screen" id="trainer-client">
   <div class="tclient-header">
-    <div class="tclient-header-top">
+    <!-- Barra de navegación: atrás a la izquierda (a Clientes o, dentro de un
+         bloque, a la sesión), el estado del guardado y las acciones -->
+    <div class="tc-nav">
+      <button class="tc-back" id="tc-back" onclick="tcAtras()">
+        <svg class="ic"><use href="#i-chevron-l"/></svg><span id="tc-back-t">Clientes</span>
+      </button>
+      <span class="re-estado" id="re-estado" role="status" aria-live="polite"></span>
+      <div class="tc-acciones" id="tc-acciones">
+        <button class="tc-circ" id="tc-chat" onclick="openSupportChat()" aria-label="Chat con el atleta"><svg class="ic"><use href="#i-chat"/></svg></button>
+        <button class="tc-circ" id="tc-datos" onclick="openEditAthleteProfile()" aria-label="Datos del atleta"><svg class="ic"><use href="#i-perfil"/></svg></button>
+        <button class="tc-circ" id="tc-mas" hidden aria-label="Más opciones del circuito"><svg class="ic"><use href="#i-mas"/></svg></button>
+      </div>
+    </div>
+    <div class="tclient-header-top" id="tc-identidad">
       <div class="tclient-id">
         <span class="tclient-av" id="tclient-av"></span>
         <div class="tclient-id-t">
           <div class="tclient-name" id="tclient-name">Nicolás Saravia</div>
           <div class="tclient-meta" id="tclient-meta"></div>
         </div>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn-circle btn-circle-outline" onclick="openEditAthleteProfile()" title="Editar perfil" aria-label="Editar perfil"><svg class="ic"><use href="#i-settings"/></svg></button>
-        <button class="btn-circle btn-circle-outline" onclick="openSupportChat()" title="Soporte" aria-label="Soporte"><svg class="ic"><use href="#i-chat"/></svg></button>
       </div>
     </div>
     <!-- Los tabs viven en la barra inferior del entrenador (mockups 13-14);
@@ -7989,6 +8306,7 @@ async function loadTrainerExtraClients() {
   const extras = (list || []).filter(a => a.trainerId === currentTrainer);
   _clientList = extras;
   renderClientList();
+  cargaResumenClientes();
 }
 
 /* ── Lista de clientes: búsqueda, filtro por objetivo y orden ──
@@ -8009,14 +8327,17 @@ function renderClientList() {
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 
-  // Chips de objetivo, construidos con los objetivos que existen de verdad
-  const goals = [...new Set(_clientList.map(a => a.profile?.goal).filter(Boolean))]
-    .sort((a, b) => prettyGoal(a).localeCompare(prettyGoal(b)));
+  // Filtros por cómo va cada cliente; los números llegan con el resumen
+  const estados = new Map(_clientList.map(a => [a.clientId, estadoCliente(a)]));
+  const cuenta = f => _clientList.filter(a => estados.get(a.clientId).filtros.includes(f)).length;
   const chips = document.getElementById('cli-filters');
   if (chips) {
-    chips.innerHTML = [['todos', 'Todos'], ...goals.map(g => [g, prettyGoal(g)])]
-      .map(([val, label]) => `<button class="cli-chip${_clientFilter === val ? ' active' : ''}"
-        onclick="setClientFilter('${esc(val)}')">${esc(label)}</button>`).join('');
+    chips.innerHTML = [['todos', 'Todos'], ['hoy', 'Entrenó hoy'], ['inactivos', 'Inactivos'], ['sin-rutina', 'Sin rutina']]
+      .map(([val, label]) => {
+        const n = val === 'todos' ? _clientList.length : (_resumenClientes ? cuenta(val) : null);
+        return `<button class="cli-chip${_clientFilter === val ? ' active' : ''}" aria-pressed="${_clientFilter === val}"
+          onclick="setClientFilter('${val}')">${label}${n != null && (n || val === 'todos') ? ` · <span class="cli-chip-n">${n}</span>` : ''}</button>`;
+      }).join('');
   }
 
   const q = norm(document.getElementById('cli-search')?.value).trim();
@@ -8028,41 +8349,91 @@ function renderClientList() {
     return name.split(/\s+/).some(w => w.startsWith(q)) || user.startsWith(q);
   };
   let list = _clientList.filter(a => {
-    if (_clientFilter !== 'todos' && (a.profile?.goal || '') !== _clientFilter) return false;
+    if (_clientFilter !== 'todos' && !estados.get(a.clientId).filtros.includes(_clientFilter)) return false;
     if (!q) return true;
     return matches(a);
   });
-  list = list.slice().sort((a, b) => _clientSort === 'nombre'
-    ? String(a.name || a.username || '').localeCompare(String(b.name || b.username || ''), 'es')
-    : (b.createdAt || 0) - (a.createdAt || 0));
+  list = list.slice().sort((a, b) =>
+    String(a.name || a.username || '').localeCompare(String(b.name || b.username || ''), 'es'));
 
-  const sortBtn = document.getElementById('cli-sort');
-  if (sortBtn) sortBtn.innerHTML = `Ordenar: <strong>${_clientSort === 'nombre' ? 'Nombre' : 'Más recientes'}</strong>
-    <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg>`;
-
+  const sec = document.getElementById('cli-sec');
+  if (sec) sec.hidden = !list.length;
   if (!_clientList.length) {
     container.innerHTML = '<div class="cli-empty">No hay atletas aún. Toca “+” para crear el primero.</div>';
     return;
   }
   if (!list.length) {
-    container.innerHTML = `<div class="cli-empty">Ningún cliente coincide${q ? ` con “${esc(document.getElementById('cli-search').value)}”` : ''}.</div>`;
+    container.innerHTML = `<div class="cli-empty">${q
+      ? `Ningún cliente coincide con “${esc(document.getElementById('cli-search').value)}”.`
+      : 'Ningún cliente en este filtro.'}</div>`;
     return;
   }
+  const hoyI = (hoyBogota().getDay() + 6) % 7;
   container.innerHTML = list.map((a, i) => {
     const displayName = a.name || a.username || '?';
     const initials = displayName.split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
     const dias = a.sessionsPerWeek ? `${a.sessionsPerWeek} días` : '';
     const plan = [a.profile?.goal ? prettyGoal(a.profile.goal) : '', dias].filter(Boolean).join(' · ') || 'Sin plan definido';
+    const e = estados.get(a.clientId);
+    const hechos = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'].filter((_, k) => e.semana[k]);
     return `${i ? '<div class="group-sep"></div>' : ''}
-      <div class="client-card" style="--fila:${Math.min(i, 14)}" onclick="openTrainerClient('${esc(a.clientId)}','${esc(displayName)}')">
+      <div class="client-card" role="button" tabindex="0" style="--fila:${Math.min(i, 14)}"
+        onclick="openTrainerClient('${esc(a.clientId)}','${esc(displayName)}')"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
         <div class="client-avatar" style="${estiloAvatar(a.profile?.goal)}">${esc(initials)}</div>
         <div class="client-body">
-          <div class="client-name">${esc(displayName)}</div>
+          <div class="cli-fila-nom"><span class="client-name">${esc(displayName)}</span>${e.notas
+            ? `<span class="cli-notas">${e.notas} nota${e.notas === 1 ? '' : 's'}</span>` : ''}</div>
           <div class="client-meta">${esc(plan)}</div>
+          <div class="cli-estado ${e.clase}"><span class="cli-estado-t">${esc(e.t)}</span>${e.d ? `<span class="cli-estado-d">${esc(e.d)}</span>` : ''}</div>
+          <div class="cli-semana" role="img" aria-label="${hechos.length ? 'Esta semana entrenó ' + hechos.join(', ') : 'Esta semana aún no entrena'}">
+            ${'LMXJVSD'.split('').map((l, k) => `<span class="cli-dia${e.semana[k] ? ' hecho' : ''}${k === hoyI ? ' hoy' : ''}">${l}</span>`).join('')}
+          </div>
         </div>
-        <svg class="ic client-arrow"><use href="#i-chevron-r"/></svg>
       </div>`;
   }).join('');
+}
+
+/* Cómo va un cliente: cuándo entrenó, qué días de esta semana y sus notas */
+let _resumenClientes = null;
+function hoyBogota() {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function isoDia(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function estadoCliente(a) {
+  const r = _resumenClientes && _resumenClientes[a.clientId];
+  const vacio = { clase: 'cargando', t: '', d: '', semana: [], notas: 0, filtros: [] };
+  if (!_resumenClientes) return vacio;
+  if (!r) return { ...vacio, clase: '' };
+  const hoy = hoyBogota();
+  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+  const semanaIso = [...Array(7)].map((_, i) => { const d = new Date(lunes); d.setDate(lunes.getDate() + i); return isoDia(d); });
+  const recientes = (r.recientes || []).filter(x => semanaIso.includes(x.day));
+  const semana = semanaIso.map(d => recientes.some(x => x.day === d));
+  const notas = recientes.reduce((n, x) => n + (x.notas || 0), 0);
+  const base = { semana, notas, filtros: [] };
+  if (!r.tieneRutina) return { ...base, clase: 'sin-rutina', t: 'Sin rutina', d: 'Armarla ›', filtros: ['sin-rutina'] };
+  if (!r.ultima) {
+    const viejo = a.createdAt && Date.now() - a.createdAt > 5 * 86400000;
+    return { ...base, clase: viejo ? 'inactivo' : '', t: 'Sin sesiones', d: 'Aún no entrena', filtros: viejo ? ['inactivos'] : [] };
+  }
+  const [y, m, dd] = String(r.ultima.day).split('-').map(Number);
+  const n = Math.round((hoy - new Date(y, m - 1, dd)) / 86400000);
+  const t = n <= 0 ? 'Hoy' : n === 1 ? 'Ayer' : `Hace ${n} días`;
+  const clase = n <= 0 ? 'hoy' : n >= 5 ? 'inactivo' : '';
+  return { ...base, clase, t, d: r.ultima.titulo || '', filtros: n <= 0 ? ['hoy'] : n >= 5 ? ['inactivos'] : [] };
+}
+async function cargaResumenClientes() {
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'resumen-clientes', token: TRAINER_TOKEN, trainerUsername: currentTrainer })
+    });
+    const r = await res.json();
+    if (r.ok) { _resumenClientes = r.resumen || {}; renderClientList(); }
+  } catch (_) {}
 }
 
 /* El color de cada objetivo, para reconocer al cliente de un vistazo */
@@ -8072,7 +8443,7 @@ const COLOR_OBJETIVO = {
 };
 function estiloAvatar(goal) {
   const c = COLOR_OBJETIVO[goal];
-  return c ? `background:linear-gradient(140deg, ${c[0]}, ${c[1]}) !important;color:#fff` : '';
+  return c ? `background:${c[1]} !important;color:#fff` : '';
 }
 
 /* Objetivo legible: "perdida-grasa" → "Pérdida de grasa" */
@@ -8382,6 +8753,10 @@ async function deleteCurrentAthlete() {
 }
 
 async function openTrainerClient(clientId, clientName) {
+  // Lo que quedó sin mandar del cliente anterior se guarda antes de cambiar
+  guardaYa(true);
+  _guardadoBase = null;
+  if (_hojaEj) { _hojaEj = null; document.getElementById('ejh-fondo')?.classList.remove('ver'); }
   trainerClientId = clientId;
   document.getElementById('tclient-name').textContent = clientName;
   const ficha = (_clientList || []).find(x => x.clientId === clientId) || {};
@@ -8401,6 +8776,8 @@ async function openTrainerClient(clientId, clientName) {
   activateTrainerNav('editar');
   editorData = null;
   editorDay = 'sesion1';
+  editorBlock = null;
+  pintaCabeceraCliente();
   show('trainer-client');
 
   try {
@@ -8425,7 +8802,11 @@ async function openTrainerClient(clientId, clientName) {
             : (clientId === 'nicolas' ? FALLBACK_DATA : emptyRoutineTemplateJS(4));
     editorData = JSON.parse(JSON.stringify(fb));
   }
+  if (trainerClientId !== clientId) return;   // se fue a otro cliente mientras cargaba
   renderTrainerTab();
+  pintaCabeceraCliente();
+  // Desde aquí cada cambio se guarda solo
+  baseDeGuardado();
 }
 
 function emptyRoutineTemplateJS(n) {
@@ -8460,7 +8841,8 @@ function marcasDeSesion(c) {
                                || lista.find(f => f && f.name === nombre);
   const cuenta = { facil: 0, justo: 0, fallo: 0 };
   lista.forEach(f => { if (f && cuenta[f.resp] !== undefined) cuenta[f.resp]++; });
-  const notas = lista.filter(f => f && String(f.nota || '').trim()).length;
+  // La nota general también cuenta: es lo mismo que marca la lista de clientes
+  const notas = lista.filter(f => f && String(f.nota || '').trim()).length + (String(c.notes || '').trim() ? 1 : 0);
   const resumen = [cuenta.facil ? `${cuenta.facil} fácil` : '', cuenta.justo ? `${cuenta.justo} justo` : '',
                    cuenta.fallo ? `${cuenta.fallo} no llegó` : '', notas ? `${notas} nota${notas === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
   return { porEj, resumen, hayFallo: cuenta.fallo > 0 };
@@ -8560,7 +8942,9 @@ function setTrainerTab(tab) {
   document.getElementById('tab-pagos').classList.toggle('active', tab === 'pagos');
   document.getElementById('tab-editar').classList.toggle('active', tab === 'editar');
   activateTrainerNav(tab);
+  if (_hojaEj) cierraHojaEj();
   renderTrainerTab();
+  pintaCabeceraCliente();
 }
 
 function activateTrainerNav(tab) {
@@ -8578,7 +8962,7 @@ function activateTrainerNav(tab) {
 }
 
 /* Orden de las pestañas del entrenador, para saber de qué lado entra */
-const ORDEN_TAB_ENTRENADOR = ['editar', 'comidas', 'resumen', 'pagos', 'rutinas'];
+const ORDEN_TAB_ENTRENADOR = ['editar', 'rutinas', 'comidas', 'resumen', 'pagos'];
 
 function renderTrainerTab() {
   const el = document.getElementById('tclient-content');
@@ -8587,7 +8971,7 @@ function renderTrainerTab() {
   if (activeTrainerTab === 'resumen') { renderTrainerResumen(); return; }
   if (activeTrainerTab === 'rutinas') {
     const records = trainerData.completions || [];
-    const head = '<h1 class="tsec-title">Rutinas</h1><div class="tsec-sub">Historial de sesiones.</div>';
+    const head = '<h1 class="tsec-title">Historial</h1><div class="tsec-sub">Las sesiones que ha hecho.</div>';
     if (!records.length) {
       el.innerHTML = head + '<div class="group tdata-empty"><svg class="ic ic-lg tdata-empty-icon"><use href="#i-rutina"/></svg>Aún no hay rutinas completadas.</div>';
       return;
@@ -10132,6 +10516,9 @@ function renderRoutineEditor() {
   // edición de un bloque concreto. Antes todo estaba desplegado a la vez.
   if (editorBlock) renderBlockEditor(el, days);
   else renderSessionBlocks(el, days);
+  pintaCabeceraCliente();
+  if (_hojaEj) pintaHojaEj();
+  programaGuardado();
 }
 
 /* Bloque abierto: null = índice de la sesión.
@@ -10152,383 +10539,819 @@ function closeEditorBlock() {
   if (c) c.scrollTop = 0;
 }
 
-/* ── Vista 1: índice de bloques de la sesión ── */
+/* ── Ayudas del editor ── */
+const DIA_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+function fichaCliente() {
+  return (_clientList || []).find(x => x.clientId === trainerClientId) || {};
+}
+function tituloSesion(dayKey) {
+  return deriveSessionTitle(editorData && editorData[dayKey], String(dayKey).slice(6));
+}
+/* "Lun · Hombros" si el atleta eligió sus días; si no, "S1 · Hombros":
+   los atletas del entrenador siguen sus sesiones en orden, no por día. */
+function etiquetaSesion(dayKey) {
+  const f = fichaCliente();
+  const n = parseInt(String(dayKey).slice(6));
+  let dia = null;
+  if (Array.isArray(f.trainingDays) && f.trainingDays.length) {
+    const dias = [...new Set(f.trainingDays.map(Number))].sort((a, b) => (a || 7) - (b || 7));
+    if (dias[n - 1] != null) dia = DIA_CORTO[dias[n - 1]];
+  }
+  return `${dia || 'S' + n} · ${tituloSesion(dayKey)}`;
+}
+/* Cuánto dura, más o menos: lo justo para que el entrenador se haga una idea */
+function minutosSesion(day) {
+  let s = 0;
+  const nWu = [...(day.warmupHombro || []), ...(day.warmup || [])].length;
+  s += nWu * 40 * (parseInt(day.warmupSeries) || 2);
+  (day.circuits || []).forEach(c => {
+    const n = (c.exercises || []).length;
+    if (n) s += (parseInt(c.series) || 4) * (n * 50 + (parseInt(c.rest) || 60));
+  });
+  if (day.cardio && String(day.cardio).trim()) {
+    const m = String(day.cardio).match(/(\d+)\s*min/i);
+    s += (m ? +m[1] : 15) * 60;
+  }
+  return Math.round(s / 300) * 5;
+}
+function infoCatalogo(name) { return EXERCISE_CATALOG.find(e => e.name === name) || null; }
+function miniHtml(img, tam, icono = 'i-plus') {
+  return img
+    ? `<img class="ej-mini m${tam}" src="${reEscAttr(miniDe(img))}" data-gif="${reEscAttr(img)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=this.dataset.gif">`
+    : `<span class="ej-mini m${tam} ej-mini-vacia"><svg class="ic ic-sm"><use href="#${icono}"/></svg></span>`;
+}
+const SET_NOMBRE = { dropset: 'Drop set', piramidal: 'Pirámide' };
+/* Lo que se le pide: "20 lbs/lado × 6 reps", o "15 → 10 lbs c/u × 12 reps" */
+function prescripcion(ex, sep = ' × ') {
+  const st = ex.setType || 'normal';
+  let w = ex.w1 || '', r = ex.reps || '';
+  if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
+    const pasos = orderedSteps(ex.steps1, st);
+    const ws = pasos.map(p => numDe(p.w)).filter(v => v != null);
+    const resto = String((pasos.find(p => numDe(p.w) != null) || {}).w || '').replace(/^[^\d]*\d+(?:[.,]\d+)?\s*/, '');
+    w = ws.length ? `${ws.map(fmtNum).join(' → ')} ${resto}`.trim() : '';
+    const rs = [...new Set(pasos.map(p => String(p.reps || '').trim()).filter(Boolean))];
+    r = rs.length === 1 ? rs[0] : rs.map(x => numDe(x)).filter(v => v != null).join('/') + (rs.length ? ' reps' : '');
+  }
+  return [w, r].filter(Boolean).join(sep);
+}
+function numDe(str) {
+  const m = String(str == null ? '' : str).match(/\d+(?:[.,]\d+)?/);
+  return m ? parseFloat(m[0].replace(',', '.')) : null;
+}
+function fmtNum(v) { return Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10); }
+/* Cambia el número de "20 lbs c/u" sin tocar el resto. Sin número, se
+   escribe con la unidad del aparato. */
+function ponNumero(str, v, sufijo) {
+  const s = String(str || '').trim();
+  if (v == null || v === '' || !isFinite(v)) return /\d/.test(s) ? '' : s;
+  return /\d/.test(s) ? s.replace(/\d+(?:[.,]\d+)?/, fmtNum(+v)) : `${fmtNum(+v)} ${sufijo}`;
+}
+function pasoPeso(name) { const c = infoCatalogo(name); return (c && c.step) || 5; }
+function sufijoPeso(name) {
+  const c = infoCatalogo(name);
+  return c && c.unit === 'lado' ? 'lbs/lado' : c && c.unit === 'mancuerna' ? 'lbs c/u' : 'lbs';
+}
+/* Un paso más o menos, al múltiplo del aparato: con discos de 5, 12 → 15 */
+function siguientePeso(n, dir, paso) {
+  if (n == null) return dir > 0 ? paso : null;
+  const v = dir > 0 ? Math.floor(n / paso + 1e-9) * paso + paso : Math.ceil(n / paso - 1e-9) * paso - paso;
+  return v < paso ? null : v;
+}
+function unidadDe(str, defecto) {
+  const r = String(str || '').replace(/^[^\d]*\d+(?:[.,]\d+)?\s*/, '').trim();
+  return /\d/.test(String(str || '')) ? r : defecto;
+}
+
+/* ── Vista 1: la sesión ── */
 function renderSessionBlocks(el, days) {
   const day = editorData[editorDay];
   const nEx = (day.circuits || []).reduce((n, c) => n + (c.exercises || []).length, 0);
-  const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
-  const wuN = parseInt(day.warmupSeries) || 2;
-  const warmupRemoved = day.warmup === null;
-
-  let html = '<h1 class="tsec-title">Editar rutina</h1>';
-
-  html += `<div class="re-day-bar">`;
-  days.forEach(d => {
-    const num = d.slice(6);
-    html += `<button class="day-chip${d===editorDay?' active':''}" onclick="setEditorDay('${d}')">S${num}</button>`;
-  });
-  html += `<button class="day-chip day-chip-ic" onclick="addSession()" title="Agregar sesión" aria-label="Agregar sesión"><svg class="ic ic-sm"><use href="#i-plus"/></svg></button>`;
-  if (days.length > 1) {
-    html += `<button class="day-chip day-chip-ic" onclick="removeSession('${editorDay}')" title="Quitar sesión actual" aria-label="Quitar sesión"><svg class="ic ic-sm"><use href="#i-trash"/></svg></button>`;
-  }
-  html += `</div>`;
-
   const nCirc = (day.circuits || []).length;
-  html += `<div class="blk-head">
-      <div class="blk-head-title">Sesión ${editorDay.slice(6)}</div>
-      <div class="blk-head-sub">${nEx} ejercicio${nEx===1?'':'s'} · ${nCirc} circuito${nCirc===1?'':'s'}</div>
+  const hombro = Array.isArray(day.warmupHombro) ? day.warmupHombro.length : 0;
+  const delDia = Array.isArray(day.warmup) ? day.warmup.length : 0;
+  const wuN = parseInt(day.warmupSeries) || 2;
+  const warmupRemoved = day.warmup == null && !hombro;
+  const min = minutosSesion(day);
+
+  let html = `<div class="ses-chips" role="tablist" aria-label="Sesiones">`;
+  days.forEach(d => {
+    html += `<button class="ses-chip${d === editorDay ? ' on' : ''}" role="tab" aria-selected="${d === editorDay}" onclick="setEditorDay('${d}')">${reEscAttr(etiquetaSesion(d))}</button>`;
+  });
+  html += `<button class="ses-chip ses-chip-add" onclick="addSession()" aria-label="Agregar sesión"><svg class="ic ic-sm"><use href="#i-plus"/></svg></button></div>`;
+
+  html += `<div class="ses-cab">
+      <div><h1 class="ses-titulo">${reEscAttr(tituloSesion(editorDay))}</h1>
+        <div class="ses-sub">${nEx} ejercicio${nEx === 1 ? '' : 's'} · ${nCirc} circuito${nCirc === 1 ? '' : 's'}${min ? ` · unos ${min} min` : ''}</div></div>
+      <button class="tc-circ" onclick="menuSesion()" aria-label="Más opciones de la sesión"><svg class="ic"><use href="#i-mas"/></svg></button>
     </div>`;
 
-  html += `<div class="blk-list">`;
+  html += `<div class="ses-bloques blk-list">`;
+  if (warmupRemoved) {
+    html += `<button class="ses-fila" onclick="restoreWarmup('${editorDay}'); openEditorBlock('warmup')">
+        <span class="ses-ic ses-ic-vacio"><svg class="ic"><use href="#i-plus"/></svg></span>
+        <span class="ses-fila-t"><span class="ses-fila-n">Calentamiento</span><span class="ses-fila-m">Sin configurar</span></span>
+        <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg></button>`;
+  } else {
+    const partes = [hombro ? 'Bloque de hombro' : '', delDia ? `${delDia} del día` : ''].filter(Boolean);
+    html += `<button class="ses-fila" onclick="openEditorBlock('warmup')">
+        <span class="ses-ic ses-ic-wu"><svg class="ic"><use href="#i-llama"/></svg></span>
+        <span class="ses-fila-t"><span class="ses-fila-n">Calentamiento</span>
+          <span class="ses-fila-m">${partes.length ? partes.join(' + ') : 'Sin ejercicios'} · ${wuN} vuelta${wuN === 1 ? '' : 's'}</span></span>
+        <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg></button>`;
+  }
 
-  // Calentamiento
-  html += warmupRemoved
-    ? `<button class="blk-row blk-row-empty" onclick="restoreWarmup('${editorDay}'); openEditorBlock('warmup')">
-         <span class="blk-ic"><svg class="ic ic-sm"><use href="#i-plus"/></svg></span>
-         <span class="blk-body"><span class="blk-name">Calentamiento</span>
-           <span class="blk-meta">Sin configurar</span></span>
-         <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-       </button>`
-    : `<button class="blk-row" onclick="openEditorBlock('warmup')">
-         <span class="blk-ic blk-ic-wu"><svg class="ic ic-sm"><use href="#i-repeat"/></svg></span>
-         <span class="blk-body"><span class="blk-name">Calentamiento</span>
-           <span class="blk-meta">${nWu} ejercicio${nWu===1?'':'s'} · ${wuN} vuelta${wuN===1?'':'s'}</span></span>
-         <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-       </button>`;
-
-  // Circuitos
   (day.circuits || []).forEach((c, ci) => {
-    const n = (c.exercises || []).length;
+    const exs = c.exercises || [];
     const series = parseInt(c.series) || 4;
     const rest = parseInt(c.rest) || 60;
-    html += `<button class="blk-row" onclick="openEditorBlock('circuit',${ci})">
-        <span class="blk-ic blk-ic-num blk-ic-cir">${ci+1}</span>
-        <span class="blk-body"><span class="blk-name">Circuito ${ci+1}</span>
-          <span class="blk-meta">${n} ejercicio${n===1?'':'s'} · ${series} serie${series===1?'':'s'} · ${rest} s descanso</span></span>
-        <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-      </button>`;
+    html += `<button class="ses-cir" onclick="openEditorBlock('circuit',${ci})" aria-label="Circuito ${ci + 1}, ${exs.length} ejercicios">
+        <span class="ses-cir-cab"><span class="ses-cir-n">Circuito ${ci + 1}</span>
+          <span class="ses-cir-m">${series} serie${series === 1 ? '' : 's'} · ${rest >= 120 && rest % 60 === 0 ? rest / 60 + ' min' : rest + ' s'}</span></span>`;
+    if (!exs.length) html += `<span class="ses-cir-vacio" style="display:block">Sin ejercicios · tócalo para agregar</span>`;
+    exs.forEach(ex => {
+      const nota = String(ex.trainerNote || '').trim();
+      const p = [prescripcion(ex, ' · '), nota].filter(Boolean).join(' · ');
+      html += `<span class="ses-ej">${miniHtml(ex.img, 40)}
+          <span class="ses-ej-t"><span class="ses-ej-n">${reEscAttr(ex.name || 'Sin elegir')}</span>
+            <span class="ses-ej-p">${reEscAttr(p || 'Sin peso ni repeticiones')}</span></span>
+          ${SET_NOMBRE[ex.setType] ? `<span class="ej-tag">${SET_NOMBRE[ex.setType]}</span>` : ''}</span>`;
+    });
+    html += `</button>`;
   });
+  html += `</div>`;
 
-  html += `</div>`;   // cierra la lista de bloques de entrenamiento
+  html += `<button class="ent-add blk-add" onclick="addCircuit('${editorDay}')"><svg class="ic"><use href="#i-plus"/></svg>Agregar circuito</button>`;
 
-  // Agregar circuito va justo después de los circuitos, a la vista: al final
-  // quedaba debajo del cardio y del botón de guardar
-  html += `<button class="re-add-btn blk-add" onclick="addCircuit('${editorDay}')">
-      <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar circuito
-    </button>`;
-
-
-  // Cardio: es un añadido al final de la sesión, no un bloque como los demás
+  // Cardio: un interruptor; encendido, se escribe qué hace
   const hasCardio = day.cardio !== '' && day.cardio != null;
-  html += `<div class="blk-list blk-list-extra">
-    <button class="blk-row${hasCardio ? '' : ' blk-row-empty'}" onclick="openEditorBlock('cardio')">
-      <span class="blk-ic${hasCardio ? ' blk-ic-cardio' : ''}">${hasCardio
-        ? '<svg class="ic ic-sm"><use href="#i-rutina"/></svg>'
-        : '<svg class="ic ic-sm"><use href="#i-plus"/></svg>'}</span>
-      <span class="blk-body"><span class="blk-name">Cardio final</span>
-        <span class="blk-meta">${hasCardio ? reEscAttr(day.cardio) : 'Sin configurar'}</span></span>
-      <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-    </button></div>`;
-
-  html += `<div class="blk-footer">
-      <div class="blk-footer-note">Los cambios llegan al atleta al guardar.</div>
-      <button class="re-save-btn" id="re-save-btn" onclick="saveRoutineFromEditor()">Guardar rutina</button>
+  html += `<div class="wu-grupo ses-cardio" style="margin-top:12px">
+      <div class="ses-cardio-fila">
+        <span class="ses-fila-t"><span class="ses-fila-n">Cardio al final</span>
+          <span class="ses-fila-m">${hasCardio ? 'Lo hace después del último circuito' : 'Sin cardio esta sesión'}</span></span>
+        <label class="sw"><input type="checkbox" role="switch" aria-label="Cardio al final"${hasCardio ? ' checked' : ''} onchange="toggleCardio('${editorDay}',this.checked)"><span class="sw-pista"></span><span class="sw-bola"></span></label>
+      </div>
+      ${hasCardio ? `<input type="text" class="na-input ses-cardio-in" placeholder="Ej.: caminadora 20 min nivel 6" value="${reEscAttr(String(day.cardio).trim())}" oninput="updateEditorCardio('${editorDay}',this.value)">` : ''}
     </div>`;
+  html += `<div class="ses-pie">Los cambios se guardan solos y le llegan al atleta.</div>`;
   el.innerHTML = html;
 }
 
-/* ── Vista 2: edición de un bloque ── */
+/* ── Vista 2: un bloque (calentamiento, circuito o cardio) ── */
 function renderBlockEditor(el, days) {
   const day = editorData[editorDay];
   const b = editorBlock;
-  // Si se borró el circuito que se estaba editando, se vuelve al índice
   if (b.kind === 'circuit' && !(day.circuits || [])[b.ci]) { return closeEditorBlock(); }
-
-  const titulo = b.kind === 'warmup' ? 'Calentamiento'
-    : b.kind === 'cardio' ? 'Cardio final'
-    : `Circuito ${b.ci + 1}`;
-
-  let html = `<button class="blk-back" onclick="closeEditorBlock()">
-      <svg class="ic ic-sm"><use href="#i-chevron-l"/></svg> Sesión ${editorDay.slice(6)}
-    </button>
-    <h1 class="tsec-title">${titulo}</h1>`;
-
-  if (b.kind === 'warmup') {
-    html += renderWarmupBlockHtml(day);
-  } else if (b.kind === 'cardio') {
-    html += `<div class="group blk-cardio">
-      <label class="blk-check">
-        <input type="checkbox" ${day.cardio ? 'checked' : ''} onchange="toggleCardio('${editorDay}',this.checked)">
-        Incluir cardio al final de la sesión
-      </label>
-      ${day.cardio !== '' && day.cardio != null
-        ? `<input type="text" class="na-input" placeholder="Ej.: caminadora 20 min nivel 6" value="${reEscAttr(day.cardio)}" oninput="updateEditorCardio('${editorDay}',this.value)">`
-        : ''}
+  const titulo = b.kind === 'warmup' ? 'Calentamiento' : b.kind === 'cardio' ? 'Cardio final' : `Circuito ${b.ci + 1}`;
+  let html = `<h1 class="tsec-title" style="margin-bottom:14px">${titulo}</h1>`;
+  if (b.kind === 'warmup') html += renderWarmupBlockHtml(day);
+  else if (b.kind === 'cardio') {
+    const hasCardio = day.cardio !== '' && day.cardio != null;
+    html += `<div class="wu-grupo ses-cardio">
+      <div class="ses-cardio-fila">
+        <span class="ses-fila-t"><span class="ses-fila-n">Cardio al final</span></span>
+        <label class="sw"><input type="checkbox" role="switch" aria-label="Cardio al final"${hasCardio ? ' checked' : ''} onchange="toggleCardio('${editorDay}',this.checked)"><span class="sw-pista"></span><span class="sw-bola"></span></label>
+      </div>
+      ${hasCardio ? `<input type="text" class="na-input ses-cardio-in" placeholder="Ej.: caminadora 20 min nivel 6" value="${reEscAttr(String(day.cardio).trim())}" oninput="updateEditorCardio('${editorDay}',this.value)">` : ''}
     </div>`;
-  } else {
-    html += renderCircuitBlockHtml(day, b.ci);
-  }
-
-  html += `<div class="blk-footer">
-      <button class="re-save-btn" onclick="closeEditorBlock()">Listo · Volver a la sesión</button>
-    </div>`;
+  } else html += renderCircuitBlockHtml(day, b.ci);
   el.innerHTML = html;
+  if (b.kind === 'circuit') activaArrastre(el, b.ci);
 }
 
-/* Cuerpo del calentamiento (mismos campos que antes) */
+/* ── Calentamiento: vueltas, bloque de hombro y los del día ── */
+const BLOQUE_HOMBRO = [
+  ['Elevaciones laterales', 'Elevaciones laterales con mancuernas'],
+  ['Elevaciones frontales', 'Elevaciones frontales alternas con mancuernas'],
+  ['Press de hombro con mancuernas, de pie', 'Press de hombro de pie con mancuernas'],
+];
+function bloqueHombro() {
+  return BLOQUE_HOMBRO.map(([text, cat]) => {
+    const c = infoCatalogo(cat);
+    const it = { text, w: '5 lbs', reps: '15 reps' };
+    if (c) { it.img = c.img; it.muscle = c.muscle; }
+    return it;
+  });
+}
 function renderWarmupBlockHtml(day) {
-  let html = '';
-  // Migrate legacy warmupHombro → warmup (one single list going forward).
-  // Si warmup es null (warmup removido explícitamente), no re-poblar.
-  if (Array.isArray(day.warmupHombro) && day.warmupHombro.length && day.warmup !== null) {
-    day.warmup = [...(day.warmupHombro || []), ...(day.warmup || [])];
-    day.warmupHombro = [];
+  const hombro = Array.isArray(day.warmupHombro) ? day.warmupHombro : [];
+  if (day.warmup == null && !hombro.length) {
+    return `<button class="ent-add" onclick="restoreWarmup('${editorDay}')"><svg class="ic"><use href="#i-plus"/></svg>Agregar calentamiento</button>`;
   }
-  // Warmup editor (single list, picker-based) — puede removerse por completo
-  const warmupRemoved = day.warmup === null && (day.warmupHombro == null || (Array.isArray(day.warmupHombro) && day.warmupHombro.length === 0));
-  if (warmupRemoved) {
-    html += `<button class="re-add-btn" onclick="restoreWarmup('${editorDay}')"><svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar calentamiento</button>`;
-  } else {
-  html += `<div class="re-warmup-card">`;
   const wuSeries = parseInt(day.warmupSeries) || 2;
-  // El título ya está en la cabecera de la pantalla: aquí solo los controles.
-  html += `<div class="re-sec-head">
-    <div class="cir-set-field">
-      <span class="cir-set-label">Vueltas</span>
-      <select class="re-rest-select" onchange="setWarmupSeries('${editorDay}',this.value)" aria-label="Vueltas del calentamiento">
-        ${[1,2,3,4,5].map(n => `<option value="${n}"${wuSeries===n?' selected':''}>${n}</option>`).join('')}
-      </select>
+  const delDia = Array.isArray(day.warmup) ? day.warmup : [];
+  const esHombro = (day.circuits || []).some(c => (c.exercises || []).some(e => e.muscle === 'hombros'));
+  const fila = (it, lista, wi) => {
+    const o = (typeof it === 'object' && it) ? it : { text: String(it || '') };
+    const p = [o.w, o.reps].filter(Boolean).join(' · ');
+    return `<button class="wu-it" onclick="abreHojaWu('${lista}',${wi})">${miniHtml(o.img, 44, o.text || o.name ? 'i-repeat' : 'i-plus')}
+        <span class="wu-it-t"><span class="wu-it-n">${reEscAttr(o.text || o.name || 'Elegir ejercicio…')}</span>
+          <span class="wu-it-p">${reEscAttr(p || 'Sin peso ni repeticiones')}</span></span>
+        <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg></button>`;
+  };
+  let html = `<div class="wu-vista">
+    <div class="wu-grupo"><div class="wu-cab">
+      <span class="wu-cab-t"><span class="wu-cab-n" style="font-weight:400">Vueltas</span><span class="wu-cab-s">Todo el calentamiento se repite</span></span>
+      ${pasoHtml(wuSeries, `cambiaVueltas(-1)`, `cambiaVueltas(1)`, 'vuelta', 1, 5)}
+    </div></div>
+    <div class="wu-grupo"><div class="wu-cab">
+      <span class="wu-cab-t"><span class="wu-cab-n">Bloque de hombro</span><span class="wu-cab-s">Siempre en tren superior · 5 lbs, 15 reps</span></span>
+      <label class="sw"><input type="checkbox" role="switch" aria-label="Bloque de hombro"${hombro.length ? ' checked' : ''} onchange="ponBloqueHombro(this.checked)"><span class="sw-pista"></span><span class="sw-bola"></span></label>
+    </div>${hombro.map((it, wi) => fila(it, 'warmupHombro', wi)).join('')}</div>
+    <div class="wu-grupo"><div class="wu-cab"><span class="wu-cab-t"><span class="wu-cab-n">Del día</span></span></div>
+      ${delDia.map((it, wi) => fila(it, 'warmup', wi)).join('')}
+      ${delDia.length ? '' : `<p class="wu-texto">${esHombro
+        ? 'Es día de hombro: el bloque ya lo calienta. En los demás días va un ejercicio por grupo, el mismo de la rutina y liviano.'
+        : 'Un ejercicio por cada grupo que se trabaja hoy: el mismo de la rutina, liviano, y un poco más en la segunda vuelta.'}</p>`}
+      <button class="wu-sugerir" onclick="sugiereCalentamiento()"><svg class="ic"><use href="#i-sparkle"/></svg>Sugerir desde los circuitos</button>
     </div>
-    <button class="re-del-btn" onclick="removeWarmup('${editorDay}')" title="Quitar calentamiento" aria-label="Quitar calentamiento"><svg class="ic ic-sm"><use href="#i-close"/></svg></button>
+    <button class="ent-add" style="margin-top:0" onclick="openWarmupPicker(-1,'warmup')"><svg class="ic"><use href="#i-plus"/></svg>Agregar ejercicio</button>
+    <button class="ent-quitar" onclick="removeWarmup('${editorDay}')">Quitar el calentamiento</button>
   </div>`;
-  (day.warmup || []).forEach((it, wi) => {
-    const obj = (typeof it === 'object' && it) ? it : { text: String(it||'') };
-    const name = obj.text || obj.name || '';
-    const pw = parseWeight(obj.w || '');
-    const pr = parseReps(obj.reps || '');
-    html += `<div class="re-wu-row re-ex-block">
-      <div class="re-name-row">
-        <button class="re-name-btn" onclick="openWarmupPicker(${wi})">
-          <span class="re-name-text">${reEscAttr(name) || 'Elegir ejercicio…'}</span>
-          <svg class="ic ic-sm re-name-chev"><use href="#i-chevron-r"/></svg>
-        </button>
-        <button class="re-del-btn" onclick="removeWarmupItem('${editorDay}','warmup',${wi})" title="Quitar" aria-label="Quitar ejercicio"><svg class="ic ic-sm"><use href="#i-close"/></svg></button>
-      </div>
-      <div class="re-wr-row" style="width:100%">
-        <div class="re-wr-col">
-          <div class="re-input-label">Peso</div>
-          <div class="re-combo">
-            <input type="number" inputmode="decimal" value="${pw.num}" placeholder="0" oninput="updateWarmupWeightPair(${wi},this.value,this.nextElementSibling.value)">
-            <select class="re-unit-select" onchange="updateWarmupWeightPair(${wi},this.previousElementSibling.value,this.value)">
-              <option value="lbs"${pw.unit==='lbs'?' selected':''}>lbs</option>
-              <option value="kg"${pw.unit==='kg'?' selected':''}>kg</option>
-            </select>
-          </div>
-        </div>
-        <div class="re-wr-col">
-          <div class="re-input-label">Repeticiones</div>
-          <div class="re-combo">
-            <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateWarmupRepsPair(${wi},this.value,this.nextElementSibling.value)">
-            <select class="re-unit-select" onchange="updateWarmupRepsPair(${wi},this.previousElementSibling.value,this.value)">
-              <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
-              <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
-              <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  });
-  html += `<button class="re-add-btn re-wu-add" onclick="addWarmupPicker()"><svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar calentamiento</button>`;
-  html += `</div>`;
-  } // cierre del else (warmup no removido)
   return html;
 }
-
-/* Cuerpo de un circuito (mismos campos que antes) */
-function renderCircuitBlockHtml(day, ci) {
-  const circuit = day.circuits[ci];
-  const restSec = parseInt(circuit.rest) || 60;
-  const restVal = [60, 90, 120].includes(restSec) ? restSec : 60;
-  const seriesVal = parseInt(circuit.series) || 4;
-
-  // Ajustes del circuito
-  let html = `<div class="group cir-settings">
-      <div class="cir-set-field">
-        <span class="cir-set-label">Series</span>
-        <select class="re-rest-select" onchange="setCircuitSeries('${editorDay}',${ci},this.value)">
-          ${[1,2,3,4,5].map(n => `<option value="${n}"${seriesVal===n?' selected':''}>${n}</option>`).join('')}
-        </select>
-      </div>
-      <div class="cir-set-sep"></div>
-      <div class="cir-set-field">
-        <span class="cir-set-label">Descanso</span>
-        <select class="re-rest-select" onchange="setCircuitRest('${editorDay}',${ci},this.value)">
-          ${[60,90,120].map(n => `<option value="${n}"${restVal===n?' selected':''}>${n} s</option>`).join('')}
-        </select>
-      </div>
-    </div>`;
-
-  const SET_LABEL = { normal:'Normal', dropset:'Drop set', piramidal:'Piramidal' };
-
-  // Cabecera de la lista: solo aparece el botón si hay algo que reordenar
-  if ((circuit.exercises || []).length > 1) {
-    html += `<div class="cir-list-head">
-        <span class="cir-list-n">${(circuit.exercises || []).length} ejercicios</span>
-        <button class="cir-reordenar${reordenando ? ' activo' : ''}" onclick="toggleReordenar()">
-          <svg class="ic ic-sm"><use href="#${reordenando ? 'i-check' : 'i-reordenar'}"/></svg>
-          ${reordenando ? 'Hecho' : 'Reordenar'}
-        </button>
-      </div>`;
+/* Menos · número · más, como el Stepper de iOS */
+function pasoHtml(v, menos, mas, nombre, min, max) {
+  return `<span class="paso">
+      <button class="paso-b" onclick="${menos}" aria-label="Una ${nombre} menos"${v <= min ? ' disabled' : ''}><svg class="ic"><use href="#i-menos"/></svg></button>
+      <span class="paso-v" aria-live="polite">${v}</span>
+      <button class="paso-b" onclick="${mas}" aria-label="Una ${nombre} más"${v >= max ? ' disabled' : ''}><svg class="ic"><use href="#i-plus"/></svg></button>
+    </span>`;
+}
+function cambiaVueltas(dir) {
+  const d = editorData[editorDay];
+  d.warmupSeries = Math.min(5, Math.max(1, (parseInt(d.warmupSeries) || 2) + dir));
+  renderRoutineEditor();
+}
+function ponBloqueHombro(on) {
+  const d = editorData[editorDay];
+  d.warmupHombro = on ? bloqueHombro() : [];
+  if (!Array.isArray(d.warmup)) d.warmup = [];
+  renderRoutineEditor();
+}
+/* La misma regla que usa el plan con IA (calentamientoDelDia en plan-ia.js):
+   un ejercicio por grupo, el mismo de la rutina, al 40 % y luego al 60 %. */
+function sugiereCalentamiento() {
+  const d = editorData[editorDay];
+  const exs = (d.circuits || []).flatMap(c => c.exercises || []).filter(e => e && e.name && e.name !== 'Nuevo ejercicio');
+  if (!exs.length) { alert('Primero arma los circuitos: el calentamiento sale de ellos.'); return; }
+  const INFERIOR = ['cuadriceps', 'isquio', 'isquiotibiales', 'gluteo', 'pantorrilla'];
+  const musculos = [...new Set(exs.map(e => e.muscle))];
+  const superior = musculos.some(m => !INFERIOR.includes(m) && m !== 'abdomen');
+  const cubiertos = new Set(['abdomen', ...(superior ? ['hombros', 'trapecio'] : [])]);
+  const pesoBarra = n => /multipower|smith/i.test(n) ? 20
+    : /barra|sentadilla trasera|sentadilla frontal|box squat|peso muerto|hip thrust con barra|puente de gl[uú]teos|buenos d[ií]as|pendlay|zancadas con barra/i.test(n) ? 45 : 0;
+  const total = e => {
+    const c = infoCatalogo(e.name) || {};
+    if (c.unit === 'corporal') return null;
+    const n = numDe(e.w1);
+    if (/barra sola/i.test(e.w1 || '')) return pesoBarra(e.name) || null;
+    if (n == null || n <= 0) return null;
+    return c.unit === 'lado' ? n * 2 + pesoBarra(e.name) : n;
+  };
+  const escribe = (e, t) => {
+    const c = infoCatalogo(e.name) || {}, paso = c.step || 5, barra = pesoBarra(e.name);
+    if (c.unit === 'lado') {
+      const lado = (t - barra) / 2;
+      return lado < paso ? (barra ? 'barra sola' : `${paso} lbs/lado`) : `${Math.round(lado / paso) * paso} lbs/lado`;
+    }
+    const v = Math.max(paso, Math.round(t / paso) * paso);
+    return c.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+  };
+  const nuevos = [];
+  for (const m of musculos) {
+    if (cubiertos.has(m)) continue;
+    const grupo = exs.filter(e => e.muscle === m);
+    const e = grupo.find(x => total(x) != null) || grupo[0];
+    const c = infoCatalogo(e.name) || {};
+    const it = { text: e.name, reps: '15 reps' };
+    if (e.img) it.img = e.img;
+    if (e.muscle) it.muscle = e.muscle;
+    const t = total(e);
+    if (c.unit === 'corporal') { it.w = 'sin peso'; it.reps = '8 reps'; }
+    else if (!t) it.w = 'muy ligero';
+    else {
+      const barra = c.unit === 'lado' ? pesoBarra(e.name) : 0;
+      const v1 = barra ? 'barra sola' : escribe(e, t * 0.4);
+      const v2 = escribe(e, Math.max(barra, t * (barra ? 0.5 : 0.6)));
+      it.w = v1 === v2 ? v1 : `${v1} → ${v2}`;
+    }
+    nuevos.push(it);
   }
+  const ya = Array.isArray(d.warmup) ? d.warmup.length : 0;
+  if (ya && !confirm(`¿Reemplazar los ${ya} ejercicio${ya === 1 ? '' : 's'} del día por la sugerencia?`)) return;
+  d.warmup = nuevos;
+  if (superior && !(Array.isArray(d.warmupHombro) && d.warmupHombro.length)) d.warmupHombro = bloqueHombro();
+  if (!d.warmupSeries) d.warmupSeries = 2;
+  renderRoutineEditor();
+  if (!nuevos.length) estadoGuardado('info', superior ? 'El bloque de hombro ya lo cubre' : 'Nada que sugerir');
+}
 
-  (circuit.exercises || []).forEach((ex, ei) => {
-    const st = ex.setType || 'normal';
-    // En el editor los escalones se muestran en el orden en que están: si se
-    // reordenaran al vuelo, el campo saltaría de sitio mientras se escribe el
-    // peso. El orden canónico (drop set descendente) se aplica al guardar.
-    const steps = ex.steps1 || [];
-    const isOpen = editorExercise === ei;
-    const pw = parseWeight(ex.w1 || '');
-    const pr = parseReps(ex.reps || '');
-
-    // Plegado: nombre y resumen, como en el índice de bloques
-    if (!isOpen) {
-      const resumen = st === 'normal'
-        ? [ex.w1, ex.reps, SET_LABEL[st]].filter(Boolean).join(' · ')
-        : `${steps.length} escalón${steps.length===1?'':'es'} · ${SET_LABEL[st]}`;
-      if (reordenando) {
-        const ultimo = (circuit.exercises || []).length - 1;
-        html += `<div class="cir-ex cir-ex-closed cir-ex-mover">
-            <span class="cir-ex-body">
-              <span class="cir-ex-name">${reEscAttr(ex.name || 'Sin ejercicio')}</span>
-              <span class="cir-ex-meta">${ei + 1} de ${ultimo + 1}</span>
-            </span>
-            <span class="cir-mover-par">
-              <button class="cir-mover-btn" onclick="moveExercise('${editorDay}',${ci},${ei},-1)"${ei === 0 ? ' disabled' : ''} aria-label="Subir ${reEscAttr(ex.name || 'ejercicio')}">
-                <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
-              </button>
-              <button class="cir-mover-btn" onclick="moveExercise('${editorDay}',${ci},${ei},1)"${ei === ultimo ? ' disabled' : ''} aria-label="Bajar ${reEscAttr(ex.name || 'ejercicio')}">
-                <svg class="ic ic-sm"><use href="#i-chevron-d"/></svg>
-              </button>
-            </span>
-          </div>`;
-        return;
-      }
-      html += `<button class="cir-ex cir-ex-closed" onclick="openEditorExercise(${ei})">
-          <span class="cir-ex-body">
-            <span class="cir-ex-name">${reEscAttr(ex.name || 'Sin ejercicio')}</span>
-            <span class="cir-ex-meta">${reEscAttr(resumen || 'Sin configurar')}</span>
-          </span>
-          <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
-        </button>`;
-      return;
-    }
-
-    const campoPeso = `
-      <div class="re-wr-col">
-        <div class="re-input-label">Peso</div>
-        <div class="re-combo">
-          <input type="number" inputmode="decimal" value="${pw.num}" placeholder="0" oninput="updateEditorWeightPair('${editorDay}',${ci},${ei},'w1',this.value,this.nextElementSibling.value)">
-          <select class="re-unit-select" onchange="updateEditorWeightPair('${editorDay}',${ci},${ei},'w1',this.previousElementSibling.value,this.value)">
-            <option value="lbs"${pw.unit==='lbs'?' selected':''}>lbs</option>
-            <option value="kg"${pw.unit==='kg'?' selected':''}>kg</option>
-          </select>
-        </div>
-      </div>`;
-    const campoReps = `
-      <div class="re-wr-col">
-        <div class="re-input-label">Repeticiones</div>
-        <div class="re-combo">
-          <input type="number" inputmode="numeric" value="${pr.num}" placeholder="0" oninput="updateEditorRepsPair('${editorDay}',${ci},${ei},'reps',this.value,this.nextElementSibling.value)">
-          <select class="re-unit-select" onchange="updateEditorRepsPair('${editorDay}',${ci},${ei},'reps',this.previousElementSibling.value,this.value)">
-            <option value="rep"${pr.type==='rep'?' selected':''}>reps</option>
-            <option value="alt"${pr.type==='alt'?' selected':''}>alt.</option>
-            <option value="seg"${pr.type==='seg'?' selected':''}>seg.</option>
-          </select>
-        </div>
-      </div>`;
-
-    let cuerpo;
-    if (st === 'normal') {
-      cuerpo = `<div class="re-wr-row">${campoPeso}${campoReps}</div>`;
-    } else {
-      cuerpo = `<div class="re-steps">` + steps.map((step, si) => {
-        const spw = parseWeight(step.w);
-        const spr = parseReps(step.reps);
-        return `<div class="re-step-row">
-            <span class="re-step-num">${si+1}</span>
-            <div class="re-wr-col">
-              <div class="re-combo">
-                <input type="number" inputmode="decimal" value="${spw.num}" placeholder="0" oninput="updateStepWeightPair('${editorDay}',${ci},${ei},1,${si},this.value,this.nextElementSibling.value)">
-                <select class="re-unit-select" onchange="updateStepWeightPair('${editorDay}',${ci},${ei},1,${si},this.previousElementSibling.value,this.value)">
-                  <option value="lbs"${spw.unit==='lbs'?' selected':''}>lbs</option>
-                  <option value="kg"${spw.unit==='kg'?' selected':''}>kg</option>
-                </select>
-              </div>
-            </div>
-            <div class="re-wr-col">
-              <div class="re-combo">
-                <input type="number" inputmode="numeric" value="${spr.num}" placeholder="0" oninput="updateStepRepsPair('${editorDay}',${ci},${ei},1,${si},this.value,this.nextElementSibling.value)">
-                <select class="re-unit-select" onchange="updateStepRepsPair('${editorDay}',${ci},${ei},1,${si},this.previousElementSibling.value,this.value)">
-                  <option value="rep"${spr.type==='rep'?' selected':''}>reps</option>
-                  <option value="alt"${spr.type==='alt'?' selected':''}>alt.</option>
-                  <option value="seg"${spr.type==='seg'?' selected':''}>seg.</option>
-                </select>
-              </div>
-            </div>
-            <button class="re-step-del" onclick="removeStep('${editorDay}',${ci},${ei},1,${si})" aria-label="Quitar escalón">
-              <svg class="ic ic-sm"><use href="#i-close"/></svg>
-            </button>
-          </div>`;
-      }).join('') +
-      `</div><button class="re-add-step" onclick="addStep('${editorDay}',${ci},${ei},1)">
-         <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar escalón
-       </button>`;
-    }
-
-    const nota = (ex.trainerNote || '').trim();
-    html += `<div class="cir-ex cir-ex-open">
-        <div class="cir-ex-head">
-          <button class="cir-ex-name-btn" onclick="openExercisePicker(${ci},${ei},1)">
-            <span class="cir-ex-name">${reEscAttr(ex.name || 'Elegir ejercicio…')}</span>
-            <svg class="ic ic-sm cir-ex-swap"><use href="#i-chevron-r"/></svg>
-          </button>
-          <button class="re-del-btn" onclick="removeExercise('${editorDay}',${ci},${ei})" title="Quitar ejercicio" aria-label="Quitar ejercicio">
-            <svg class="ic ic-sm"><use href="#i-close"/></svg>
-          </button>
-          <button class="re-del-btn" onclick="openEditorExercise(-1)" title="Plegar" aria-label="Plegar">
-            <svg class="ic ic-sm"><use href="#i-chevron-up"/></svg>
-          </button>
-        </div>
-        <div class="cir-type-row">
-          <span class="cir-set-label">Tipo</span>
-          <select class="re-rest-select" onchange="setSetType('${editorDay}',${ci},${ei},this.value)">
-            ${['normal','dropset','piramidal'].map(t =>
-              `<option value="${t}"${st===t?' selected':''}>${SET_LABEL[t]}</option>`).join('')}
-          </select>
-        </div>
-        ${cuerpo}
-        <details class="cir-note"${nota ? ' open' : ''}>
-          <summary class="cir-note-sum">
-            <svg class="ic ic-sm"><use href="#i-doc"/></svg>
-            <span>Nota del entrenador</span>
-            <svg class="ic ic-sm cir-note-chev"><use href="#i-chevron-r"/></svg>
-          </summary>
-          <textarea class="re-nota re-trainer-note" rows="2"
-            placeholder="Ej.: bajar más lento, subir 5 lbs la próxima semana…"
-            oninput="updateEditorTrainerNote('${editorDay}',${ci},${ei},this.value)">${reEscAttr(nota)}</textarea>
-        </details>
+/* ── Circuito: series, descanso y sus ejercicios ── */
+const DESCANSOS = [45, 60, 90, 120];
+function renderCircuitBlockHtml(day, ci) {
+  const c = day.circuits[ci];
+  const exs = c.exercises || [];
+  const series = parseInt(c.series) || 4;
+  const rest = parseInt(c.rest) || 60;
+  let html = `<div class="cir-ajustes">
+      <div class="cir-aj-fila"><span class="cir-aj-l">Series</span>
+        ${pasoHtml(series, `cambiaSeries(${ci},-1)`, `cambiaSeries(${ci},1)`, 'serie', 1, 8)}</div>
+      <div class="cir-aj-col"><span class="cir-aj-l">Descanso entre vueltas</span>
+        <div class="seg" role="radiogroup" aria-label="Descanso entre vueltas">
+          ${DESCANSOS.map(s => `<button class="seg-op${rest === s ? ' on' : ''}" role="radio" aria-checked="${rest === s}" onclick="setCircuitRest('${editorDay}',${ci},${s}); renderRoutineEditor()">${s >= 120 ? s / 60 + ' min' : s + ' s'}</button>`).join('')}
+        </div></div>
+    </div>`;
+  if (exs.length) {
+    html += `<div class="cir-lista-cab"><span class="cir-lista-t">Ejercicios · ${exs.length}</span>
+      ${exs.length > 1 ? '<span class="cir-lista-h">Arrastra ≡ para reordenar</span>' : ''}</div>`;
+  }
+  html += `<div class="cir-ejs" id="cir-ejs">`;
+  exs.forEach((ex, ei) => {
+    const nota = String(ex.trainerNote || '').trim();
+    html += `<div class="cir-ej" data-ei="${ei}" role="button" tabindex="0" onclick="abreHojaEj(${ci},${ei})"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abreHojaEj(${ci},${ei})}">
+        ${miniHtml(ex.img, 56)}
+        <span class="cir-ej-t"><span class="cir-ej-n">${reEscAttr(ex.name || 'Elegir ejercicio…')}</span>
+          <span class="cir-ej-p">${reEscAttr(prescripcion(ex) || 'Toca para poner peso y repeticiones')}</span>
+          <span class="cir-ej-tags">${SET_NOMBRE[ex.setType] ? `<span class="ej-tag">${SET_NOMBRE[ex.setType]}</span>` : ''}${nota ? `<span class="ej-tag ej-tag-nota">Nota: ${reEscAttr(nota)}</span>` : ''}</span>
+        </span>
+        ${exs.length > 1 ? `<button class="cir-asa" aria-label="Mover ${reEscAttr(ex.name || 'ejercicio')}. Flechas arriba y abajo para moverlo" onclick="event.stopPropagation()" onkeydown="asaTecla(event,${ci},${ei})"><svg class="ic"><use href="#i-asa"/></svg></button>` : ''}
       </div>`;
   });
-
-  html += `<button class="re-add-btn" onclick="openExercisePickerMulti(${ci})">
-      <svg class="ic ic-sm"><use href="#i-plus"/></svg> Agregar ejercicios
-    </button>`;
-  html += `<button class="cir-remove" onclick="removeCircuit('${editorDay}',${ci})">
-      <svg class="ic ic-sm"><use href="#i-trash"/></svg> Quitar este circuito
-    </button>`;
+  html += `</div>`;
+  html += `<button class="ent-add" onclick="openExercisePickerMulti(${ci})"><svg class="ic"><use href="#i-plus"/></svg>Agregar ejercicio</button>`;
   return html;
+}
+function cambiaSeries(ci, dir) {
+  const c = editorData[editorDay].circuits[ci];
+  c.series = Math.min(8, Math.max(1, (parseInt(c.series) || 4) + dir));
+  renderRoutineEditor();
+}
+function duplicaCircuito(ci) {
+  const lista = editorData[editorDay].circuits;
+  const copia = JSON.parse(JSON.stringify(lista[ci]));
+  lista.splice(ci + 1, 0, copia);
+  lista.forEach((c, i) => { c.label = `Circuito ${i + 1}`; });
+  editorBlock = { kind: 'circuit', ci: ci + 1 };
+  empujaContenido(document.getElementById('tclient-content'), 1, renderRoutineEditor);
+}
+function menuCircuito(ci) {
+  abreMenu([
+    { t: 'Duplicar circuito', fn: () => duplicaCircuito(ci) },
+    { t: 'Quitar circuito', peligro: true, fn: () => removeCircuit(editorDay, ci) },
+  ]);
+}
+function menuSesion() {
+  const n = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k)).length;
+  const ops = [{ t: 'Agregar sesión', fn: () => addSession() }];
+  if (n > 1) ops.push({ t: 'Quitar esta sesión', peligro: true, fn: () => removeSession(editorDay) });
+  abreMenu(ops);
+}
+
+/* Menú de acciones de iOS: opciones arriba y Cancelar aparte */
+function abreMenu(ops) {
+  document.querySelector('.menu-fondo')?.remove();
+  const fondo = document.createElement('div');
+  fondo.className = 'menu-fondo';
+  fondo.innerHTML = `<div class="menu" role="menu" tabindex="-1">
+      <div class="menu-grupo">${ops.map((o, i) => `<button class="menu-op${o.peligro ? ' peligro' : ''}" role="menuitem" data-i="${i}">${reEscAttr(o.t)}</button>`).join('')}</div>
+      <div class="menu-grupo"><button class="menu-op cancelar" data-i="-1">Cancelar</button></div>
+    </div>`;
+  const cierra = () => { fondo.classList.remove('ver'); setTimeout(() => fondo.remove(), 300); };
+  fondo.addEventListener('keydown', e => { if (e.key === 'Escape') cierra(); });
+  fondo.addEventListener('click', e => {
+    const b = e.target.closest('.menu-op');
+    if (!b && e.target !== fondo) return;
+    cierra();
+    const o = b && ops[+b.dataset.i];
+    if (o) setTimeout(o.fn, 120);
+  });
+  (document.getElementById('app-shell') || document.body).appendChild(fondo);
+  requestAnimationFrame(() => { fondo.classList.add('ver'); fondo.querySelector('.menu')?.focus({ preventScroll: true }); });
+}
+
+/* ── Reordenar arrastrando ≡ ── */
+function activaArrastre(raiz, ci) {
+  const cont = raiz.querySelector('#cir-ejs');
+  if (!cont) return;
+  cont.querySelectorAll('.cir-asa').forEach(asa => {
+    asa.addEventListener('pointerdown', e => {
+      if (e.button) return;
+      e.preventDefault();
+      const tarjeta = asa.closest('.cir-ej');
+      const todas = [...cont.querySelectorAll('.cir-ej')];
+      const desde = todas.indexOf(tarjeta);
+      const rects = todas.map(t => t.getBoundingClientRect());
+      const alto = rects[desde].height + 10;
+      const y0 = e.clientY;
+      let hacia = desde;
+      tarjeta.classList.add('arrastrando');
+      todas.forEach(t => { if (t !== tarjeta) t.classList.add('corre'); });
+      try { asa.setPointerCapture(e.pointerId); } catch (_) {}
+      const mueve = ev => {
+        const dy = ev.clientY - y0;
+        tarjeta.style.transform = `translateY(${dy}px) scale(1.02)`;
+        const centro = rects[desde].top + rects[desde].height / 2 + dy;
+        hacia = desde;
+        rects.forEach((r, i) => {
+          const medio = r.top + r.height / 2;
+          if (i > desde && centro > medio) hacia = Math.max(hacia, i);
+          if (i < desde && centro < medio) hacia = Math.min(hacia, i);
+        });
+        todas.forEach((t, i) => {
+          if (t === tarjeta) return;
+          const corre = (i > desde && i <= hacia) ? -alto : (i < desde && i >= hacia) ? alto : 0;
+          t.style.transform = corre ? `translateY(${corre}px)` : '';
+        });
+      };
+      const suelta = () => {
+        asa.removeEventListener('pointermove', mueve);
+        asa.removeEventListener('pointerup', suelta);
+        asa.removeEventListener('pointercancel', suelta);
+        todas.forEach(t => { t.style.transform = ''; t.classList.remove('arrastrando', 'corre'); });
+        if (hacia !== desde) {
+          const lista = editorData[editorDay].circuits[ci].exercises;
+          const [ex] = lista.splice(desde, 1);
+          lista.splice(hacia, 0, ex);
+          renderRoutineEditor();
+        }
+      };
+      asa.addEventListener('pointermove', mueve);
+      asa.addEventListener('pointerup', suelta);
+      asa.addEventListener('pointercancel', suelta);
+    });
+  });
+}
+/* Con teclado: flechas arriba y abajo sobre el asa */
+function asaTecla(e, ci, ei) {
+  const dir = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+  if (!dir) return;
+  e.preventDefault();
+  const lista = editorData[editorDay].circuits[ci].exercises;
+  const a = ei + dir;
+  if (a < 0 || a >= lista.length) return;
+  [lista[ei], lista[a]] = [lista[a], lista[ei]];
+  renderRoutineEditor();
+  document.querySelectorAll('#cir-ejs .cir-asa')[a]?.focus();
+}
+
+/* ── Hoja de un ejercicio (del circuito o del calentamiento) ── */
+let _hojaEj = null;   // {tipo:'ej', ci, ei} | {tipo:'wu', lista, wi}
+function objHoja() {
+  const h = _hojaEj;
+  if (!h || !editorData || !editorData[editorDay]) return null;
+  const d = editorData[editorDay];
+  if (h.tipo === 'ej') return (d.circuits?.[h.ci]?.exercises || [])[h.ei] || null;
+  const arr = d[h.lista];
+  if (!Array.isArray(arr) || arr[h.wi] == null) return null;
+  if (typeof arr[h.wi] !== 'object') arr[h.wi] = { text: String(arr[h.wi] || '') };
+  return arr[h.wi];
+}
+function abreHojaEj(ci, ei) { _hojaEj = { tipo: 'ej', ci, ei }; pintaHojaEj(true); }
+function abreHojaWu(lista, wi) { _hojaEj = { tipo: 'wu', lista, wi }; pintaHojaEj(true); }
+function cierraHojaEj() {
+  const f = document.getElementById('ejh-fondo');
+  _hojaEj = null;
+  if (f) { f.classList.remove('ver'); f.dataset.img = ''; f.dataset.nom = '-'; setTimeout(() => { if (!_hojaEj) f.innerHTML = ''; }, 450); }
+  renderRoutineEditor();
+}
+function pintaHojaEj(abrir) {
+  let f = document.getElementById('ejh-fondo');
+  if (!f) {
+    f = document.createElement('div');
+    f.id = 'ejh-fondo';
+    f.className = 'ejh-fondo';
+    f.addEventListener('click', e => { if (e.target === f) cierraHojaEj(); });
+    f.addEventListener('keydown', e => { if (e.key === 'Escape') cierraHojaEj(); });
+    (document.getElementById('app-shell') || document.body).appendChild(f);
+  }
+  const ex = objHoja();
+  if (!ex) { if (_hojaEj) cierraHojaEj(); return; }
+  const h = _hojaEj, esEj = h.tipo === 'ej';
+  const nombre = esEj ? (ex.name || '') : (ex.text || ex.name || '');
+  const img = ex.img || '';
+  const cuerpo = f.querySelector('.ejh-cuerpo');
+  // Mismo ejercicio: sólo se repinta lo que cambia, sin reiniciar el GIF
+  if (cuerpo && f.dataset.img === img && f.dataset.nom === nombre) {
+    const din = f.querySelector('#ejh-din');
+    if (din) din.innerHTML = hojaDinamica(ex, esEj);
+    if (abrir) f.classList.add('ver');
+    return;
+  }
+  f.dataset.img = img; f.dataset.nom = nombre;
+  const musc = MUSC_LABELS[ex.muscle] || MUSC_LABELS[(infoCatalogo(nombre) || {}).muscle] || '';
+  const primerNombre = String(document.getElementById('tclient-name')?.textContent || '').trim().split(/\s+/)[0] || 'el atleta';
+  f.innerHTML = `<div class="ejh" role="dialog" aria-modal="true" aria-labelledby="ejh-nom" tabindex="-1">
+      <div class="ejh-cuerpo">
+        <div class="ejh-asa"></div>
+        <div class="ejh-cab">
+          <div><h2 class="ejh-nom" id="ejh-nom">${reEscAttr(nombre || 'Elegir ejercicio')}</h2>
+            <div class="ejh-sub">${musc ? `<span class="ejh-musc">${musc}</span>` : ''}
+              <button class="ejh-cambiar" onclick="cambiaEjDesdeHoja()">${nombre ? 'Cambiar ejercicio' : 'Elegir ejercicio'}</button></div></div>
+          <button class="ejh-cerrar" onclick="cierraHojaEj()" aria-label="Cerrar"><svg class="ic"><use href="#i-close"/></svg></button>
+        </div>
+        ${img ? `<div class="ejh-img"><img src="${reEscAttr(img)}" alt="${reEscAttr(nombre)}" style="background-image:url('${reEscAttr(miniDe(img))}')"></div>` : ''}
+        <div id="ejh-din">${hojaDinamica(ex, esEj)}</div>
+        ${esEj ? `<label class="ejh-nota"><span class="ejh-nota-l">Nota para ${reEscAttr(primerNombre)}</span>
+          <input type="text" value="${reEscAttr(ex.trainerNote || '')}" placeholder="Ej.: bajar lento, sentado…" oninput="updateEditorTrainerNote('${editorDay}',${h.ci},${h.ei},this.value); programaGuardado()"></label>` : ''}
+      </div>
+      <div class="ejh-pie">
+        <button class="ejh-quitar" onclick="quitaDesdeHoja()">Quitar</button>
+        <button class="ejh-listo" onclick="cierraHojaEj()">Listo</button>
+      </div>
+    </div>`;
+  if (abrir) requestAnimationFrame(() => { f.classList.add('ver'); f.querySelector('.ejh')?.focus({ preventScroll: true }); });
+}
+/* Tipo de serie y la tabla de peso × repeticiones */
+function hojaDinamica(ex, esEj) {
+  const nombre = esEj ? ex.name : (ex.text || ex.name);
+  const sufP = sufijoPeso(nombre);
+  const campo = (valor, tipo, clave, si) => {
+    const esPeso = tipo === 'w';
+    const n = numDe(valor);
+    const texto = /\d/.test(String(valor || '')) ? '' : String(valor || '').trim();
+    const unidad = esPeso ? unidadDe(valor, sufP) : unidadDe(valor, 'reps');
+    const args = `'${clave}',${si == null ? 'null' : si}`;
+    return `<div class="pz">
+        <button class="pz-b" onclick="pasoHoja(${args},-1)" aria-label="${esPeso ? 'Menos peso' : 'Menos repeticiones'}"><svg class="ic"><use href="#i-menos"/></svg></button>
+        <span class="pz-v"><input type="text" inputmode="${esPeso ? 'decimal' : 'numeric'}" value="${n == null ? '' : fmtNum(n)}" placeholder="${reEscAttr(texto || '0')}"
+            aria-label="${esPeso ? 'Peso' : 'Repeticiones'}" oninput="escribeHoja(${args},this.value)">
+          <button class="pz-u" onclick="unidadHoja(${args})" aria-label="Cambiar unidad">${reEscAttr(unidad || (esPeso ? sufP : 'reps'))}</button></span>
+        <button class="pz-b" onclick="pasoHoja(${args},1)" aria-label="${esPeso ? 'Más peso' : 'Más repeticiones'}"><svg class="ic"><use href="#i-plus"/></svg></button>
+      </div>`;
+  };
+  if (!esEj) {
+    // Calentamiento: el peso es texto libre ("10 → 15 lbs c/u", "barra sola")
+    return `<div class="ejh-tabla">
+        <div class="ejh-fila cab"><span>Peso</span><span>Repeticiones</span></div>
+        <div class="ejh-fila">
+          <div class="pz"><span class="pz-v"><input type="text" style="max-width:none;text-align:center;font-size:17px" value="${reEscAttr(ex.w || '')}" placeholder="Ej.: 5 lbs" aria-label="Peso" oninput="_wuHoja().w=this.value; programaGuardado()"></span></div>
+          ${campo(ex.reps, 'r', 'reps', null)}
+        </div></div>`;
+  }
+  const st = ex.setType || 'normal';
+  let html = `<div class="seg" role="radiogroup" aria-label="Tipo de serie" style="margin-bottom:14px">
+      ${[['normal', 'Normal'], ['dropset', 'Drop set'], ['piramidal', 'Pirámide']].map(([v, t]) =>
+        `<button class="seg-op${st === v ? ' on' : ''}" role="radio" aria-checked="${st === v}" onclick="cambiaTipoSerie('${v}')">${t}</button>`).join('')}
+    </div>`;
+  if (st === 'normal') {
+    html += `<div class="ejh-tabla">
+        <div class="ejh-fila cab"><span>Peso</span><span>Repeticiones</span></div>
+        <div class="ejh-fila">${campo(ex.w1, 'w', 'w1', null)}${campo(ex.reps, 'r', 'reps', null)}</div>
+      </div>`;
+  } else {
+    const pasos = ex.steps1 || [];
+    html += `<div class="ejh-tabla escalones">
+        <div class="ejh-fila cab"><span></span><span>Peso · <button class="ejh-cab-u" onclick="unidadEscalones()" aria-label="Cambiar unidad del peso">${reEscAttr(unidadDe((pasos[0] || {}).w, sufP))}</button></span><span>Reps</span><span></span></div>
+        ${pasos.map((p, si) => `<div class="ejh-fila"><span class="ejh-num">${si + 1}</span>
+            ${campo(p.w, 'w', 'w', si)}${campo(p.reps, 'r', 'reps', si)}
+            <button class="ejh-quita" onclick="quitaEscalon(${si})" aria-label="Quitar escalón ${si + 1}"${pasos.length <= 1 ? ' disabled' : ''}><svg class="ic"><use href="#i-close"/></svg></button></div>`).join('')}
+        <button class="ejh-mas" onclick="agregaEscalon()">+ Agregar escalón</button>
+      </div>`;
+  }
+  return html;
+}
+function _wuHoja() { return objHoja() || {}; }
+/* El objeto que guarda el valor: el ejercicio o uno de sus escalones */
+function destinoHoja(clave, si) {
+  const ex = objHoja();
+  if (!ex) return null;
+  if (si == null) return ex;
+  return (ex.steps1 || [])[si] || null;
+}
+function pasoHoja(clave, si, dir) {
+  const o = destinoHoja(clave, si), ex = objHoja();
+  if (!o) return;
+  const nombre = ex.name || ex.text;
+  if (clave === 'reps') {
+    const n = numDe(o.reps);
+    const v = Math.min(100, Math.max(1, (n == null ? (dir > 0 ? 9 : 2) : n) + dir));
+    o.reps = ponNumero(o.reps, v, 'reps');
+  } else {
+    const v = siguientePeso(numDe(o[clave]), dir, pasoPeso(nombre));
+    if (v == null) return;
+    o[clave] = ponNumero(o[clave], v, sufijoPeso(nombre));
+  }
+  pintaHojaEj();
+  programaGuardado();
+}
+function escribeHoja(clave, si, valor) {
+  const o = destinoHoja(clave, si), ex = objHoja();
+  if (!o) return;
+  const v = String(valor).replace(',', '.').trim();
+  const n = v === '' ? null : parseFloat(v);
+  if (v !== '' && !isFinite(n)) return;
+  o[clave] = ponNumero(o[clave], n, clave === 'reps' ? 'reps' : sufijoPeso(ex.name || ex.text));
+  programaGuardado();
+}
+/* Tocar la unidad la cambia: lbs ↔ kg, y reps → seg → reps alternas */
+function unidadHoja(clave, si) {
+  const o = destinoHoja(clave, si), ex = objHoja();
+  if (!o) return;
+  const s = String(o[clave] || '');
+  const n = numDe(s);
+  if (clave === 'reps') {
+    const t = /seg/i.test(s) ? 'alt' : /alterna/i.test(s) ? 'rep' : 'seg';
+    o.reps = n == null ? formatReps('', t) : formatReps(fmtNum(n), t);
+  } else {
+    if (n == null) return;
+    o[clave] = /kg/i.test(s) ? s.replace(/kg/i, 'lbs') : /lbs?/i.test(s) ? s.replace(/lbs?/i, 'kg') : `${fmtNum(n)} kg`;
+  }
+  pintaHojaEj();
+  programaGuardado();
+}
+/* En drop set y pirámide la unidad va en el encabezado y vale para todos */
+function unidadEscalones() {
+  const ex = objHoja();
+  if (!ex || !Array.isArray(ex.steps1)) return;
+  const aKg = !/kg/i.test((ex.steps1.find(p => /\d/.test(p.w || '')) || {}).w || '');
+  ex.steps1.forEach(p => {
+    if (!/\d/.test(p.w || '')) return;
+    p.w = aKg ? (/lbs?/i.test(p.w) ? p.w.replace(/lbs?/i, 'kg') : `${p.w} kg`) : p.w.replace(/kg/i, 'lbs');
+  });
+  pintaHojaEj();
+  programaGuardado();
+}
+
+/* Al pasar a drop set o pirámide, los escalones salen del peso que ya tenía */
+function cambiaTipoSerie(tipo) {
+  const ex = objHoja(), h = _hojaEj;
+  if (!ex || h.tipo !== 'ej') return;
+  if (tipo !== 'normal') {
+    const vacios = !Array.isArray(ex.steps1) || !ex.steps1.length || ex.steps1.every(p => !numDe(p.w) && !numDe(p.reps));
+    if (vacios) {
+      const paso = pasoPeso(ex.name), n = numDe(ex.w1), dir = tipo === 'dropset' ? -1 : 1;
+      ex.steps1 = [0, 1, 2].map(i => {
+        let v = n;
+        for (let k = 0; k < i && v != null; k++) v = siguientePeso(v, dir, paso) ?? v;
+        return { w: n == null ? '' : ponNumero(ex.w1, v, sufijoPeso(ex.name)), reps: ex.reps || '' };
+      });
+    }
+  }
+  setSetType(editorDay, h.ci, h.ei, tipo);
+}
+function agregaEscalon() {
+  const ex = objHoja();
+  if (!ex) return;
+  const pasos = ex.steps1 || (ex.steps1 = []);
+  const ult = pasos[pasos.length - 1];
+  let w = '';
+  if (ult && numDe(ult.w) != null) {
+    const v = siguientePeso(numDe(ult.w), ex.setType === 'dropset' ? -1 : 1, pasoPeso(ex.name));
+    w = ponNumero(ult.w, v ?? numDe(ult.w), sufijoPeso(ex.name));
+  }
+  pasos.push({ w, reps: ult ? ult.reps || '' : '' });
+  pintaHojaEj();
+  programaGuardado();
+}
+function quitaEscalon(si) {
+  const ex = objHoja();
+  if (!ex || !Array.isArray(ex.steps1) || ex.steps1.length <= 1) return;
+  ex.steps1.splice(si, 1);
+  pintaHojaEj();
+  programaGuardado();
+}
+function cambiaEjDesdeHoja() {
+  const h = _hojaEj;
+  if (!h) return;
+  if (h.tipo === 'ej') openExercisePicker(h.ci, h.ei, 1);
+  else openWarmupPicker(h.wi, h.lista);
+}
+function quitaDesdeHoja() {
+  const h = _hojaEj, ex = objHoja();
+  if (!h || !ex) return;
+  const nombre = ex.name || ex.text || 'este ejercicio';
+  if (!confirm(`¿Quitar ${nombre}?`)) return;
+  const d = editorData[editorDay];
+  if (h.tipo === 'ej') d.circuits[h.ci].exercises.splice(h.ei, 1);
+  else d[h.lista].splice(h.wi, 1);
+  cierraHojaEj();
+}
+
+/* ── Guardado automático ──
+   Cada cambio se guarda solo, un momento después de hacerlo. Se manda una
+   copia normalizada (títulos y escalones en orden) sin tocar lo que se está
+   editando, para que ningún campo salte de sitio mientras se escribe. */
+let _guardadoBase = null;     // JSON de lo último guardado (null = aún no se puede)
+let _tGuardado = null;
+let _cadenaGuardado = Promise.resolve();
+let _huboAutoguardado = false;
+let _problemasGuardado = [];
+
+function baseDeGuardado() {
+  _guardadoBase = editorData ? JSON.stringify(editorData) : null;
+  _huboAutoguardado = false;
+}
+function programaGuardado() {
+  if (!editorData || _guardadoBase == null || !trainerClientId) return;
+  clearTimeout(_tGuardado);
+  _tGuardado = setTimeout(() => guardaYa(false), 1200);
+}
+function rutinaNormalizada(json) {
+  const r = JSON.parse(json);
+  Object.keys(r).forEach(k => {
+    if (!/^sesion\d+$/.test(k) || !r[k]) return;
+    const d = r[k];
+    d.title = deriveSessionTitle(d, k.replace('sesion', ''));
+    d.sub = deriveSessionSub(d);
+    (d.circuits || []).forEach(c => (c.exercises || []).forEach(ex => {
+      if (Array.isArray(ex.steps1)) ex.steps1 = orderedSteps(ex.steps1, ex.setType);
+    }));
+  });
+  return r;
+}
+/* Manda la rutina; reintenta solo si se cae la red. `conIA` deja que el
+   servidor titule las sesiones (una vez, al salir del editor). */
+async function enviaRutina(cliente, json, conIA) {
+  const cuerpo = JSON.stringify({
+    action: 'save-routine', token: TRAINER_TOKEN, trainerUsername: currentTrainer, client: cliente,
+    routine: rutinaNormalizada(json), autoguardado: !conIA,
+  });
+  for (let intento = 0; intento < 4; intento++) {
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: cuerpo,
+        keepalive: cuerpo.length < 60000,
+      });
+      const r = await res.json();
+      return !!r.ok;
+    } catch (e) {
+      await new Promise(ok => setTimeout(ok, 1500 * (intento + 1)));
+    }
+  }
+  return false;
+}
+function guardaYa(final) {
+  clearTimeout(_tGuardado);
+  if (!editorData || _guardadoBase == null || !trainerClientId) return _cadenaGuardado;
+  const json = JSON.stringify(editorData), cliente = trainerClientId;
+  if (json === _guardadoBase) {
+    // Sin cambios nuevos: al salir, la IA titula lo que se guardó en el camino
+    if (final && _huboAutoguardado) {
+      _huboAutoguardado = false;
+      _cadenaGuardado = _cadenaGuardado.then(() => enviaRutina(cliente, json, true));
+    }
+    return _cadenaGuardado;
+  }
+  _problemasGuardado = validateRoutineBeforeSave(JSON.parse(json));
+  if (_problemasGuardado.length) { estadoGuardado('error', 'Sin guardar'); return _cadenaGuardado; }
+  const antes = _guardadoBase;
+  _guardadoBase = json;
+  estadoGuardado('guardando');
+  _cadenaGuardado = _cadenaGuardado.then(() => enviaRutina(cliente, json, final)).then(ok => {
+    if (cliente !== trainerClientId) return;
+    if (ok) {
+      _huboAutoguardado = !final;
+      data = JSON.parse(json);
+      estadoGuardado('ok');
+    } else {
+      if (_guardadoBase === json) _guardadoBase = antes;   // que el próximo intento lo vuelva a mandar
+      estadoGuardado('error', 'Sin conexión');
+      clearTimeout(_tGuardado);
+      _tGuardado = setTimeout(() => guardaYa(false), 5000);
+    }
+  });
+  return _cadenaGuardado;
+}
+function estadoGuardado(tipo, texto) {
+  const el = document.getElementById('re-estado');
+  if (!el) return;
+  clearTimeout(el._t);
+  el.className = 're-estado ver' + (tipo === 'ok' ? ' ok' : tipo === 'error' ? ' error' : '');
+  el.style.cursor = tipo === 'error' && _problemasGuardado.length ? 'pointer' : '';
+  el.onclick = tipo === 'error' && _problemasGuardado.length
+    ? () => alert('Falta resolver:\n\n' + _problemasGuardado.slice(0, 6).join('\n')) : null;
+  el.innerHTML = tipo === 'ok' ? '<svg class="ic"><use href="#i-check"/></svg>Guardado'
+    : tipo === 'guardando' ? 'Guardando…' : reEscAttr(texto || '');
+  if (tipo === 'ok' || tipo === 'info') el._t = setTimeout(() => el.classList.remove('ver'), 2600);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') guardaYa(false); });
+window.addEventListener('pagehide', () => guardaYa(false));
+
+/* ── Cabecera del cliente: atrás, estado y acciones según dónde se está ── */
+function pintaCabeceraCliente() {
+  const scr = document.getElementById('trainer-client');
+  if (!scr) return;
+  const enBloque = activeTrainerTab === 'editar' && !!editorBlock && !!editorData;
+  scr.classList.toggle('en-bloque', enBloque);
+  const t = document.getElementById('tc-back-t');
+  const back = document.getElementById('tc-back');
+  const etiqueta = enBloque ? tituloSesion(editorDay) : 'Clientes';
+  if (t) t.textContent = etiqueta;
+  if (back) back.setAttribute('aria-label', `Volver a ${etiqueta}`);
+  const esCir = enBloque && editorBlock.kind === 'circuit';
+  document.getElementById('tc-chat').hidden = enBloque;
+  document.getElementById('tc-datos').hidden = enBloque;
+  const mas = document.getElementById('tc-mas');
+  mas.hidden = !esCir;
+  mas.onclick = esCir ? () => menuCircuito(editorBlock.ci) : null;
+}
+function tcAtras() {
+  if (activeTrainerTab === 'editar' && editorBlock) { closeEditorBlock(); return; }
+  guardaYa(true);
+  show('trainer-portal');
 }
 
 /* Modo reordenar: mientras está activo la lista no se abre, solo se mueve.
@@ -11276,12 +12099,13 @@ function selectExerciseByIdx(idx) {
   const ex = _pickerCatalog[idx];
   const t = editorPickerTarget;
   if (t.kind === 'warmup') {
-    if (!Array.isArray(editorData[t.day].warmup)) editorData[t.day].warmup = [];
+    const k = t.lista || 'warmup';
+    if (!Array.isArray(editorData[t.day][k])) editorData[t.day][k] = [];
     if (t.wi === -1) {
-      editorData[t.day].warmup.push({ text: ex.name, name: ex.name, img: ex.img, muscle: ex.muscle });
+      editorData[t.day][k].push({ text: ex.name, name: ex.name, img: ex.img, muscle: ex.muscle, w: '', reps: '15 reps' });
     } else {
-      const cur = editorData[t.day].warmup[t.wi] || {};
-      editorData[t.day].warmup[t.wi] = { ...cur, text: ex.name, name: ex.name, img: ex.img, muscle: ex.muscle };
+      const cur = editorData[t.day][k][t.wi] || {};
+      editorData[t.day][k][t.wi] = { ...cur, text: ex.name, name: ex.name, img: ex.img, muscle: ex.muscle };
     }
   } else {
     const { day, ci, ei } = t;
@@ -11294,10 +12118,10 @@ function selectExerciseByIdx(idx) {
   renderRoutineEditor();
 }
 
-function openWarmupPicker(wi) {
+function openWarmupPicker(wi, lista) {
   _pickerMulti = false;
   _pickerChosen = [];
-  editorPickerTarget = { day: editorDay, kind: 'warmup', wi };
+  editorPickerTarget = { day: editorDay, kind: 'warmup', wi, lista: lista === 'warmupHombro' ? 'warmupHombro' : 'warmup' };
   _pickerSelectedMuscle = null;
   document.getElementById('expicker-search').value = '';
   renderPickerList('');
@@ -11315,11 +12139,12 @@ function validateRoutineBeforeSave(routine) {
   const problems = [];
   for (const [dayKey, day] of Object.entries(routine)) {
     if (!day || !/^sesion\d+$/.test(dayKey)) continue;
+    // En el calentamiento caben pasos sin GIF ("movilidad con banda"): el
+    // atleta los ve como texto. Sólo se frena un GIF que no existe.
     const checkItem = (item, where) => {
       const name = typeof item === 'string' ? item : (item && (item.text || item.name));
       const img  = typeof item === 'object' && item.img ? item.img : null;
-      if (name && !img) problems.push(`${where}: "${name}" sin GIF (elegilo del catálogo)`);
-      else if (img && !validImgs.has(img)) problems.push(`${where}: "${name}" apunta a un GIF inválido`);
+      if (img && !validImgs.has(img)) problems.push(`${where}: "${name}" apunta a un GIF inválido`);
     };
     (day.warmup || []).forEach((it, i) => checkItem(it, `${dayKey} / calentamiento #${i+1}`));
     (day.warmupHombro || []).forEach((it, i) => checkItem(it, `${dayKey} / hombro #${i+1}`));
@@ -11338,44 +12163,15 @@ function validateRoutineBeforeSave(routine) {
   return problems;
 }
 
+/* Ya no hay botón de guardar: se guarda solo. Esto manda ya lo pendiente
+   (y deja que la IA titule las sesiones). */
 async function saveRoutineFromEditor() {
-  const btn = document.getElementById('re-save-btn');
   const problems = validateRoutineBeforeSave(editorData);
   if (problems.length) {
     alert('No se puede guardar hasta resolver:\n\n' + problems.slice(0, 6).join('\n') + (problems.length > 6 ? `\n... y ${problems.length-6} más` : ''));
     return;
   }
-  btn.disabled = true; btn.textContent = 'Guardando…';
-  // Antes de guardar se normaliza la sesión: título y lista de ejercicios al
-  // día, y escalones de drop set / piramidal en su orden correcto. Así el
-  // dato guardado (emails, historial, asistente) coincide con lo que se ve.
-  Object.keys(editorData).forEach(k => {
-    if (!/^sesion\d+$/.test(k)) return;
-    const d = editorData[k];
-    if (!d) return;
-    d.title = deriveSessionTitle(d, k.replace('sesion', ''));
-    d.sub = deriveSessionSub(d);
-    (d.circuits || []).forEach(c => (c.exercises || []).forEach(ex => {
-      if (Array.isArray(ex.steps1)) ex.steps1 = orderedSteps(ex.steps1, ex.setType);
-    }));
-  });
-  try {
-    const res = await fetch(WORKER_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'save-routine', token:TRAINER_TOKEN, trainerUsername: currentTrainer, client: trainerClientId, routine:editorData })
-    });
-    const json = await res.json();
-    if (json.ok) {
-      if (json.routine) editorData = json.routine;
-      data = JSON.parse(JSON.stringify(editorData));
-      btn.textContent = 'Guardado';
-      setTimeout(() => { btn.disabled=false; btn.textContent='Guardar rutina'; }, 2000);
-    } else {
-      btn.textContent = 'Error al guardar'; btn.disabled = false;
-    }
-  } catch(e) {
-    btn.textContent = 'Error al guardar'; btn.disabled = false;
-  }
+  await guardaYa(true);
 }
 
 /* auto-resize textarea */
@@ -12403,13 +13199,14 @@ if ('serviceWorker' in navigator) {
 
 <!-- ══ TRAINER BOTTOM NAV ══ -->
 <div class="trainer-bottom-nav" id="trainer-bottom-nav">
-  <button class="tbnav-item" id="tbnav-back" onclick="show('trainer-portal')">
-    <svg class="ic tbnav-icon"><use href="#i-chevron-l"/></svg>Clientes
-  </button>
-  <!-- Editar va primero (es a lo que más se entra) y Rutinas, que es el
-       historial de sesiones, queda al final. -->
+  <!-- "Clientes" ya no es una pestaña: es el botón atrás de la cabecera.
+       Rutina va primero (es a lo que más se entra); Historial son las
+       sesiones que hizo. -->
   <button class="tbnav-item" id="tbnav-editar" onclick="setTrainerTab('editar')">
-    <svg class="ic tbnav-icon"><use href="#i-pencil"/></svg>Editar
+    <svg class="ic tbnav-icon"><use href="#i-rutina"/></svg>Rutina
+  </button>
+  <button class="tbnav-item" id="tbnav-rutinas" onclick="setTrainerTab('rutinas')">
+    <svg class="ic tbnav-icon"><use href="#i-clock"/></svg>Historial
   </button>
   <button class="tbnav-item" id="tbnav-comidas" onclick="setTrainerTab('comidas')">
     <svg class="ic tbnav-icon"><use href="#i-comidas"/></svg>Comidas
@@ -12419,9 +13216,6 @@ if ('serviceWorker' in navigator) {
   </button>
   <button class="tbnav-item" id="tbnav-pagos" onclick="setTrainerTab('pagos')">
     <svg class="ic tbnav-icon"><use href="#i-pagos"/></svg>Pagos
-  </button>
-  <button class="tbnav-item" id="tbnav-rutinas" onclick="setTrainerTab('rutinas')">
-    <svg class="ic tbnav-icon"><use href="#i-rutina"/></svg>Rutinas
   </button>
 </div>
 

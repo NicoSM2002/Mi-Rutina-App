@@ -1835,7 +1835,9 @@ export default {
           }
           return { key: k, exercises: exs };
         }).filter(s => s.exercises.length > 0);
-        if (summary.length && env.ANTHROPIC_API_KEY) {
+        // El editor guarda solo a cada cambio: esos guardados llevan el título
+        // calculado en el teléfono y la IA titula una vez, al salir.
+        if (summary.length && env.ANTHROPIC_API_KEY && !body.autoguardado) {
           const prompt = `Analiza estas sesiones de entrenamiento y para cada una devuelve un JSON con el grupo muscular principal (title) y un subtítulo breve listando los ejercicios separados por " · " (sub). title debe ser corto (1-3 palabras, ej: "Cuádriceps", "Pecho + Tríceps", "Espalda + Bíceps", "Hombros", "Full Body"). sub es la lista de ejercicios principales tal cual.
 
 Sesiones:
@@ -2402,6 +2404,38 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
       };
       await env.DB.put(`trainer:${username}`, JSON.stringify(updated));
       return new Response(JSON.stringify({ ok: true, trainer: updated }), { headers: cors });
+    }
+
+    // ── LISTA DE CLIENTES: cómo va cada uno ──
+    // Para la lista del entrenador: cuándo entrenó, qué días de las dos
+    // últimas semanas y cuántas notas dejó, y si ya tiene rutina. Solo de
+    // sus propios atletas.
+    if (body.action === 'resumen-clientes') {
+      if (body.token !== 'ent2026' || !body.trainerUsername) {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      }
+      const mios = (await listAthletes(env)).filter(a => a.trainerId === body.trainerUsername);
+      const hace14 = Date.now() - 15 * 86400000;
+      const resumen = {};
+      await Promise.all(mios.map(async a => {
+        const [comps, rutina] = await Promise.all([
+          env.DB.get(`completions:${a.clientId}`, 'json'),
+          env.DB.get(`routine:${a.clientId}`, 'json'),
+        ]);
+        const lista = Array.isArray(comps) ? comps : [];
+        const titulo = r => (r.snapshot && r.snapshot.title) || r.dayLabel || '';
+        const notasDe = r => (String(r.notes || '').trim() ? 1 : 0) +
+          (Array.isArray(r.feedback) ? r.feedback.filter(f => String(f.nota || '').trim()).length : 0);
+        const tieneRutina = !!rutina && Object.keys(rutina).some(k => /^sesion\d+$/.test(k) &&
+          (rutina[k].circuits || []).some(c => (c.exercises || []).some(e => e && e.name && e.name !== 'Nuevo ejercicio')));
+        resumen[a.clientId] = {
+          ultima: lista[0] ? { day: lista[0].day, titulo: titulo(lista[0]) } : null,
+          recientes: lista.filter(r => (r.ts || 0) >= hace14).slice(0, 14)
+            .map(r => ({ day: r.day, titulo: titulo(r), notas: notasDe(r) })),
+          tieneRutina,
+        };
+      }));
+      return new Response(JSON.stringify({ ok: true, resumen }), { headers: cors });
     }
 
     // ── LIST ATHLETES BY TRAINER (admin only) ──
