@@ -327,10 +327,25 @@ button { font: inherit; }
   .pant { flex: none; width: min(220px, calc((100svh - 320px) / 2.2)); }
   .pant .stage { --w: 100%; }
   .pant h3 { margin-top: 16px; font-size: 17px; } .pant p { font-size: 14px; }
-  .pantallas .pant { opacity: 1; transform: none; transition: opacity .4s; }
+  /* Cada teléfono en su capa: atenuarlo no repinta la sombra grande */
+  .pantallas .pant { opacity: 1; transform: none; transition: opacity .3s ease; will-change: opacity; }
   .pantallas .pant.lejos { opacity: .45; }
   .pant-prog { display: block; margin-top: 18px; width: 120px; height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
   .pant-prog i { display: block; height: 100%; width: calc(var(--p, 0) * 100%); background: var(--violet); }
+}
+/* Donde se puede, el deslizamiento lo lleva el propio navegador, atado al
+   scroll: va pegado al dedo también hacia atrás (en iPhone, el JavaScript
+   llegaba un instante tarde). --sobra y --pausa las mide el script. */
+@keyframes pantDesliza { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(var(--sobra, 0px) * -1), 0, 0); } }
+@keyframes pantBarra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@supports (animation-timeline: view()) {
+  @media (max-width: 900px) {
+    #funciones { view-timeline: --pant block; }
+    .pantallas.cssx, .pant-prog.cssx i { animation-timing-function: linear; animation-fill-mode: both; animation-timeline: --pant;
+      animation-range: contain var(--pausa, 0px) contain calc(100% - var(--pausa, 0px)); }
+    .pantallas.cssx { animation-name: pantDesliza; }
+    .pant-prog.cssx i { width: 100%; transform-origin: left center; animation-name: pantBarra; }
+  }
 }
 
 /* ─── Con entrenador (y gimnasios) ─── */
@@ -527,11 +542,11 @@ button { font: inherit; }
   <div class="wrap plan-grid">
     <div class="ph-col reveal">
       <div class="stage"><div class="phone"><div class="scr"><div class="layers" id="planLayers">
-        <img class="on" src="/landing/img/app/reg-objetivo-720.webp" alt="Encuesta: qué quieres lograr" loading="lazy" width="720" height="1561">
-        <img src="/landing/img/app/reg-dias-720.webp" alt="Encuesta: qué días entrenas" loading="lazy" width="720" height="1561">
-        <img src="/landing/img/app/reg-tiempo-720.webp" alt="Encuesta: cuánto tiempo y dónde" loading="lazy" width="720" height="1561">
-        <img src="/landing/img/app/reg-molestias-720.webp" alt="Encuesta: qué te molesta" loading="lazy" width="720" height="1561">
-        <img src="/landing/img/app/reg-plan-720.webp" alt="Tu plan está listo" loading="lazy" width="720" height="1561">
+        <img class="on" src="/landing/img/app/reg-objetivo-720.webp" alt="Encuesta: qué quieres lograr" loading="lazy" decoding="async" width="720" height="1561">
+        <img src="/landing/img/app/reg-dias-720.webp" alt="Encuesta: qué días entrenas" loading="lazy" decoding="async" width="720" height="1561">
+        <img src="/landing/img/app/reg-tiempo-720.webp" alt="Encuesta: cuánto tiempo y dónde" loading="lazy" decoding="async" width="720" height="1561">
+        <img src="/landing/img/app/reg-molestias-720.webp" alt="Encuesta: qué te molesta" loading="lazy" decoding="async" width="720" height="1561">
+        <img src="/landing/img/app/reg-plan-720.webp" alt="Tu plan está listo" loading="lazy" decoding="async" width="720" height="1561">
       </div></div></div></div>
     </div>
     <div class="reveal rv-d">
@@ -615,13 +630,13 @@ button { font: inherit; }
       <h2 class="d h2" style="margin-top:16px">Abres y sabes <span class="v">qué hacer.</span></h2>
     </div>
     <div class="pantallas" id="pantallas">
-      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/tecnica-720.webp" srcset="/landing/img/app/tecnica-420.webp 420w, /landing/img/app/tecnica-720.webp 720w" sizes="260px" alt="Técnica con GIF" loading="lazy" width="720" height="1561"></div></div></div>
+      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/tecnica-720.webp" srcset="/landing/img/app/tecnica-420.webp 420w, /landing/img/app/tecnica-720.webp 720w" sizes="260px" alt="Técnica con GIF" loading="lazy" decoding="async" width="720" height="1561"></div></div></div>
         <h3>Cada ejercicio, con GIF</h3><p>Más de 170, con el músculo que trabaja marcado.</p></div>
-      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/descanso-720.webp" srcset="/landing/img/app/descanso-420.webp 420w, /landing/img/app/descanso-720.webp 720w" sizes="260px" alt="Descanso cronometrado" loading="lazy" width="720" height="1561"></div></div></div>
+      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/descanso-720.webp" srcset="/landing/img/app/descanso-420.webp 420w, /landing/img/app/descanso-720.webp 720w" sizes="260px" alt="Descanso cronometrado" loading="lazy" decoding="async" width="720" height="1561"></div></div></div>
         <h3>El descanso arranca solo</h3><p>Marcas la vuelta y empieza la cuenta.</p></div>
-      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/fuerza-720.webp" srcset="/landing/img/app/fuerza-420.webp 420w, /landing/img/app/fuerza-720.webp 720w" sizes="260px" alt="Tu progreso" loading="lazy" width="720" height="1561"></div></div></div>
+      <div class="pant"><div class="stage"><div class="phone"><div class="scr"><img src="/landing/img/app/fuerza-720.webp" srcset="/landing/img/app/fuerza-420.webp 420w, /landing/img/app/fuerza-720.webp 720w" sizes="260px" alt="Tu progreso" loading="lazy" decoding="async" width="720" height="1561"></div></div></div>
         <h3>Ves cuánto has subido</h3><p>Cada ejercicio, semana a semana.</p></div>
-      <div class="pant"><div class="stage"><div class="phone dark"><div class="scr"><img src="/landing/img/app/oscuro-circuito-720.webp" srcset="/landing/img/app/oscuro-circuito-420.webp 420w, /landing/img/app/oscuro-circuito-720.webp 720w" sizes="260px" alt="Modo oscuro" loading="lazy" width="720" height="1561"></div></div></div>
+      <div class="pant"><div class="stage"><div class="phone dark"><div class="scr"><img src="/landing/img/app/oscuro-circuito-720.webp" srcset="/landing/img/app/oscuro-circuito-420.webp 420w, /landing/img/app/oscuro-circuito-720.webp 720w" sizes="260px" alt="Modo oscuro" loading="lazy" decoding="async" width="720" height="1561"></div></div></div>
         <h3>Claro u oscuro</h3><p>Sigue a tu iPhone o eliges tú.</p></div>
     </div>
     <div class="pant-prog" aria-hidden="true"><i id="pantProg"></i></div>
@@ -923,18 +938,32 @@ button { font: inherit; }
   const fun = $('#funciones'), pants = $('#pantallas'), pantEls = [...pants.children], movil = matchMedia('(max-width: 900px)');
   const PAUSA = () => innerHeight * .2;
   const sobra = () => Math.max(0, pants.scrollWidth - (fun.clientWidth - 40));
+  const prog = $('#pantProg').parentElement;
+  const CSS_X = (() => { try { return CSS.supports('animation-timeline: view()') && CSS.supports('animation-range: contain 0px contain 100%'); } catch (e) { return false; } })();
+  let geo = null;
   const midePant = () => {
-    if (!movil.matches) { fun.style.height = ''; pants.style.transform = ''; return; }
-    fun.style.height = (innerHeight + sobra() + 2 * PAUSA()) + 'px';
+    pants.classList.remove('cssx'); prog.classList.remove('cssx');
+    if (!movil.matches) { fun.style.height = ''; pants.style.transform = ''; geo = null; return; }
+    pants.style.transform = 'none';   // se mide en reposo
+    const max = sobra(), pausa = PAUSA(), x0 = pants.getBoundingClientRect().left;
+    fun.style.height = (innerHeight + max + 2 * pausa) + 'px';
+    fun.style.setProperty('--sobra', max.toFixed(1) + 'px');
+    fun.style.setProperty('--pausa', pausa.toFixed(1) + 'px');
+    geo = { max, pausa, x0, centros: pantEls.map(p => { const b = p.getBoundingClientRect(); return { c: b.left - x0 + b.width / 2, w: b.width }; }) };
+    if (CSS_X) { pants.style.transform = ''; pants.classList.add('cssx'); prog.classList.add('cssx'); }
   };
+  // Lo que no cambia al hacer scroll se mide una vez (midePant). En cada
+  // cuadro sólo se lee la posición de la sección: medir los teléfonos justo
+  // después de moverlos obligaba a recalcular la página en cada cuadro.
   const muevePant = () => {
-    if (!movil.matches) return;
-    const r = fun.getBoundingClientRect(), max = sobra();
-    const x = Math.min(max, Math.max(0, -r.top - PAUSA()));
-    pants.style.transform = `translate3d(${(-x).toFixed(1)}px,0,0)`;
-    $('#pantProg').parentElement.style.setProperty('--p', (max ? x / max : 0).toFixed(3));
+    if (!movil.matches || !geo) return;
+    const x = Math.min(geo.max, Math.max(0, -fun.getBoundingClientRect().top - geo.pausa));
+    if (!CSS_X) {
+      pants.style.transform = `translate3d(${(-x).toFixed(1)}px,0,0)`;
+      prog.style.setProperty('--p', (geo.max ? x / geo.max : 0).toFixed(3));
+    }
     const cx = innerWidth / 2;
-    pantEls.forEach(p => { const b = p.getBoundingClientRect(); p.classList.toggle('lejos', Math.abs(b.left + b.width / 2 - cx) > b.width * .75); });
+    geo.centros.forEach((g, i) => pantEls[i].classList.toggle('lejos', Math.abs(geo.x0 + g.c - x - cx) > g.w * .75));
   };
   midePant(); addEventListener('load', () => { midePant(); muevePant(); });
   let anchoAntes = innerWidth;
