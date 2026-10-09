@@ -3194,12 +3194,18 @@ select.na-input {
 /* Cada sesión es su propia tarjeta: sin aire se veían pegadas */
 .resumen-section > .resumen-session-card + .resumen-session-card { margin-top:10px; }
 .modo-prueba {
-  position:fixed; left:50%; bottom:calc(var(--sab) + 92px); transform:translateX(-50%); z-index:400;
+  position:fixed; left:50%; top:calc(var(--sat) + 8px); transform:translateX(-50%); z-index:400; pointer-events:none;
   display:flex; gap:10px; align-items:center; padding:8px 8px 8px 14px; border-radius:100px;
   background:var(--t1); color:var(--bg); font-size:13px; font-weight:600; white-space:nowrap;
   box-shadow:0 6px 20px rgba(0,0,0,.18);
 }
-.modo-prueba a { color:var(--bg); background:rgba(127,127,127,.35); padding:4px 10px; border-radius:100px; text-decoration:none; }
+/* Donde hay barra inferior va encima de ella; en el resto, arriba. Sólo
+   "Salir" recibe toques: el aviso nunca tapa un botón de la app. */
+body:has(.screen.active:is(#today, #routine, #resumen, #profile, #profile-generic, #profile-msaravia, #meals, #payments)) .modo-prueba { top:auto; bottom:calc(var(--sab) + 92px); }
+body:has(.screen.active:is(#athlete-login, #trainer-login)) .modo-prueba { top:auto; bottom:calc(var(--sab) + 16px); }
+/* En el registro no hace falta: el plan final ya dice que es de prueba */
+body:has(#registro.active) .modo-prueba { display:none; }
+.modo-prueba a { pointer-events:auto; color:var(--bg); background:rgba(127,127,127,.35); padding:4px 10px; border-radius:100px; text-decoration:none; }
 .resumen-session-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex:1; }
 .resumen-session-day { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
 .resumen-session-date { font-size:15px; color:var(--t2); letter-spacing:-.2px; }
@@ -3960,6 +3966,26 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .giro-btn { display:inline-block; width:20px; height:20px; border-radius:50%; border:2.5px solid rgba(255,255,255,.4); border-top-color:#fff; animation:gifSpin .7s linear infinite; vertical-align:middle; }
 .complete-confirm.hecho { display:flex; align-items:center; justify-content:center; padding:0; height:52px; }
 .complete-confirm .chulo-btn { width:26px; height:26px; fill:none; stroke:#fff; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; }
+/* ══ Movimiento v3: registro y entrenador ══ */
+.esc-pasos { list-style:none; margin:12px auto 0; padding:0; display:flex; flex-direction:column; gap:9px; width:max-content; max-width:100%; text-align:left; }
+.esc-pasos li { display:flex; gap:10px; align-items:center; font-size:15px; color:var(--t2); opacity:.55; transition:opacity .3s ease, color .3s ease; }
+.esc-pasos li.va, .esc-pasos li.ok { opacity:1; color:var(--t1); }
+.esc-pp { position:relative; width:18px; height:18px; border-radius:50%; flex:none; border:1.5px solid var(--b3); display:grid; place-items:center; }
+.esc-pasos li.va .esc-pp { border-color:transparent; border-top-color:var(--ac-str); border-right-color:var(--ac-str); animation:gifSpin .8s linear infinite; }
+.esc-pasos li.ok .esc-pp { border-color:var(--ok); background:var(--ok); animation:none; }
+.esc-pp svg { width:10px; height:10px; fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; }
+.esc-pt { position:relative; display:inline-block; min-width:12ch; }
+.reg-pn, .reg-dn { display:inline-block; }
+.seg { position:relative; }
+.seg-op { position:relative; z-index:1; }
+.seg-pieza {
+  position:absolute; top:2px; bottom:2px; left:2px; border-radius:8px; background:var(--seg-on); pointer-events:none;
+  width:calc((100% - 4px - (var(--n) - 1) * 2px) / var(--n)); box-shadow:0 1px 3px rgba(0,0,0,.12);
+  transform:translateX(calc(var(--i) * (100% + 2px)));
+}
+.seg:has(.seg-pieza) .seg-op.on { background:transparent; box-shadow:none; }
+.est-giro { animation:gifSpin .8s linear infinite; }
+.re-estado svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
 /* ══ Progreso: segmentado con pieza deslizante ══ */
 .prog-tabs { position:relative; background:var(--s2); border-radius:12px; padding:3px; gap:0; }
 .prog-tab { position:relative; z-index:1; min-height:38px; padding:8px; border-radius:10px; background:transparent !important;
@@ -7044,6 +7070,62 @@ function giraPeso(el, de, a, delta) {
   }, 3200);
 }
 
+/* El botón se sacude cuando falta algo, como el candado del iPhone */
+function sacudir(el) {
+  if (!el) return;
+  anima(el, [{ transform: 'none' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(7px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(3px)' }, { transform: 'none' }],
+    'firme', 0, { duration: 420, fill: 'none', siempre: true });
+  try { navigator.vibrate && navigator.vibrate([18, 40, 18]); } catch (e) {}
+}
+/* Una fila que se abre hacia abajo o se pliega (escalones, ejercicios) */
+function desplegar(el, retraso = 0) {
+  if (!el || movReducido()) return;
+  const cs = getComputedStyle(el), h = el.getBoundingClientRect().height;
+  el.style.overflow = 'hidden';
+  const a = anima(el, [{ height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 },
+    { height: h + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 }], 'firme', retraso, { fill: 'backwards' });
+  const fin = () => { el.style.overflow = ''; };
+  if (a) a.finished.then(fin).catch(fin); else fin();
+}
+function plegar(el) {
+  if (!el || movReducido()) return Promise.resolve();
+  const cs = getComputedStyle(el), h = el.getBoundingClientRect().height;
+  el.style.overflow = 'hidden'; el.style.pointerEvents = 'none';
+  const a = anima(el, [{ height: h + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1, transform: 'none' },
+    { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0, transform: 'translateX(-12%)' }], 'firme', 0, { fill: 'forwards' });
+  return a ? a.finished.catch(() => {}) : Promise.resolve();
+}
+/* Una lista que cambia: lo que queda se desliza a su sitio, lo nuevo entra */
+function flipLista(cont, pintar) {
+  if (!cont || movReducido()) { pintar(); return; }
+  const antes = new Map([...cont.querySelectorAll('[data-k]')].map(e => [e.dataset.k, e.getBoundingClientRect().top]));
+  pintar();
+  let nuevos = 0;
+  cont.querySelectorAll('[data-k]').forEach(e => {
+    const a = antes.get(e.dataset.k);
+    if (a != null) {
+      const dy = a - e.getBoundingClientRect().top;
+      if (Math.abs(dy) > 1) anima(e, [{ transform: `translateY(${dy}px)` }, { transform: 'none' }], 'suave', 0, { fill: 'none' });
+    } else {
+      anima(e, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], 'suave', Math.min(nuevos++, 8) * 40, { fill: 'backwards' });
+    }
+  });
+}
+/* Paso a paso: el número rueda hacia arriba o hacia abajo */
+function giraPaso(el, de, a) {
+  if (!el || de === a) return;
+  el.textContent = de;
+  giraTexto(el, String(a), a > de ? 1 : -1);
+}
+/* Selector segmentado: la pieza blanca viaja de la opción vieja a la nueva */
+const _txPieza = i => `translateX(calc(${i} * (100% + 2px)))`;
+function viajaPieza(pieza, de, a) {
+  if (!pieza || de === a) return;
+  if (de < 0) { anima(pieza, [{ opacity: 0, transform: _txPieza(a) + ' scale(.85)' }, { opacity: 1, transform: _txPieza(a) }], 'rebote', 0, { fill: 'none' }); return; }
+  anima(pieza, [{ transform: _txPieza(de) }, { transform: _txPieza(a) + ' scaleX(1.05)', offset: .6 }, { transform: _txPieza(a) }], 'suave', 0, { fill: 'none', siempre: true });
+}
+const CHULO_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg>';
+
 /* Progreso: tras una sesión nueva, el anillo avanza y los conteos suben */
 function lunesISO() {
   const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
@@ -7668,9 +7750,21 @@ function regPinta(dir) {
     cuerpo.appendChild(nuevo);
   });
   cuerpo.scrollTop = 0;
+  // El título llega primero y las opciones detrás, una tras otra
+  if (dir && !movReducido()) {
+    const piezas = [];
+    [...nuevo.children].forEach(c => { const ops = c.querySelectorAll(':scope > .reg-op'); if (ops.length > 1) piezas.push(...ops); else piezas.push(c); });
+    piezas.slice(0, 9).forEach((e, k) => anima(e, [{ opacity: 0, transform: `translateX(${dir * 26}px)` }, { opacity: 1, transform: 'none' }], 'suave', 60 + k * 45, { fill: 'backwards' }));
+  }
   const total = REG_PASOS.length - 1;
-  document.getElementById('reg-progreso').style.width = (REG.paso / total * 100) + '%';
-  document.getElementById('reg-paso-n').textContent = REG.paso ? `${REG.paso} de ${total}` : '';
+  const barra = document.getElementById('reg-progreso');
+  const de = parseFloat(barra.style.width) || 0, a = REG.paso / total * 100;
+  barra.style.transition = 'none';
+  barra.style.width = a + '%';
+  if (de !== a) anima(barra, [{ width: de + '%' }, { width: a + '%' }], 'rebote', 0, { fill: 'none', siempre: true });
+  const pn = document.getElementById('reg-paso-n'), nAntes = parseInt(pn.textContent) || 0;
+  pn.innerHTML = REG.paso ? `<span class="reg-pn">${REG.paso}</span> de ${total}` : '';
+  if (REG.paso && nAntes && nAntes !== REG.paso) giraPaso(pn.querySelector('.reg-pn'), nAntes, REG.paso);
   const sig = document.getElementById('reg-sig');
   sig.innerHTML = (p.boton || 'Continuar');
   sig.disabled = false;
@@ -7686,7 +7780,13 @@ function regLimpiaError() { const e = document.getElementById('reg-error'); if (
 async function regSiguiente() {
   const p = REG_PASOS[REG.paso];
   const falta = p.falta && p.falta();
-  if (falta) { document.getElementById('reg-error').textContent = falta; return; }
+  if (falta) {
+    const er = document.getElementById('reg-error');
+    er.textContent = falta;
+    sacudir(document.getElementById('reg-sig'));
+    anima(er, [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], 'suave');
+    return;
+  }
   if (p.antes) {
     const ok = await p.antes();
     if (!ok) return;
@@ -7711,6 +7811,7 @@ function regAtras() {
 function regElige(campo, valor, btn) {
   REG.enc[campo] = valor;
   btn.parentElement.querySelectorAll('.reg-op, .reg-chip').forEach(b => b.classList.toggle('on', b === btn));
+  anima(btn, [{ transform: 'scale(.96)' }, { transform: 'none' }], 'rebote', 0, { fill: 'none' });
   regLimpiaError();
 }
 
@@ -7720,7 +7821,10 @@ function regDia(d, btn) {
   if (i >= 0) dias.splice(i, 1); else dias.push(d);
   btn.classList.toggle('on', i < 0);
   btn.setAttribute('aria-pressed', String(i < 0));
-  document.getElementById('reg-dias-n').innerHTML = regTextoDias();
+  anima(btn, [{ transform: 'scale(.85)' }, { transform: 'none' }], 'rebote', 0, { fill: 'none' });
+  const nEl = document.getElementById('reg-dias-n'), nAntes = parseInt(nEl.textContent) || 0;
+  nEl.innerHTML = regTextoDias();
+  if (nAntes && dias.length && nAntes !== dias.length && dias.length <= 6) giraPaso(nEl.querySelector('.reg-dn'), nAntes, dias.length);
   regLimpiaError();
 }
 
@@ -7729,7 +7833,7 @@ function regTextoDias() {
   if (!n) return '';
   const tipo = n === 2 ? 'torso y pierna' : n === 3 ? 'empuje, tirón y pierna' : n === 4 ? 'torso y pierna alternados'
     : n === 5 ? 'un grupo grande por día' : 'empuje, tirón y pierna';
-  return n > 6 ? '<b>Son muchos días.</b> Quita alguno.' : `<b>${n} día${n === 1 ? '' : 's'}</b>${n >= 2 ? ' · ' + tipo : ''}`;
+  return n > 6 ? '<b>Son muchos días.</b> Quita alguno.' : `<b><span class="reg-dn">${n}</span> día${n === 1 ? '' : 's'}</b>${n >= 2 ? ' · ' + tipo : ''}`;
 }
 
 function regMolestia(v, btn) {
@@ -7803,6 +7907,8 @@ async function regCompruebaUsuario() {
 const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0];
 const LETRA_SEMANA = { 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S', 0: 'D' };
 const CM = { pe: 'var(--m-pecho)', es: 'var(--m-espalda)', pi: 'var(--m-pierna)', ho: 'var(--m-hombros)', br: 'var(--m-brazos)', co: 'var(--m-core)' };
+const DIVISION_TXT = { 2: '2 días: torso y pierna', 3: '3 días: empuje, tirón y pierna', 4: '4 días: torso y pierna alternados',
+  5: '5 días: un grupo grande por día', 6: '6 días: empuje, tirón y pierna' };
 // Los músculos de cada día según cuántos días entrena (la misma división del plan)
 const MUSCULOS_DIA = {
   2: [['pe','es','ho','pe','es','br'], ['pi','pi','pi','pi','pi','pi']],
@@ -7835,6 +7941,8 @@ async function regCrear() {
   const escena = armaEscena(cuerpo, e);
   const [j] = await Promise.all([peticion, escena.armada]);
   escena.para();
+  // El último paso se chulea antes de enseñar el plan
+  if (j && j.ok && escena.cierra) { escena.cierra(); await new Promise(r => setTimeout(r, movReducido() ? 0 : 520)); }
 
   if (!j || !j.ok) {
     REG.paso = j && j.campo === 'usuario' ? 1 : REG_PASOS.length - 1;
@@ -7896,7 +8004,9 @@ function armaEscena(cuerpo, e) {
           e.dias.includes(d) ? '' : '<svg class="ic"><use href="#i-moon"/></svg>'}</div>`).join('')}
       <div class="esc-cap" style="top:${TOP_DIAS + 80 + 6 * 17 + 34}px">
         <div class="esc-t">Armando tu plan</div>
-        <div class="esc-s" id="esc-s"><span>Leyendo tus respuestas</span></div>
+        <ul class="esc-pasos" id="esc-pasos">${['Leyendo tus respuestas', DIVISION_TXT[Math.max(2, Math.min(6, nDias))] || 'Armando tu semana',
+          'Eligiendo tus ejercicios', 'Calculando tus pesos de partida'].map((t, i) =>
+          `<li class="${i ? '' : 'va'}"><span class="esc-pp"></span><span class="esc-pt"><span>${t}</span></span></li>`).join('')}</ul>
         <div class="esc-n" id="esc-n"></div>
       </div>
     </div>`;
@@ -7904,12 +8014,26 @@ function armaEscena(cuerpo, e) {
   const $e = s => esc.querySelector(s);
   let vivo = true, respira = null;
   const espera = ms => new Promise(r => setTimeout(r, movReducido() ? Math.min(ms, 150) : ms));
-  const frase = txt => {
-    const s = $e('#esc-s'); if (!s) return;
-    const viejo = s.firstElementChild, nuevo = document.createElement('span');
-    nuevo.textContent = txt; s.appendChild(nuevo);
-    if (viejo) anima(viejo, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], 'firme', 0, { duration: 180 }).finished.then(() => viejo.remove()).catch(() => {});
-    anima(nuevo, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], 'suave', 140);
+  // Cada paso que termina se chulea y el siguiente empieza a girar
+  const lis = [...esc.querySelectorAll('#esc-pasos li')];
+  const avanza = i => lis.forEach((li, k) => {
+    if (k < i && !li.classList.contains('ok')) {
+      li.classList.remove('va'); li.classList.add('ok');
+      const pp = li.querySelector('.esc-pp'); pp.innerHTML = CHULO_SVG;
+      anima(pp, [{ transform: 'scale(.4)' }, { transform: 'none' }], 'rebote');
+      const pth = pp.querySelector('path'); if (pth) anima(pth, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 'firme', 60, { duration: 300, siempre: true });
+    }
+    if (k === i) li.classList.add('va');
+  });
+  // Mientras la IA piensa, la última línea va diciendo qué hace
+  const ultima = txt => {
+    const t = lis[3] && lis[3].querySelector('.esc-pt'); if (!t) return;
+    const viejo = t.firstElementChild, nuevo = document.createElement('span');
+    nuevo.textContent = txt;
+    if (!viejo || movReducido()) { t.innerHTML = ''; t.appendChild(nuevo); return; }
+    viejo.style.position = 'absolute'; viejo.style.left = '0'; t.appendChild(nuevo);
+    anima(viejo, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], 'firme', 0, { duration: 180 }).finished.then(() => viejo.remove()).catch(() => viejo.remove());
+    anima(nuevo, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], 'suave', 120);
   };
   const columnas = [];
 
@@ -7928,8 +8052,7 @@ function armaEscena(cuerpo, e) {
     });
     anima(orbe, [{ opacity: 0, transform: 'translate(-50%,-50%) scale(0)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }], 'rebote', 160);
     await espera(820); if (!vivo) return;
-    frase(nDias === 2 ? '2 días: torso y pierna' : nDias === 3 ? '3 días: empuje, tirón y pierna' : nDias === 4 ? '4 días: torso y pierna alternados'
-      : nDias === 5 ? '5 días: un grupo grande por día' : '6 días: empuje, tirón y pierna');
+    avanza(1);
     // 3 · El orbe se abre en tus siete días
     anima(orbe, [{ opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(.3) translateY(-120px)' }], 'firme');
     esc.querySelectorAll('.esc-dia').forEach((d, i) => {
@@ -7943,7 +8066,7 @@ function armaEscena(cuerpo, e) {
       anima(d, [{ transform: 'scale(1)' }, { transform: 'scale(1.14)', offset: .45 }, { transform: 'scale(1)' }], 'suave', k * 85, { duration: 520 });
     });
     await espera(450); if (!vivo) return;
-    frase('Eligiendo tus ejercicios');
+    avanza(2);
     // 5 · Cada día se llena con el color de su músculo
     const mapa = MUSCULOS_DIA[Math.max(2, Math.min(6, nDias))] || MUSCULOS_DIA[3];
     esc.querySelectorAll('.esc-dia.on').forEach((d, k) => {
@@ -7965,11 +8088,11 @@ function armaEscena(cuerpo, e) {
       if (f < 1) requestAnimationFrame(cuenta);
     })();
     await espera(1150); if (!vivo) return;
-    frase('Calculando tus pesos de partida');
-    // Mientras la IA piensa, los bloques respiran y la frase avanza
+    avanza(3);
+    // Mientras la IA piensa, los bloques respiran y la última línea avanza
     const frases = ['Calculando tus pesos de partida', 'Preparando los calentamientos', 'Repasando que todo encaje', 'Ya casi'];
     let f = 0;
-    respira = setInterval(() => { f = Math.min(f + 1, frases.length - 1); frase(frases[f]); }, 2600);
+    respira = setInterval(() => { f = Math.min(f + 1, frases.length - 1); ultima(frases[f]); }, 2600);
     columnas.forEach(({ col }, k) => [...col.children].forEach((b, j) => {
       if (!movReducido()) b.animate([{ opacity: 1 }, { opacity: .45 }, { opacity: 1 }], { duration: 1600, delay: (j * 120 + k * 60), iterations: Infinity, easing: 'ease-in-out' });
     }));
@@ -7979,6 +8102,7 @@ function armaEscena(cuerpo, e) {
     armada,
     columnas,
     para() { vivo = false; clearInterval(respira); },
+    cierra() { avanza(4); },
     esc,
   };
 }
@@ -8031,6 +8155,7 @@ function regMuestraPlan(j, escena) {
     cuerpo.innerHTML = ''; cuerpo.appendChild(final);
     entrar(document.getElementById('registro'), 1, true);
     pie();
+    setTimeout(() => estallidoDesde(final.querySelector('.reg-listo-check')), 600);
     return;
   }
 
@@ -8075,6 +8200,7 @@ function regMuestraPlan(j, escena) {
     anima(final.querySelector('.reg-listo-check'), [{ transform: 'scale(.4)' }, { transform: 'none' }], 'rebote');
     [...final.children].slice(2).forEach((h, i) => anima(h, [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], 'suave', 180 + i * 70));
     pie();
+    setTimeout(() => estallidoDesde(final.querySelector('.reg-listo-check')), 520);
   }, total - 40);
 }
 
@@ -8745,7 +8871,14 @@ let _clientList = [];
 let _clientFilter = 'todos';
 let _clientSort = 'nombre';   // 'nombre' | 'reciente'
 
-function setClientFilter(goal) { _clientFilter = goal; renderClientList(); }
+function setClientFilter(goal) {
+  if (goal === _clientFilter) return;
+  _clientFilter = goal;
+  // Los que quedan se deslizan a su sitio y los que entran llegan en fila
+  flipLista(document.getElementById('trainer-extra-clients'), renderClientList);
+  const on = document.querySelector('#cli-filters .cli-chip.active');
+  if (on) anima(on, [{ transform: 'scale(.9)' }, { transform: 'none' }], 'rebote', 0, { fill: 'none' });
+}
 function toggleClientSort() {
   _clientSort = _clientSort === 'nombre' ? 'reciente' : 'nombre';
   renderClientList();
@@ -8807,7 +8940,7 @@ function renderClientList() {
     const e = estados.get(a.clientId);
     const hechos = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'].filter((_, k) => e.semana[k]);
     return `${i ? '<div class="group-sep"></div>' : ''}
-      <div class="client-card" role="button" tabindex="0" style="--fila:${Math.min(i, 14)}"
+      <div class="client-card" role="button" tabindex="0" data-k="${esc(a.clientId)}" style="--fila:${Math.min(i, 14)}"
         onclick="openTrainerClient('${esc(a.clientId)}','${esc(displayName)}')"
         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
         <div class="client-avatar" style="${estiloAvatar(a.profile?.goal)}">${esc(initials)}</div>
@@ -11215,7 +11348,7 @@ function renderWarmupBlockHtml(day) {
   const fila = (it, lista, wi) => {
     const o = (typeof it === 'object' && it) ? it : { text: String(it || '') };
     const p = [o.w, o.reps].filter(Boolean).join(' · ');
-    return `<button class="wu-it" onclick="abreHojaWu('${lista}',${wi})">${miniHtml(o.img, 44, o.text || o.name ? 'i-repeat' : 'i-plus')}
+    return `<button class="wu-it" data-wu="${lista}|${wi}" onclick="abreHojaWu('${lista}',${wi})">${miniHtml(o.img, 44, o.text || o.name ? 'i-repeat' : 'i-plus')}
         <span class="wu-it-t"><span class="wu-it-n">${reEscAttr(o.text || o.name || 'Elegir ejercicio…')}</span>
           <span class="wu-it-p">${reEscAttr(p || 'Sin peso ni repeticiones')}</span></span>
         <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg></button>`;
@@ -11245,20 +11378,34 @@ function renderWarmupBlockHtml(day) {
 function pasoHtml(v, menos, mas, nombre, min, max) {
   return `<span class="paso">
       <button class="paso-b" onclick="${menos}" aria-label="Una ${nombre} menos"${v <= min ? ' disabled' : ''}><svg class="ic"><use href="#i-menos"/></svg></button>
-      <span class="paso-v" aria-live="polite">${v}</span>
+      <span class="paso-v" data-paso="${nombre}" aria-live="polite">${v}</span>
       <button class="paso-b" onclick="${mas}" aria-label="Una ${nombre} más"${v >= max ? ' disabled' : ''}><svg class="ic"><use href="#i-plus"/></svg></button>
     </span>`;
 }
 function cambiaVueltas(dir) {
   const d = editorData[editorDay];
-  d.warmupSeries = Math.min(5, Math.max(1, (parseInt(d.warmupSeries) || 2) + dir));
+  const de = parseInt(d.warmupSeries) || 2;
+  d.warmupSeries = Math.min(5, Math.max(1, de + dir));
   renderRoutineEditor();
+  giraPaso(document.querySelector('#tclient-content .paso-v[data-paso="vuelta"]'), de, d.warmupSeries);
 }
 function ponBloqueHombro(on) {
   const d = editorData[editorDay];
-  d.warmupHombro = on ? bloqueHombro() : [];
   if (!Array.isArray(d.warmup)) d.warmup = [];
+  if (!on) {
+    // Los tres se pliegan antes de irse
+    const its = [...document.querySelectorAll('#tclient-content .wu-it[data-wu^="warmupHombro|"]')];
+    if (its.length && !movReducido()) {
+      Promise.all(its.map(plegar)).then(() => { d.warmupHombro = []; renderRoutineEditor(); });
+      return;
+    }
+    d.warmupHombro = [];
+    renderRoutineEditor();
+    return;
+  }
+  d.warmupHombro = bloqueHombro();
   renderRoutineEditor();
+  document.querySelectorAll('#tclient-content .wu-it[data-wu^="warmupHombro|"]').forEach((e, k) => desplegar(e, k * 70));
 }
 /* La misma regla que usa el plan con IA (calentamientoDelDia en plan-ia.js):
    un ejercicio por grupo, el mismo de la rutina, al 40 % y luego al 60 %. */
@@ -11330,7 +11477,8 @@ function renderCircuitBlockHtml(day, ci) {
         ${pasoHtml(series, `cambiaSeries(${ci},-1)`, `cambiaSeries(${ci},1)`, 'serie', 1, 8)}</div>
       <div class="cir-aj-col"><span class="cir-aj-l">Descanso entre vueltas</span>
         <div class="seg" role="radiogroup" aria-label="Descanso entre vueltas">
-          ${DESCANSOS.map(s => `<button class="seg-op${rest === s ? ' on' : ''}" role="radio" aria-checked="${rest === s}" onclick="setCircuitRest('${editorDay}',${ci},${s}); renderRoutineEditor()">${s >= 120 ? s / 60 + ' min' : s + ' s'}</button>`).join('')}
+          ${DESCANSOS.includes(rest) ? `<span class="seg-pieza" style="--n:${DESCANSOS.length};--i:${DESCANSOS.indexOf(rest)}" aria-hidden="true"></span>` : ''}
+          ${DESCANSOS.map(s => `<button class="seg-op${rest === s ? ' on' : ''}" role="radio" aria-checked="${rest === s}" onclick="cambiaDescanso(${ci},${s})">${s >= 120 ? s / 60 + ' min' : s + ' s'}</button>`).join('')}
         </div></div>
     </div>`;
   if (exs.length) {
@@ -11356,8 +11504,17 @@ function renderCircuitBlockHtml(day, ci) {
 }
 function cambiaSeries(ci, dir) {
   const c = editorData[editorDay].circuits[ci];
-  c.series = Math.min(8, Math.max(1, (parseInt(c.series) || 4) + dir));
+  const de = parseInt(c.series) || 4;
+  c.series = Math.min(8, Math.max(1, de + dir));
   renderRoutineEditor();
+  giraPaso(document.querySelector('#tclient-content .paso-v[data-paso="serie"]'), de, c.series);
+}
+function cambiaDescanso(ci, s) {
+  const c = editorData[editorDay].circuits[ci];
+  const de = DESCANSOS.indexOf(parseInt(c.rest) || 60);
+  setCircuitRest(editorDay, ci, s);
+  renderRoutineEditor();
+  viajaPieza(document.querySelector('#tclient-content .cir-ajustes .seg-pieza'), de, DESCANSOS.indexOf(s));
 }
 function duplicaCircuito(ci) {
   const lista = editorData[editorDay].circuits;
@@ -11544,7 +11701,7 @@ function hojaDinamica(ex, esEj) {
     const texto = /\d/.test(String(valor || '')) ? '' : String(valor || '').trim();
     const unidad = esPeso ? unidadDe(valor, sufP) : unidadDe(valor, 'reps');
     const args = `'${clave}',${si == null ? 'null' : si}`;
-    return `<div class="pz">
+    return `<div class="pz" data-campo="${clave}|${si == null ? '' : si}">
         <button class="pz-b" onclick="pasoHoja(${args},-1)" aria-label="${esPeso ? 'Menos peso' : 'Menos repeticiones'}"><svg class="ic"><use href="#i-menos"/></svg></button>
         <span class="pz-v"><input type="text" inputmode="${esPeso ? 'decimal' : 'numeric'}" value="${n == null ? '' : fmtNum(n)}" placeholder="${reEscAttr(texto || '0')}"
             aria-label="${esPeso ? 'Peso' : 'Repeticiones'}" oninput="escribeHoja(${args},this.value)">
@@ -11562,7 +11719,9 @@ function hojaDinamica(ex, esEj) {
         </div></div>`;
   }
   const st = ex.setType || 'normal';
+  const TIPOS = ['normal', 'dropset', 'piramidal'];
   let html = `<div class="seg" role="radiogroup" aria-label="Tipo de serie" style="margin-bottom:14px">
+      <span class="seg-pieza" style="--n:3;--i:${Math.max(0, TIPOS.indexOf(st))}" aria-hidden="true"></span>
       ${[['normal', 'Normal'], ['dropset', 'Drop set'], ['piramidal', 'Pirámide']].map(([v, t]) =>
         `<button class="seg-op${st === v ? ' on' : ''}" role="radio" aria-checked="${st === v}" onclick="cambiaTipoSerie('${v}')">${t}</button>`).join('')}
     </div>`;
@@ -11601,11 +11760,13 @@ function pasoHoja(clave, si, dir) {
     o.reps = ponNumero(o.reps, v, 'reps');
   } else {
     const v = siguientePeso(numDe(o[clave]), dir, pasoPeso(nombre));
-    if (v == null) return;
+    if (v == null) { sacudir(document.querySelector(`#ejh-din .pz[data-campo="${clave}|${si == null ? '' : si}"]`)); return; }
     o[clave] = ponNumero(o[clave], v, sufijoPeso(nombre));
   }
   pintaHojaEj();
   programaGuardado();
+  const inp = document.querySelector(`#ejh-din .pz[data-campo="${clave}|${si == null ? '' : si}"] input`);
+  if (inp && !movReducido()) anima(inp, [{ transform: `translateY(${dir * 55}%)`, opacity: 0, filter: 'blur(2px)' }, { transform: 'none', opacity: 1, filter: 'blur(0)' }], 'suave', 0, { fill: 'none' });
 }
 function escribeHoja(clave, si, valor) {
   const o = destinoHoja(clave, si), ex = objHoja();
@@ -11649,6 +11810,7 @@ function unidadEscalones() {
 function cambiaTipoSerie(tipo) {
   const ex = objHoja(), h = _hojaEj;
   if (!ex || h.tipo !== 'ej') return;
+  const TIPOS = ['normal', 'dropset', 'piramidal'], de = TIPOS.indexOf(ex.setType || 'normal');
   if (tipo !== 'normal') {
     const vacios = !Array.isArray(ex.steps1) || !ex.steps1.length || ex.steps1.every(p => !numDe(p.w) && !numDe(p.reps));
     if (vacios) {
@@ -11661,6 +11823,7 @@ function cambiaTipoSerie(tipo) {
     }
   }
   setSetType(editorDay, h.ci, h.ei, tipo);
+  viajaPieza(document.querySelector('#ejh-din .seg-pieza'), de, TIPOS.indexOf(tipo));
 }
 function agregaEscalon() {
   const ex = objHoja();
@@ -11675,13 +11838,21 @@ function agregaEscalon() {
   pasos.push({ w, reps: ult ? ult.reps || '' : '' });
   pintaHojaEj();
   programaGuardado();
+  const filas = document.querySelectorAll('#ejh-din .ejh-tabla .ejh-fila:not(.cab)');
+  desplegar(filas[filas.length - 1]);
 }
+let _plegando = false;
 function quitaEscalon(si) {
   const ex = objHoja();
-  if (!ex || !Array.isArray(ex.steps1) || ex.steps1.length <= 1) return;
-  ex.steps1.splice(si, 1);
-  pintaHojaEj();
-  programaGuardado();
+  if (_plegando || !ex || !Array.isArray(ex.steps1) || ex.steps1.length <= 1) return;
+  const fila = document.querySelectorAll('#ejh-din .ejh-tabla .ejh-fila:not(.cab)')[si];
+  _plegando = true;
+  plegar(fila).then(() => {
+    _plegando = false;
+    ex.steps1.splice(si, 1);
+    pintaHojaEj();
+    programaGuardado();
+  });
 }
 function cambiaEjDesdeHoja() {
   const h = _hojaEj;
@@ -11695,9 +11866,18 @@ function quitaDesdeHoja() {
   const nombre = ex.name || ex.text || 'este ejercicio';
   if (!confirm(`¿Quitar ${nombre}?`)) return;
   const d = editorData[editorDay];
-  if (h.tipo === 'ej') d.circuits[h.ci].exercises.splice(h.ei, 1);
-  else d[h.lista].splice(h.wi, 1);
-  cierraHojaEj();
+  const quita = () => {
+    if (h.tipo === 'ej') d.circuits[h.ci].exercises.splice(h.ei, 1);
+    else d[h.lista].splice(h.wi, 1);
+  };
+  // Baja la hoja y la fila se pliega en su sitio; luego se repinta
+  const f = document.getElementById('ejh-fondo');
+  _hojaEj = null;
+  if (f) { f.classList.remove('ver'); f.dataset.img = ''; f.dataset.nom = '-'; setTimeout(() => { if (!_hojaEj) f.innerHTML = ''; }, 450); }
+  const sel = h.tipo === 'ej' ? `#cir-ejs .cir-ej[data-ei="${h.ei}"]` : `.wu-it[data-wu="${h.lista}|${h.wi}"]`;
+  const fila = document.querySelector('#tclient-content ' + sel);
+  if (!fila || movReducido()) { quita(); renderRoutineEditor(); return; }
+  setTimeout(() => plegar(fila).then(() => { quita(); renderRoutineEditor(); }), 280);
 }
 
 /* ── Guardado automático ──
@@ -11793,8 +11973,14 @@ function estadoGuardado(tipo, texto) {
   el.style.cursor = tipo === 'error' && _problemasGuardado.length ? 'pointer' : '';
   el.onclick = tipo === 'error' && _problemasGuardado.length
     ? () => alert('Falta resolver:\n\n' + _problemasGuardado.slice(0, 6).join('\n')) : null;
-  el.innerHTML = tipo === 'ok' ? '<svg class="ic"><use href="#i-check"/></svg>Guardado'
-    : tipo === 'guardando' ? 'Guardando…' : reEscAttr(texto || '');
+  el.innerHTML = tipo === 'ok' ? CHULO_SVG + 'Guardado'
+    : tipo === 'guardando' ? '<svg class="est-giro" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="34 60"/></svg>Guardando…'
+    : reEscAttr(texto || '');
+  if (tipo === 'ok' && !movReducido()) {
+    const pth = el.querySelector('path');
+    if (pth) { pth.style.strokeDasharray = '1'; anima(pth, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 'firme', 0, { duration: 340, siempre: true }); }
+    anima(el, [{ transform: 'scale(.9)' }, { transform: 'none' }], 'rebote', 0, { fill: 'none' });
+  }
   if (tipo === 'ok' || tipo === 'info') el._t = setTimeout(() => el.classList.remove('ver'), 2600);
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') guardaYa(false); });
@@ -11843,9 +12029,17 @@ function openEditorExercise(ei) {
 }
 
 function setEditorDay(day) {
+  const dir = Math.sign(parseInt(String(day).slice(6)) - parseInt(String(editorDay).slice(6)));
   editorDay = day;
   editorBlock = null;   // cada sesión se abre por su índice de bloques
   renderRoutineEditor();
+  // Los chips se quedan; lo de la sesión entra por el lado del chip tocado
+  if (dir && !movReducido()) {
+    document.querySelectorAll('#tclient-content > :not(.ses-chips)').forEach((e, k) =>
+      anima(e, [{ opacity: 0, transform: `translateX(${dir * 36}px)` }, { opacity: 1, transform: 'none' }], 'suave', k * 25, { fill: 'backwards' }));
+  }
+  const chip = document.querySelector('#tclient-content .ses-chip.on');
+  if (chip) chip.scrollIntoView({ block: 'nearest', inline: 'center', behavior: movReducido() ? 'auto' : 'smooth' });
 }
 
 function updateEditorField(day, ci, ei, field, value) {
@@ -12450,6 +12644,7 @@ function updatePickerTray() {
 function confirmPickerSelection() {
   if (!_pickerChosen.length) return;
   const { day, ci } = editorPickerTarget;
+  const antes = editorData[day].circuits[ci].exercises.length;
   _pickerChosen.forEach(ex => {
     editorData[day].circuits[ci].exercises.push({
       name: ex.name, muscle: ex.muscle, img: ex.img, tip: ex.tip || '',
@@ -12458,6 +12653,8 @@ function confirmPickerSelection() {
   });
   closeExercisePicker();
   renderRoutineEditor();
+  // Los recién agregados se abren hacia abajo, uno tras otro
+  document.querySelectorAll('#cir-ejs .cir-ej').forEach((c, k) => { if (k >= antes) desplegar(c, 120 + (k - antes) * 70); });
 }
 
 function openExercisePicker(ci, ei, week) {
@@ -12573,6 +12770,7 @@ function selectExerciseByIdx(idx) {
     if (!Array.isArray(editorData[t.day][k])) editorData[t.day][k] = [];
     if (t.wi === -1) {
       editorData[t.day][k].push({ text: ex.name, name: ex.name, img: ex.img, muscle: ex.muscle, w: '', reps: '15 reps' });
+      t._nueva = `${k}|${editorData[t.day][k].length - 1}`;
     } else {
       const cur = editorData[t.day][k][t.wi] || {};
       editorData[t.day][k][t.wi] = { ...cur, text: ex.name, name: ex.name, img: ex.img, muscle: ex.muscle };
@@ -12586,6 +12784,7 @@ function selectExerciseByIdx(idx) {
   }
   closeExercisePicker();
   renderRoutineEditor();
+  if (t._nueva) { desplegar(document.querySelector(`#tclient-content .wu-it[data-wu="${t._nueva}"]`), 120); t._nueva = null; }
 }
 
 function openWarmupPicker(wi, lista) {
