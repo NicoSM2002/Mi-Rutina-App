@@ -3947,7 +3947,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .ex-tinte { position:absolute; inset:0; border-radius:inherit; z-index:-1; pointer-events:none; }
 .prog-steps .ps { position:relative; overflow:hidden; }
 .ps-llena { position:absolute; inset:0; border-radius:inherit; transform-origin:left center; }
-.ex-vuela { position:fixed; z-index:60; object-fit:cover; transform-origin:0 0; pointer-events:none; background:#fff; border-radius:12px; }
+.ex-vuela { position:fixed; z-index:60; overflow:hidden; pointer-events:none; background:#fff; border-radius:12px; }
+.ex-vuela :is(img, canvas) { display:block; width:100%; height:100%; object-fit:cover; }
 .dg { display:inline-block; height:1em; overflow:hidden; vertical-align:top; }
 .dg-t { display:flex; flex-direction:column; }
 .dg-t span { display:block; height:1em; line-height:1em; text-align:center; }
@@ -6931,20 +6932,57 @@ function llenaPasoHecho() {
   if (a) a.finished.then(fin).catch(fin); else fin();
 }
 
-/* Técnica: la miniatura misma crece hasta el GIF grande y vuelve al cerrar */
-function vuelaImagen(img, desde, hasta, alTerminar) {
-  const f = document.createElement('img');
-  f.className = 'ex-vuela';
-  f.alt = '';
-  f.src = img.currentSrc || img.src;
-  Object.assign(f.style, { left: hasta.left + 'px', top: hasta.top + 'px', width: hasta.width + 'px', height: hasta.height + 'px' });
-  document.body.appendChild(f);
-  const de = `translate(${desde.left - hasta.left}px, ${desde.top - hasta.top}px) scale(${desde.width / hasta.width}, ${desde.height / hasta.height})`;
-  const a = anima(f, [{ transform: de, borderRadius: '30px' }, { transform: 'none', borderRadius: '12px' }], 'firme', 0, { siempre: true, fill: 'forwards' });
-  const fin = () => { f.remove(); alTerminar && alTerminar(); };
-  if (a) a.finished.then(fin).catch(fin); else fin();
-  return f;
+/* Técnica: la miniatura crece hasta el GIF grande y vuelve al cerrar.
+   Es una ventana que cambia de tamaño y recorta la imagen (object-fit:
+   cover), como en Fotos: así la foto nunca se estira ni se aplasta. El
+   destino se vuelve a medir en cada cuadro, de modo que si la pantalla se
+   acomoda mientras vuela (el panel crece o se pliega), llega igual a su sitio. */
+let _vueloTecnica = null;
+function vuelaVentana(img, desde, destino, radios, alTerminar) {
+  if (_vueloTecnica) _vueloTecnica.termina();
+  const v = document.createElement('div');
+  v.className = 'ex-vuela';
+  // Vuela el cuadro que se está viendo, quieto: un GIF nuevo empezaría de
+  // cero y la pose saltaría respecto a la miniatura
+  let im;
+  try {
+    im = document.createElement('canvas');
+    im.width = img.naturalWidth; im.height = img.naturalHeight;
+    im.getContext('2d').drawImage(img, 0, 0);
+  } catch (e) {
+    im = document.createElement('img'); im.alt = ''; im.src = img.currentSrc || img.src;
+  }
+  v.appendChild(im);
+  document.body.appendChild(v);
+  const w0 = Math.sqrt(320), DUR = 560, t0 = performance.now();   // el resorte "firme", sin rebote
+  const pinta = (a, b, k) => {
+    v.style.left = a.left + (b.left - a.left) * k + 'px';
+    v.style.top = a.top + (b.top - a.top) * k + 'px';
+    v.style.width = Math.max(1, a.width + (b.width - a.width) * k) + 'px';
+    v.style.height = Math.max(1, a.height + (b.height - a.height) * k) + 'px';
+    v.style.borderRadius = radios[0] + (radios[1] - radios[0]) * k + 'px';
+  };
+  let raf = 0, vivo = true;
+  const termina = () => {
+    if (!vivo) return;
+    vivo = false; cancelAnimationFrame(raf); v.remove(); _vueloTecnica = null;
+    alTerminar && alTerminar();
+  };
+  const paso = t => {
+    if (!vivo) return;
+    const s = Math.max(0, t - t0) / 1000;
+    const k = (t - t0) >= DUR ? 1 : 1 - Math.exp(-w0 * s) * (1 + w0 * s);
+    const b = destino();
+    if (!b || b.width < 2) return termina();
+    pinta(desde, b, k);
+    if (t - t0 >= DUR) return termina();
+    raf = requestAnimationFrame(paso);
+  };
+  pinta(desde, desde, 0);
+  raf = requestAnimationFrame(paso);
+  _vueloTecnica = { termina };
 }
+const _enPantalla = r => r && r.width > 2 && r.bottom > 0 && r.top < innerHeight;
 
 /* El peso que cambió desde la última vez que se vio: los dígitos ruedan */
 function revisaPesosCambiados() {
@@ -7189,34 +7227,31 @@ function toggleExInfo(uid, src) {
   const fila = panel.closest('.ex-row');
   const mini = fila && fila.querySelector('.ex-thumb-gif.ready');
   const foto = document.getElementById('photo_' + uid);
-  const vuela = !!(mini && foto && src && !movReducido());
+  if (_vueloTecnica) _vueloTecnica.termina();   // un toque a mitad de vuelo lo cierra limpio
+  const desdeMini = mini && mini.getBoundingClientRect();
+  const vuela = !!(mini && foto && src && !movReducido() && _enPantalla(desdeMini));
+  const muestra = () => { if (foto) foto.style.visibility = ''; if (mini) mini.style.visibility = ''; };
   if (vuela && open) {
-    const inn = panel.querySelector('.ex-panel-in');
     loadGifInto(foto, src);
-    panel.style.transition = 'none'; if (inn) inn.style.transition = 'none';
-    panel.classList.add('show');
-    const destino = foto.getBoundingClientRect();
-    panel.classList.remove('show');
-    void panel.offsetHeight;
-    panel.style.transition = ''; if (inn) inn.style.transition = '';
-    if (destino.width > 0) {
-      foto.style.visibility = 'hidden'; mini.style.visibility = 'hidden';
-      vuelaImagen(mini, mini.getBoundingClientRect(), destino, () => {
-        foto.style.visibility = ''; mini.style.visibility = '';
-        panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      });
+    foto.style.visibility = 'hidden';   // la miniatura se queda: crece una copia desde ella
+    // Si el panel abierto no cabe, la pantalla sube mientras la foto crece:
+    // así aterriza ya a la vista, en vez de irse por debajo y volver.
+    const cont = document.getElementById('content');
+    const inn = panel.querySelector('.ex-panel-in');
+    if (cont && inn) {
+      const nav = document.getElementById('bottom-nav');
+      const piso = Math.min(cont.getBoundingClientRect().bottom, nav && nav.offsetParent ? nav.getBoundingClientRect().top : Infinity) - 12;
+      const falta = panel.getBoundingClientRect().top + inn.scrollHeight - piso;
+      if (falta > 0) cont.scrollBy({ top: falta, behavior: 'smooth' });
     }
-  } else if (vuela && !open && foto.getBoundingClientRect().height > 0) {
-    const desde = foto.getBoundingClientRect(), hasta = mini.getBoundingClientRect();
-    foto.style.visibility = 'hidden'; mini.style.visibility = 'hidden';
-    const f = document.createElement('img');
-    f.className = 'ex-vuela'; f.alt = ''; f.src = mini.currentSrc || mini.src;
-    Object.assign(f.style, { left: desde.left + 'px', top: desde.top + 'px', width: desde.width + 'px', height: desde.height + 'px' });
-    document.body.appendChild(f);
-    const de = `translate(${hasta.left - desde.left}px, ${hasta.top - desde.top}px) scale(${hasta.width / desde.width}, ${hasta.height / desde.height})`;
-    const a = anima(f, [{ transform: 'none', borderRadius: '12px' }, { transform: de, borderRadius: '30px' }], 'firme', 0, { siempre: true, fill: 'forwards' });
-    const fin = () => { f.remove(); foto.style.visibility = ''; mini.style.visibility = ''; };
-    if (a) a.finished.then(fin).catch(fin); else fin();
+    // El destino es la foto en su sitio final, medida cuadro a cuadro
+    vuelaVentana(mini, desdeMini, () => foto.getBoundingClientRect(), [16, 12], muestra);
+  } else if (vuela && !open) {
+    const desdeFoto = foto.getBoundingClientRect();
+    if (_enPantalla(desdeFoto)) {
+      foto.style.visibility = 'hidden';
+      vuelaVentana(mini, desdeFoto, () => mini.getBoundingClientRect(), [12, 16], muestra);
+    }
   }
   panel.classList.toggle('show', open);
   const btn = document.getElementById('exi_' + uid);
