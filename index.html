@@ -3191,6 +3191,15 @@ select.na-input {
 .resumen-session-card {
   background:var(--s1); border:none; border-radius:var(--r-group); padding:0; margin-bottom:0;
 }
+/* Cada sesión es su propia tarjeta: sin aire se veían pegadas */
+.resumen-section > .resumen-session-card + .resumen-session-card { margin-top:10px; }
+.modo-prueba {
+  position:fixed; left:50%; bottom:calc(var(--sab) + 92px); transform:translateX(-50%); z-index:400;
+  display:flex; gap:10px; align-items:center; padding:8px 8px 8px 14px; border-radius:100px;
+  background:var(--t1); color:var(--bg); font-size:13px; font-weight:600; white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.18);
+}
+.modo-prueba a { color:var(--bg); background:rgba(127,127,127,.35); padding:4px 10px; border-radius:100px; text-decoration:none; }
 .resumen-session-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex:1; }
 .resumen-session-day { font-family:var(--font-d); font-size:17px; font-weight:700; color:var(--t1); letter-spacing:-.4px; }
 .resumen-session-date { font-size:15px; color:var(--t2); letter-spacing:-.2px; }
@@ -4043,7 +4052,6 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9.2 3.5h5.6l-.9 6 3.4 2.9v1.6H6.7v-1.6l3.4-2.9z"/><path d="M12 14v6.5"/></symbol>
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h7.5L19 9v11.5H6z"/><path d="M13.5 3.5V9H19M9 13h6M9 16.5h4"/></symbol>
   <symbol id="i-bench" viewBox="0 0 24 24"><path d="M3 10h14M4.5 10v5M15.5 10v5M18 7.5v5"/><circle cx="19.5" cy="6" r="1.6"/></symbol>
-  <symbol id="i-user-lift" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M6 8.5h12M4 6.5v4M20 6.5v4M12 7v6M8.5 13h7l-1 7M9.5 20l.5-4"/></symbol>
   <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.9-3.9"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16M9 6.5V4.5h6v2M6 6.5l1 13.5h10l1-13.5M10 10v6M14 10v6"/></symbol>
@@ -4220,7 +4228,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
     <button class="back-btn" onclick="show('role-select')"><svg class="ic"><use href="#i-chevron-l"/></svg>Volver</button>
   </div>
   <div class="tlogin-body">
-    <div class="tlogin-icon accent"><svg class="ic ic-lg"><use href="#i-user-lift"/></svg></div>
+    <div class="tlogin-icon accent"><svg class="ic ic-lg"><use href="#i-perfil"/></svg></div>
     <div class="tlogin-title">Acceso atleta</div>
     <div class="tlogin-sub">Ingresa tu usuario para continuar.</div>
     <label class="tlogin-label" for="athlete-username">Usuario</label>
@@ -5230,7 +5238,7 @@ async function showRoutine() {
       const st = getSessionState(currentAthlete);
       // Si hoy ya entrenó, lo correcto es el descanso, no la rutina: pintar
       // la rutina y cambiarla un segundo después era el destello.
-      if (completadaHoyLocal()) {
+      if (completadaHoyLocal() && !MODO_PRUEBA) {
         document.getElementById('routine-days-bar').innerHTML =
           `<div class="session-badge pill-session">Sesión ${st.sessionNum} <span class="session-of-total ps-of">de ${st.total}</span></div>`;
         renderRestDay(st);
@@ -5267,7 +5275,7 @@ async function showRoutine() {
     });
     const data = await res.json();
     serverCompletions = data.completions || [];
-    completedToday = serverCompletions.some(c => c.day === todayISO);
+    completedToday = serverCompletions.some(c => c.day === todayISO) && !MODO_PRUEBA;
 
     // Sync localStorage sessionIdx with server completion count + offset
     const serverIdx = serverCompletions.length;
@@ -5279,7 +5287,7 @@ async function showRoutine() {
   } catch(e) {
     // Offline fallback: use localStorage
     const lastCompleted = localStorage.getItem('lastCompleted_' + currentAthlete);
-    completedToday = (lastCompleted === new Date().toDateString());
+    completedToday = (lastCompleted === new Date().toDateString()) && !MODO_PRUEBA;
   }
 
   const state = getSessionState(currentAthlete);
@@ -5485,6 +5493,7 @@ const NOMBRE_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viern
    la del próximo día de entreno, por si quiere adelantarla. */
 function sesionPorDiaDeLaSemana(athlete) {
   const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  if (MODO_PRUEBA) hoy.setDate(hoy.getDate() + 1);
   const d = hoy.getDay();                 // 0=domingo … 6=sábado
   const dias = diasDeEntreno(athlete);
   const i = dias.indexOf(d);
@@ -10354,7 +10363,7 @@ async function confirmComplete() {
   btn.setAttribute('aria-label', 'Enviando');
 
   try {
-    const res = await fetch(WORKER_URL, {
+    const res = MODO_PRUEBA ? await respuestaDePrueba() : await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -10389,7 +10398,7 @@ async function confirmComplete() {
       btn.style.flex = '0 0 52px'; btn.style.borderRadius = '26px'; btn.style.marginLeft = 'auto';
       anima(btn, [{ width: ancho + 'px', borderRadius: '14px' }, { width: '52px', borderRadius: '26px' }], 'firme', 0, { siempre: true, fill: 'none' });
       anima(btn.querySelector('path'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 'firme', 120, { duration: 340, siempre: true });
-      advanceSession(currentAthlete);
+      if (!MODO_PRUEBA) advanceSession(currentAthlete);
       olvidarPaso();       // la sesion quedo cerrada: no hay nada que retomar
       olvidarFeedback();
       olvidarCambiosHoy();
@@ -10584,6 +10593,21 @@ const WORKER_URL = 'https://mirutina.nicolas-f07.workers.dev';
    Pagos queda oculto (atleta y entrenador) mientras no se use. El código y los
    datos siguen intactos: basta con poner esto en true para reactivarlo. */
 const FEATURE_PAGOS = false;
+
+/* Modo prueba (mirutinapp.com/?probar): enseña la sesión que sigue aunque
+   hoy ya se haya entrenado, para ver la rutina y sus animaciones. Al
+   guardar no se manda nada al servidor: el historial queda intacto. */
+var MODO_PRUEBA = (() => { try { return new URLSearchParams(location.search).has('probar'); } catch (e) { return false; } })();
+function respuestaDePrueba() {
+  return new Promise(ok => setTimeout(() => ok({ json: async () => ({ ok: true, prueba: true }) }), 700));
+}
+if (MODO_PRUEBA) document.addEventListener('DOMContentLoaded', () => {
+  const b = document.createElement('div');
+  b.className = 'modo-prueba';
+  b.setAttribute('role', 'status');
+  b.innerHTML = 'Modo prueba · no se guarda nada <a href="./">Salir</a>';
+  document.body.appendChild(b);
+});
 let chatHistory = [];
 let athleteMeals = [];
 
@@ -12728,7 +12752,7 @@ function renderToday() {
   const state = typeof getSessionState === 'function' ? getSessionState(currentAthlete) : null;
   const key = state?.sessionKey || currentDay;
   const day = (data && data[key]) || null;
-  const yaCompletada = localStorage.getItem('lastCompleted_' + currentAthlete) === new Date().toDateString();
+  const yaCompletada = localStorage.getItem('lastCompleted_' + currentAthlete) === new Date().toDateString() && !MODO_PRUEBA;
   const tieneContenido = day && (Array.isArray(day.warmup) || (day.circuits || []).length || day.cardio);
   const titulo = day ? deriveSessionTitle(day, (key.match(/\d+/)||[''])[0]) : '';
 
