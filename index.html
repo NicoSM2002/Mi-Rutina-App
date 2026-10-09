@@ -7828,7 +7828,7 @@ async function regCrear() {
     referencias: { banca: +e.referencias.banca || null, sentadilla: +e.referencias.sentadilla || null, jalon: +e.referencias.jalon || null },
   };
   // La petición sale ya; la escena corre mientras tanto
-  const peticion = fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+  const peticion = MODO_PRUEBA ? planDePrueba(REG, encuesta) : fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'crear-cuenta-ia', name: REG.nombre.trim(), username: REG.usuario, encuesta }) })
     .then(r => r.json()).catch(() => ({ ok: false, error: 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' }));
 
@@ -7844,6 +7844,28 @@ async function regCrear() {
     return;
   }
   regMuestraPlan(j, escena);
+}
+
+/* Modo prueba (?crear&probar): el registro se recorre entero con su escena,
+   pero no se crea la cuenta ni se llama a la IA. Un plan de ejemplo con los
+   días elegidos, la pierna siempre en su propio día. */
+function planDePrueba(reg, enc) {
+  const NOM = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const dias = [...new Set((enc.dias || []).map(Number))].sort((a, b) => (a || 7) - (b || 7));
+  // La misma división que dibuja la escena (MUSCULOS_DIA)
+  const n = Math.min(6, Math.max(2, dias.length || 3));
+  const COD = { pe: ['pecho'], es: ['espalda'], ho: ['hombros'], br: ['biceps', 'triceps'], pi: ['cuadriceps', 'isquio', 'gluteo', 'pantorrilla'] };
+  const relleno = [1, 3, 5, 2, 4, 6, 0];
+  const sesiones = MUSCULOS_DIA[n].map((cods, i) => {
+    const musculos = [];
+    cods.forEach((c, k) => { const m = COD[c]; musculos.push(m[(k + i) % m.length]); });
+    while (musculos.length < 8) musculos.push(musculos[musculos.length % cods.length]);
+    return { dia: NOM[dias[i] != null ? dias[i] : relleno[i]], musculos, ejercicios: 8, circuitos: 3,
+             series: enc.nivel === 'principiante' ? 3 : 4 };
+  });
+  const j = { ok: true, prueba: true, athlete: { username: reg.usuario || 'tu-usuario' }, plan: { sesiones,
+    explicacion: 'Modo prueba: un plan de ejemplo con tus respuestas, para ver cómo se arma. No se creó ninguna cuenta ni se llamó a la IA.' } };
+  return new Promise(ok => setTimeout(() => ok(j), 4500));
 }
 
 function armaEscena(cuerpo, e) {
@@ -7998,6 +8020,7 @@ function regMuestraPlan(j, escena) {
     sig.onclick = () => {
       sig.onclick = regSiguiente;
       REG.paso = 0; REG.enc = null; REG.nombre = ''; REG.usuario = ''; REG.usuarioTocado = false; REG.usuarioLibre = null;
+      if (j.prueba) { show('role-select'); return; }   // en prueba no hay cuenta a la cual entrar
       entrarComoAtleta(j.athlete, j.selfToken);
     };
     anima(p, [{ opacity: 0, transform: 'translateY(30px)' }, { opacity: 1, transform: 'none' }], 'suave');
