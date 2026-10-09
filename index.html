@@ -3918,6 +3918,38 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 /* Barra inferior del entrenador con cuatro pestañas */
 .trainer-bottom-nav .tbnav-item { min-width:0; }
 
+/* ══ Movimiento sobre lo que ya existe (oct 2026) ══ */
+.gira-n { position:relative; display:inline-block; overflow:hidden; vertical-align:bottom; height:1.15em; line-height:1.15em; }
+.gira-n > span { display:block; }
+.gira-n > span:not(:last-child) { position:absolute; left:0; right:0; top:0; }
+.onda-mov { position:absolute; inset:0; border-radius:50%; border:2px solid var(--ac-str); pointer-events:none; }
+.vd { position:relative; }
+.estallido { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:9999; }
+.fb-row { position:relative; }
+.fb-row .fb-btn { position:relative; z-index:1; }
+.fb-row .fb-btn.on { background:transparent; box-shadow:none; }
+.fb-pieza {
+  position:absolute; top:2px; bottom:2px; left:2px; width:calc((100% - 8px) / 3); border-radius:11px;
+  background:var(--s1); box-shadow:0 1px 4px rgba(0,0,0,.14), 0 0 0 .5px rgba(0,0,0,.04);
+  transform:translateX(calc(var(--i, 0) * (100% + 2px))); opacity:0; visibility:hidden; pointer-events:none;
+}
+.fb-row.respondida .fb-pieza { opacity:1; visibility:visible; }
+.ex-row { position:relative; isolation:isolate; }
+.ex-tinte { position:absolute; inset:0; border-radius:inherit; z-index:-1; pointer-events:none; }
+.prog-steps .ps { position:relative; overflow:hidden; }
+.ps-llena { position:absolute; inset:0; border-radius:inherit; transform-origin:left center; }
+.ex-vuela { position:fixed; z-index:60; object-fit:cover; transform-origin:0 0; pointer-events:none; background:#fff; border-radius:12px; }
+.dg { display:inline-block; height:1em; overflow:hidden; vertical-align:top; }
+.dg-t { display:flex; flex-direction:column; }
+.dg-t span { display:block; height:1em; line-height:1em; text-align:center; }
+.peso-chip { align-self:center; font-size:12px; font-weight:700; padding:2px 8px; border-radius:100px; background:var(--ok-soft); color:var(--ok); white-space:nowrap; }
+.peso-chip.baja { background:var(--s2); color:var(--t2); }
+.timer-num { height:1.1em; line-height:1.1em; overflow:hidden; }
+.timer-num .gira-n { display:block; height:1.1em; line-height:1.1em; }
+.timer-chulo { width:52px; height:52px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; display:block; }
+.giro-btn { display:inline-block; width:20px; height:20px; border-radius:50%; border:2.5px solid rgba(255,255,255,.4); border-top-color:#fff; animation:gifSpin .7s linear infinite; vertical-align:middle; }
+.complete-confirm.hecho { display:flex; align-items:center; justify-content:center; padding:0; height:52px; }
+.complete-confirm .chulo-btn { width:26px; height:26px; fill:none; stroke:#fff; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; }
 /* ══ Progreso: segmentado con pieza deslizante ══ */
 .prog-tabs { position:relative; background:var(--s2); border-radius:12px; padding:3px; gap:0; }
 .prog-tab { position:relative; z-index:1; min-height:38px; padding:8px; border-radius:10px; background:transparent !important;
@@ -6265,6 +6297,7 @@ function pintaBotonNota(btn, txt) {
    error no debe obligar a elegir algo. */
 function marcarEjercicio(ci, nombre, valor, btn) {
   const k = ci + '|' + nombre;
+  const antes = feedbackSesion[k];
   feedbackSesion[k] = (feedbackSesion[k] === valor) ? undefined : valor;
   if (feedbackSesion[k] === undefined) delete feedbackSesion[k];
   guardarFeedback();
@@ -6274,6 +6307,7 @@ function marcarEjercicio(ci, nombre, valor, btn) {
       b.classList.toggle('on', b.dataset.v === feedbackSesion[k]);
     });
     fila.classList.toggle('respondida', !!feedbackSesion[k]);
+    muevePiezaFb(fila, antes, feedbackSesion[k]);
   }
   if (feedbackSesion[k]) {
     btn.classList.remove('pulso');
@@ -6284,6 +6318,7 @@ function marcarEjercicio(ci, nombre, valor, btn) {
   // La tarjeta entera se apaga un poco cuando ya está resuelta
   const tarjeta = btn.closest('.ex-row');
   if (tarjeta) tarjeta.classList.toggle('ex-hecho', !!feedbackSesion[k]);
+  if (feedbackSesion[k]) tineTarjeta(tarjeta, feedbackSesion[k]);
 }
 function hoyISO() {
   const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
@@ -6327,6 +6362,7 @@ function nextStep() {
   guardarPaso();
   empujaContenido(document.getElementById('content'), 1, render);
   document.getElementById('content').scrollTop = 0;
+  llenaPasoHecho();
 }
 
 function prevStep() {
@@ -6478,7 +6514,7 @@ function renderExCard(ex, ci, ei, w) {
   const cargaTexto = !pw.num && wv && /[a-z]/i.test(wv) ? String(wv) : '';
   const cargaHtml = (!isSpecial && (pw.num || cargaTexto || repsDisplay))
     ? `<div class="ex-carga">
-         ${pw.num ? `<span class="ex-peso">${pw.num.replace('.', ',')}</span>
+         ${pw.num ? `<span class="ex-peso" data-pk="${reEscAttr(currentDay + '|' + currentName)}" data-pw="${pw.num}">${pw.num.replace('.', ',')}</span>
                      <span class="ex-unidad">${pw.unit}${sufijo ? (sufijo[0] === '/' ? '' : ' ') + sufijo : ''}</span>`
            : cargaTexto ? `<span class="ex-peso ex-peso-txt">${cargaTexto.charAt(0).toUpperCase() + cargaTexto.slice(1)}</span>` : ''}
          ${repsDisplay ? (timerSeconds > 0
@@ -6671,6 +6707,7 @@ function render() {
   if (pintaContenido(html)) {
     preloadVisibleGifs();
     hydrateThumbGifs();
+    revisaPesosCambiados();
   }
 }
 
@@ -6699,7 +6736,7 @@ function vueltasHTML(ci, total, rest) {
   const lleno = hechas >= total;
   return `<div class="vueltas${lleno ? ' completas' : ''}" id="vueltas-${ci}">
       <div class="vueltas-info">
-        <span class="vueltas-t">${lleno ? 'Circuito completo' : `Vuelta ${hechas + 1} de ${total}`}</span>
+        <span class="vueltas-t">${lleno ? 'Circuito completo' : `Vuelta <span class="vt-n">${hechas + 1}</span> de ${total}`}</span>
         <span class="vueltas-dots">${Array.from({ length: total }, (_, i) =>
           `<button class="vd${i < hechas ? ' ok' : ''}" aria-label="Vuelta ${i + 1}" onclick="tocaVuelta(${ci}, ${i}, ${total}, ${rest})">${
             i < hechas ? '<svg class="ic"><use href="#i-check"/></svg>' : i + 1}</button>`).join('')}</span>
@@ -6716,8 +6753,21 @@ function pintaVueltas(ci, total, rest, animarHasta) {
   const nuevo = document.getElementById('vueltas-' + ci);
   if (animarHasta) {
     const d = nuevo.querySelectorAll('.vd')[animarHasta - 1];
-    if (d) anima(d, [{ transform: 'scale(.4)' }, { transform: 'none' }], 'rebote');
-    anima(nuevo.querySelector('.vueltas-t'), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], 'suave', 60);
+    if (d) {
+      anima(d, [{ transform: 'scale(.4)' }, { transform: 'none' }], 'rebote');
+      ondaEn(d);
+      const ic = d.querySelector('.ic');
+      if (ic) anima(ic, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], 'firme', 90, { duration: 320 });
+    }
+    const btn = nuevo.querySelector('.vuelta-btn');
+    if (btn && !btn.hidden) anima(btn, [{ transform: 'scale(.92)' }, { transform: 'none' }], 'rebote');
+    if (animarHasta >= total) {
+      anima(nuevo.querySelector('.vueltas-t'), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], 'suave', 60);
+      nuevo.querySelectorAll('.vd').forEach((x, i) => anima(x, [{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'none' }], 'rebote', 120 + i * 60, { fill: 'none' }));
+    } else {
+      const n = nuevo.querySelector('.vt-n');
+      if (n) { n.textContent = animarHasta; giraTexto(n, String(animarHasta + 1)); }
+    }
   }
 }
 function vueltaHecha(ci, total, rest) {
@@ -6741,6 +6791,247 @@ function tocaVuelta(ci, i, total, rest) {
   vueltasHoy = leerVueltas();
   const hechas = vueltasHoy[ci] || 0;
   if (i === hechas - 1) { vueltasHoy[ci] = hechas - 1; guardaVueltas(); pintaVueltas(ci, total, rest); }
+}
+
+
+/* ══ Movimiento sobre lo que ya existe (oct 2026) ══════════════════
+   Los mismos botones y los mismos pasos: aquí sólo cambia cómo reaccionan.
+   Ver la propuesta "Mi Rutina más fluida". Con "Reducir movimiento" todo
+   queda como antes (anima() ya lo vuelve un fundido). */
+
+/* Un número que rueda: el viejo sale por arriba y el nuevo entra desde abajo */
+function giraTexto(el, nuevo, dir = 1) {
+  if (!el) return;
+  if (movReducido()) { el.textContent = nuevo; return; }
+  let caja = el.querySelector(':scope > .gira-n');
+  if (!caja) {
+    const viejo = el.textContent;
+    el.innerHTML = '';
+    caja = document.createElement('span'); caja.className = 'gira-n';
+    const s0 = document.createElement('span'); s0.textContent = viejo;
+    caja.appendChild(s0); el.appendChild(caja);
+  }
+  const viejos = [...caja.children];
+  const s = document.createElement('span'); s.textContent = nuevo;
+  caja.appendChild(s);
+  viejos.forEach(v => {
+    const a = anima(v, [{ transform: 'none', filter: 'blur(0)', opacity: 1 },
+      { transform: `translateY(${-100 * dir}%)`, filter: 'blur(2px)', opacity: .2 }], 'suave', 0, { siempre: true, duration: 340, fill: 'forwards' });
+    if (a) a.finished.then(() => v.remove()).catch(() => {}); else v.remove();
+  });
+  anima(s, [{ transform: `translateY(${100 * dir}%)`, filter: 'blur(2px)' }, { transform: 'none', filter: 'blur(0)' }],
+    'suave', 0, { siempre: true, fill: 'none' });
+}
+
+/* Una onda que sale de un círculo al llenarse */
+function ondaEn(el, color) {
+  if (!el || movReducido()) return;
+  const o = document.createElement('span');
+  o.className = 'onda-mov';
+  if (color) o.style.borderColor = color;
+  el.appendChild(o);
+  const a = anima(o, [{ transform: 'scale(1)', opacity: .9 }, { transform: 'scale(2.3)', opacity: 0 }], 'firme', 0, { duration: 650 });
+  if (a) a.finished.then(() => o.remove()).catch(() => o.remove()); else o.remove();
+}
+
+/* Confeti que sale de un punto (el chulo de la sesión), no de toda la pantalla */
+function estallidoDesde(el) {
+  if (!el || movReducido()) return;
+  const r = el.getBoundingClientRect();
+  const c = document.createElement('canvas');
+  c.className = 'estallido';
+  document.body.appendChild(c);
+  const d = devicePixelRatio || 1, W = innerWidth, H = innerHeight;
+  c.width = W * d; c.height = H * d;
+  const ctx = c.getContext('2d'); ctx.scale(d, d);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const col = [css('--ac-str') || '#6E4BFF', '#A68BFF', '#34C759', '#F5A300', '#3D7BFF', '#FF6B5E'];
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let parts = Array.from({ length: 90 }, () => {
+    const a = -Math.PI / 2 + (Math.random() - .5) * 2.8, v = 5 + Math.random() * 7;
+    return { x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, rot: Math.random() * 6, vr: (Math.random() - .5) * .4,
+      t: 6 + Math.random() * 7, c: col[Math.floor(Math.random() * col.length)], vida: 100 + Math.random() * 60, red: Math.random() > .6 };
+  });
+  const paso = () => {
+    ctx.clearRect(0, 0, W, H);
+    parts = parts.filter(p => p.vida > 0 && p.y < H + 30);
+    for (const p of parts) {
+      p.vx *= .97; p.vy = p.vy * .97 + .22; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vida--;
+      ctx.save(); ctx.globalAlpha = Math.min(1, p.vida / 25); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c;
+      if (p.red) { ctx.beginPath(); ctx.arc(0, 0, p.t / 2.4, 0, 7); ctx.fill(); } else ctx.fillRect(-p.t / 2, -p.t / 4, p.t, p.t / 2);
+      ctx.restore();
+    }
+    if (parts.length) requestAnimationFrame(paso); else c.remove();
+  };
+  requestAnimationFrame(paso);
+}
+
+/* Fácil · Justo · No llegué: la tarjeta se tiñe un instante del color de la respuesta */
+const TINTE_FB = { facil: 'var(--ok-soft)', justo: 'var(--ac-soft)', fallo: 'rgba(215,38,61,.12)' };
+function tineTarjeta(tarjeta, valor) {
+  if (!tarjeta || !TINTE_FB[valor] || movReducido()) return;
+  tarjeta.querySelectorAll(':scope > .ex-tinte').forEach(t => t.remove());
+  const t = document.createElement('span');
+  t.className = 'ex-tinte';
+  t.style.background = TINTE_FB[valor];
+  tarjeta.prepend(t);
+  const a = anima(t, [{ opacity: 0 }, { opacity: 1, offset: .25 }, { opacity: 0 }], 'firme', 0, { duration: 900 });
+  if (a) a.finished.then(() => t.remove()).catch(() => t.remove()); else t.remove();
+}
+const _pxPieza = i => `translateX(calc(${i} * (100% + 2px)))`;
+function muevePiezaFb(fila, antes, ahora) {
+  const pieza = fila && fila.querySelector('.fb-pieza');
+  if (!pieza) return;
+  const idx = v => FB_OPCIONES.findIndex(o => o.v === v);
+  const i0 = idx(antes), i1 = idx(ahora);
+  if (i1 >= 0) {
+    pieza.style.setProperty('--i', i1);
+    if (i0 >= 0 && i0 !== i1) {
+      anima(pieza, [{ transform: _pxPieza(i0) }, { transform: _pxPieza(i1) + ' scaleX(1.05)', offset: .6 }, { transform: _pxPieza(i1) }], 'suave', 0, { fill: 'none', siempre: true });
+    } else if (i0 < 0) {
+      anima(pieza, [{ transform: _pxPieza(i1) + ' scale(.85)', opacity: 0 }, { transform: _pxPieza(i1), opacity: 1 }], 'rebote', 0, { fill: 'none' });
+    }
+  } else if (i0 >= 0) {
+    anima(pieza, [{ transform: _pxPieza(i0), opacity: 1, visibility: 'visible' }, { transform: _pxPieza(i0) + ' scale(.9)', opacity: 0, visibility: 'visible' }], 'firme', 0, { duration: 200, fill: 'none' });
+  }
+}
+
+/* Barra de pasos: el tramo terminado se llena de verde y el siguiente se estira */
+function llenaPasoHecho() {
+  if (movReducido()) return;
+  const segs = document.querySelectorAll('#content .prog-steps .ps');
+  const hecho = segs[routineStep - 1], ahora = segs[routineStep];
+  if (!hecho) return;
+  hecho.classList.remove('done'); hecho.classList.add('now');
+  const verde = document.createElement('i'); verde.className = 'ps-llena'; verde.style.background = 'var(--ok)';
+  hecho.appendChild(verde);
+  let vio = null;
+  if (ahora) {
+    ahora.classList.remove('now');
+    vio = document.createElement('i'); vio.className = 'ps-llena'; vio.style.background = 'var(--ac-str)'; vio.style.transform = 'scaleX(0)';
+    ahora.appendChild(vio);
+  }
+  const fin = () => {
+    hecho.classList.remove('now'); hecho.classList.add('done'); verde.remove();
+    if (!ahora || !vio) return;
+    const b = anima(vio, [{ transform: 'scaleX(0)' }, { transform: 'none' }], 'suave', 0, { fill: 'forwards' });
+    const listo = () => { ahora.classList.add('now'); vio.remove(); };
+    if (b) b.finished.then(listo).catch(listo); else listo();
+  };
+  const a = anima(verde, [{ transform: 'scaleX(0)' }, { transform: 'none' }], 'firme', 140, { duration: 460, fill: 'forwards' });
+  if (a) a.finished.then(fin).catch(fin); else fin();
+}
+
+/* Técnica: la miniatura misma crece hasta el GIF grande y vuelve al cerrar */
+function vuelaImagen(img, desde, hasta, alTerminar) {
+  const f = document.createElement('img');
+  f.className = 'ex-vuela';
+  f.alt = '';
+  f.src = img.currentSrc || img.src;
+  Object.assign(f.style, { left: hasta.left + 'px', top: hasta.top + 'px', width: hasta.width + 'px', height: hasta.height + 'px' });
+  document.body.appendChild(f);
+  const de = `translate(${desde.left - hasta.left}px, ${desde.top - hasta.top}px) scale(${desde.width / hasta.width}, ${desde.height / hasta.height})`;
+  const a = anima(f, [{ transform: de, borderRadius: '30px' }, { transform: 'none', borderRadius: '12px' }], 'firme', 0, { siempre: true, fill: 'forwards' });
+  const fin = () => { f.remove(); alTerminar && alTerminar(); };
+  if (a) a.finished.then(fin).catch(fin); else fin();
+  return f;
+}
+
+/* El peso que cambió desde la última vez que se vio: los dígitos ruedan */
+function revisaPesosCambiados() {
+  if (!currentAthlete) return;
+  const clave = 'pesosVistos_' + currentAthlete;
+  let vistos = {};
+  try { vistos = JSON.parse(localStorage.getItem(clave) || '{}') || {}; } catch (e) { vistos = {}; }
+  let cambio = false;
+  document.querySelectorAll('#content .ex-peso[data-pk]').forEach(el => {
+    const k = el.dataset.pk, w = el.dataset.pw, antes = vistos[k];
+    if (antes === w) return;
+    vistos[k] = w; cambio = true;
+    if (antes == null) return;
+    const a = parseFloat(String(antes).replace(',', '.')), b = parseFloat(String(w).replace(',', '.'));
+    if (!isFinite(a) || !isFinite(b) || a === b) return;
+    cuandoSeVea(el, () => giraPeso(el, String(antes).replace('.', ','), String(w).replace('.', ','), b - a));
+  });
+  if (cambio) { try { localStorage.setItem(clave, JSON.stringify(vistos)); } catch (e) {} }
+}
+function cuandoSeVea(el, fn) {
+  if (!('IntersectionObserver' in window)) return fn();
+  const io = new IntersectionObserver(es => {
+    if (es.some(e => e.isIntersecting)) { io.disconnect(); setTimeout(fn, 250); }
+  }, { threshold: .6 });
+  io.observe(el);
+}
+function giraPeso(el, de, a, delta) {
+  if (!el.isConnected) return;
+  if (!movReducido()) {
+    if (/^\d+$/.test(de) && /^\d+$/.test(a) && de.length === a.length) {
+      const tira = '01234567890123456789'.split('').map(d => `<span>${d}</span>`).join('');
+      el.innerHTML = a.split('').map(() => `<span class="dg"><span class="dg-t">${tira}</span></span>`).join('');
+      const sube = delta > 0;
+      [...el.querySelectorAll('.dg-t')].forEach((t, j) => {
+        const da = +de[j], db = +a[j];
+        if (da === db) { t.style.transform = `translateY(-${db}em)`; return; }
+        const ini = sube ? da : (db > da ? da + 10 : da), fin = sube ? (db < da ? db + 10 : db) : db;
+        anima(t, [{ transform: `translateY(-${ini}em)`, filter: 'blur(0)' }, { filter: 'blur(3px)', offset: .35 },
+          { transform: `translateY(-${fin}em)`, filter: 'blur(0)' }], 'lento', j * 70, { siempre: true, fill: 'forwards' });
+      });
+      setTimeout(() => { if (el.isConnected) el.textContent = a; }, (RESORTE.lento.duration || 900) + a.length * 70 + 60);
+    } else {
+      el.textContent = de;
+      giraTexto(el, a, delta > 0 ? 1 : -1);
+      setTimeout(() => { if (el.isConnected) el.textContent = a; }, 700);
+    }
+  }
+  const unidad = /kg/i.test(el.nextElementSibling ? el.nextElementSibling.textContent : '') ? 'kg' : 'lbs';
+  const chip = document.createElement('span');
+  chip.className = 'peso-chip' + (delta < 0 ? ' baja' : '');
+  const n = Math.abs(Math.round(delta * 10) / 10);
+  chip.textContent = `${delta > 0 ? '+' : '−'}${String(n).replace('.', ',')} ${unidad}`;
+  const u = el.nextElementSibling;
+  (u && u.classList.contains('ex-unidad') ? u : el).after(chip);
+  anima(chip, [{ transform: 'translateY(6px) scale(.7)', opacity: 0 }, { transform: 'none', opacity: 1 }], 'rebote', 250);
+  setTimeout(() => {
+    const b = anima(chip, [{ opacity: 1 }, { opacity: 0 }], 'firme', 0, { duration: 500 });
+    if (b) b.finished.then(() => chip.remove()).catch(() => chip.remove()); else chip.remove();
+  }, 3200);
+}
+
+/* Progreso: tras una sesión nueva, el anillo avanza y los conteos suben */
+function lunesISO() {
+  const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  n.setDate(n.getDate() - ((n.getDay() + 6) % 7));
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+function avanzaSemanaFuerza(el) {
+  const w = el && el.querySelector('.fz-anillo-wrap[data-hechas]');
+  if (!w || !currentAthlete) return;
+  const hechas = +w.dataset.hechas, meta = +w.dataset.meta, sem = lunesISO();
+  const chips = [...el.querySelectorAll('.fz-m b[data-k]')];
+  const clave = 'fzVisto_' + currentAthlete;
+  let prev = null;
+  try { prev = JSON.parse(localStorage.getItem(clave) || 'null'); } catch (e) { prev = null; }
+  const ahora = { sem, hechas, cuenta: Object.fromEntries(chips.map(b => [b.dataset.k, +b.textContent || 0])) };
+  try { localStorage.setItem(clave, JSON.stringify(ahora)); } catch (e) {}
+  if (!prev || prev.sem !== sem || !(prev.hechas < hechas) || movReducido()) return;
+  el.classList.remove('dibuja');
+  const arc = w.querySelector('.fz-anillo-a'), C = 2 * Math.PI * 26;
+  anima(arc, [{ strokeDashoffset: C * (1 - Math.min(prev.hechas, meta) / meta) }, { strokeDashoffset: C * (1 - Math.min(hechas, meta) / meta) }],
+    'rebote', 350, { siempre: true, fill: 'none' });
+  const n = w.querySelector('.fz-an-h');
+  if (n) { n.textContent = prev.hechas; setTimeout(() => giraTexto(n, String(hechas)), 420); }
+  chips.forEach((b, i) => {
+    const de = (prev.cuenta && +prev.cuenta[b.dataset.k]) || 0, a = +b.textContent || 0;
+    if (de >= a) return;
+    const t0 = performance.now() + 450 + i * 90;
+    b.textContent = de;
+    const paso = t => {
+      const k = Math.max(0, Math.min(1, (t - t0) / 900)), e = 1 - Math.pow(1 - k, 3);
+      b.textContent = Math.round(de + (a - de) * e);
+      if (k < 1) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  });
 }
 
 /* El color de cada grupo muscular */
@@ -6769,7 +7060,8 @@ function renderFeedbackFila(nombre, ci) {
   const k = ci + '|' + nombre;
   const nota = notasEjercicio[k] || '';
   const nomAttr = JSON.stringify(nombre).replace(/"/g, '&quot;');
-  return `<div class="fb-row${marca ? ' respondida' : ''}">${botones}</div>
+  const iMarca = Math.max(0, FB_OPCIONES.findIndex(o => o.v === marca));
+  return `<div class="fb-row${marca ? ' respondida' : ''}"><span class="fb-pieza" style="--i:${iMarca}" aria-hidden="true"></span>${botones}</div>
     <div class="nota-wrap">
       <button class="nota-btn${nota ? ' con-nota' : ''}" aria-expanded="false"
         onclick="event.stopPropagation();toggleNotaEjercicio(${ci}, ${nomAttr}, this)">
@@ -6884,6 +7176,39 @@ function toggleExInfo(uid, src) {
   const panel = document.getElementById('exp_' + uid);
   if (!panel) return;
   const open = !panel.classList.contains('show');
+  // La miniatura misma crece hasta el GIF grande (y vuelve al cerrar)
+  const fila = panel.closest('.ex-row');
+  const mini = fila && fila.querySelector('.ex-thumb-gif.ready');
+  const foto = document.getElementById('photo_' + uid);
+  const vuela = !!(mini && foto && src && !movReducido());
+  if (vuela && open) {
+    const inn = panel.querySelector('.ex-panel-in');
+    loadGifInto(foto, src);
+    panel.style.transition = 'none'; if (inn) inn.style.transition = 'none';
+    panel.classList.add('show');
+    const destino = foto.getBoundingClientRect();
+    panel.classList.remove('show');
+    void panel.offsetHeight;
+    panel.style.transition = ''; if (inn) inn.style.transition = '';
+    if (destino.width > 0) {
+      foto.style.visibility = 'hidden'; mini.style.visibility = 'hidden';
+      vuelaImagen(mini, mini.getBoundingClientRect(), destino, () => {
+        foto.style.visibility = ''; mini.style.visibility = '';
+        panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    }
+  } else if (vuela && !open && foto.getBoundingClientRect().height > 0) {
+    const desde = foto.getBoundingClientRect(), hasta = mini.getBoundingClientRect();
+    foto.style.visibility = 'hidden'; mini.style.visibility = 'hidden';
+    const f = document.createElement('img');
+    f.className = 'ex-vuela'; f.alt = ''; f.src = mini.currentSrc || mini.src;
+    Object.assign(f.style, { left: desde.left + 'px', top: desde.top + 'px', width: desde.width + 'px', height: desde.height + 'px' });
+    document.body.appendChild(f);
+    const de = `translate(${hasta.left - desde.left}px, ${hasta.top - desde.top}px) scale(${hasta.width / desde.width}, ${hasta.height / desde.height})`;
+    const a = anima(f, [{ transform: 'none', borderRadius: '12px' }, { transform: de, borderRadius: '30px' }], 'firme', 0, { siempre: true, fill: 'forwards' });
+    const fin = () => { f.remove(); foto.style.visibility = ''; mini.style.visibility = ''; };
+    if (a) a.finished.then(fin).catch(fin); else fin();
+  }
   panel.classList.toggle('show', open);
   const btn = document.getElementById('exi_' + uid);
   if (btn) {
@@ -6893,6 +7218,7 @@ function toggleExInfo(uid, src) {
   }
   if (!open) return;
   if (src) loadGifInto(document.getElementById('photo_' + uid), src);
+  if (vuela) return;   // al aterrizar la imagen se hace el scroll
   // Si el panel queda fuera de pantalla parece que el toque no hizo nada.
   // Se espera a que termine de crecer: antes no se sabe cuánto mide.
   setTimeout(() => panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 320);
@@ -6961,25 +7287,49 @@ let timerInterval = null;
 let timerSecs = 0;
 let timerTotal = 0;
 
+/* El anillo baja continuo (un cuadro a la vez) y cada segundo rueda. El
+   reloj de verdad es timerFin: así no se desfasa si el teléfono se traba. */
+let timerFin = 0, timerRaf = 0, timerResorteHasta = 0;
 function startTimer(seconds) {
   if (timerInterval) clearInterval(timerInterval);
+  cancelAnimationFrame(timerRaf);
   timerSecs = seconds;
   timerTotal = seconds;
+  timerFin = performance.now() + seconds * 1000;
   const arc = document.getElementById('timer-arc');
   arc.classList.remove('done');
   document.getElementById('timer-num').classList.remove('done');
   arc.style.strokeDasharray = CIRCUMFERENCE;
+  arc.style.transition = 'stroke .3s';
   updateTimerDisplay();
   document.getElementById('timer-overlay').classList.add('show');
-  timerInterval = setInterval(() => {
-    timerSecs--;
-    updateTimerDisplay();
-    if (timerSecs <= 0) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      timerDone();
+  const cuadro = () => { pintaArcoTimer(); timerRaf = requestAnimationFrame(cuadro); };
+  timerRaf = requestAnimationFrame(cuadro);
+  timerInterval = setInterval(tickTimer, 200);
+}
+function restanteTimer() { return Math.max(0, timerFin - performance.now()) / 1000; }
+function pintaArcoTimer() {
+  if (performance.now() < timerResorteHasta) return;
+  const arc = document.getElementById('timer-arc');
+  if (arc) arc.style.strokeDashoffset = CIRCUMFERENCE * (1 - restanteTimer() / timerTotal);
+}
+function tickTimer() {
+  const s = Math.ceil(restanteTimer());
+  if (s !== timerSecs) {
+    timerSecs = s;
+    const num = document.getElementById('timer-num');
+    if (s > 0) {
+      giraTexto(num, String(s));
+      if (s <= 3) anima(num, [{ transform: 'scale(1.15)' }, { transform: 'none' }], 'rebote', 0, { fill: 'none' });
     }
-  }, 1000);
+  }
+  if (s <= 0) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    cancelAnimationFrame(timerRaf);
+    document.getElementById('timer-arc').style.strokeDashoffset = CIRCUMFERENCE;
+    timerDone();
+  }
 }
 
 function updateTimerDisplay() {
@@ -6990,7 +7340,11 @@ function updateTimerDisplay() {
 
 function timerDone() {
   document.getElementById('timer-arc').classList.add('done');
-  document.getElementById('timer-num').classList.add('done');
+  const num = document.getElementById('timer-num');
+  num.classList.add('done');
+  num.innerHTML = '<svg class="timer-chulo" viewBox="0 0 24 24" aria-label="Listo"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg>';
+  anima(num.querySelector('path'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 'firme', 0, { duration: 380, siempre: true });
+  anima(num, [{ transform: 'scale(.6)' }, { transform: 'none' }], 'rebote');
   if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 300]);
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -7010,13 +7364,22 @@ function timerDone() {
 
 function cancelTimer() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  cancelAnimationFrame(timerRaf);
   document.getElementById('timer-overlay').classList.remove('show');
 }
 
 function addTime(s) {
-  timerSecs += s;
+  if (!timerInterval) return;
+  const arc = document.getElementById('timer-arc');
+  const antes = CIRCUMFERENCE * (1 - restanteTimer() / timerTotal);
+  timerFin += s * 1000;
   timerTotal += s;
-  updateTimerDisplay();
+  const despues = CIRCUMFERENCE * (1 - restanteTimer() / timerTotal);
+  // El anillo vuelve con un resorte; mientras tanto el cuadro a cuadro espera
+  timerResorteHasta = performance.now() + (RESORTE.rebote.duration || 600) * .8;
+  anima(arc, [{ strokeDashoffset: antes }, { strokeDashoffset: despues }], 'rebote', 0, { siempre: true, fill: 'none' });
+  arc.style.strokeDashoffset = despues;
+  tickTimer();
 }
 
 function handleOverlayClick(e) {
@@ -9187,26 +9550,27 @@ function bloqueEstaSemana() {
       <circle cx="32" cy="32" r="26" class="fz-anillo-a" stroke-dasharray="${C.toFixed(1)}"
         style="--fin:${(C * (1 - hechas / meta)).toFixed(1)}; --ini:${C.toFixed(1)}"/>
     </svg>
-    <span class="fz-anillo-n">${hechas}<small>/${meta}</small></span>`;
+    <span class="fz-anillo-n"><span class="fz-an-h">${hechas}</span><small>/${meta}</small></span>`;
 
   const marcasHtml = marcadas
     ? `<div class="fz-marcas">
-         ${cuenta.facil ? `<span class="fz-m facil"><b>${cuenta.facil}</b> fácil</span>` : ''}
-         ${cuenta.justo ? `<span class="fz-m justo"><b>${cuenta.justo}</b> justo</span>` : ''}
-         ${cuenta.fallo ? `<span class="fz-m fallo"><b>${cuenta.fallo}</b> no llegué</span>` : ''}
+         ${cuenta.facil ? `<span class="fz-m facil"><b data-k="facil">${cuenta.facil}</b> fácil</span>` : ''}
+         ${cuenta.justo ? `<span class="fz-m justo"><b data-k="justo">${cuenta.justo}</b> justo</span>` : ''}
+         ${cuenta.fallo ? `<span class="fz-m fallo"><b data-k="fallo">${cuenta.fallo}</b> no llegué</span>` : ''}
        </div>
        <div class="fz-semana-s">${notas ? `Y ${notas} nota${notas === 1 ? '' : 's'}. ` : ''}Con esto se ajusta tu rutina el sábado por la noche.</div>`
     : comps.length
       ? `<div class="fz-semana-s">No marcaste ejercicios todavía. Sin marcas, el peso se queda igual.</div>`
       : `<div class="fz-semana-s">Cuando completes tu primera sesión, aquí verás cómo te fue.</div>`;
 
+  queueMicrotask(() => avanzaSemanaFuerza(document.getElementById('resumen-content')));
   return `<div class="group fz-semana">
       <div class="fz-semana-top">
         <div>
           <div class="fz-semana-l">Esta semana</div>
           <div class="fz-semana-n">${hechas >= meta ? 'Semana completa' : `${comps.length} de ${meta} sesiones`}</div>
         </div>
-        <div class="fz-anillo-wrap${hechas >= meta ? ' llena' : ''}">${anillo}</div>
+        <div class="fz-anillo-wrap${hechas >= meta ? ' llena' : ''}" data-hechas="${hechas}" data-meta="${meta}">${anillo}</div>
       </div>
       ${marcasHtml}
     </div>`;
@@ -9812,10 +10176,12 @@ async function sendMeal(slot) {
         setTimeout(() => showNutritionSummary(dayLabel, { [slot]: data.analysis }, { [slot]: text }), 400);
       }
     } else {
+      btn.removeAttribute('aria-label');
       btn.textContent = 'Error, inténtalo de nuevo';
       btn.disabled = false;
     }
   } catch {
+    btn.removeAttribute('aria-label');
     btn.textContent = 'Error de conexión';
     btn.disabled = false;
   }
@@ -9954,7 +10320,11 @@ function openComplete() {
 function closeComplete() {
   document.getElementById('complete-overlay').classList.remove('show');
   const btn = document.getElementById('complete-confirm');
-  if (btn) btn.disabled = false;   // openComplete le repone el texto
+  if (btn) {
+    btn.disabled = false;   // openComplete le repone el texto
+    // El círculo del chulo se quita cuando la hoja ya bajó
+    setTimeout(() => { btn.classList.remove('hecho'); btn.style.flex = ''; btn.style.borderRadius = ''; btn.style.marginLeft = ''; btn.removeAttribute('aria-label'); }, 650);
+  }
 }
 
 function launchConfetti() {
@@ -9980,7 +10350,8 @@ async function confirmComplete() {
   const btn = document.getElementById('complete-confirm');
   const notes = document.getElementById('complete-notes').value.trim();
   btn.disabled = true;
-  btn.textContent = 'Enviando…';
+  btn.innerHTML = '<span class="giro-btn"></span>';
+  btn.setAttribute('aria-label', 'Enviando');
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -10010,8 +10381,14 @@ async function confirmComplete() {
     });
     const data = await res.json();
     if (data.ok) {
-      btn.textContent = 'Enviado';
-      launchConfetti();
+      // El mismo botón se encoge en un círculo con el chulo
+      const ancho = btn.getBoundingClientRect().width;
+      btn.innerHTML = '<svg class="chulo-btn" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg>';
+      btn.setAttribute('aria-label', 'Enviado');
+      btn.classList.add('hecho');
+      btn.style.flex = '0 0 52px'; btn.style.borderRadius = '26px'; btn.style.marginLeft = 'auto';
+      anima(btn, [{ width: ancho + 'px', borderRadius: '14px' }, { width: '52px', borderRadius: '26px' }], 'firme', 0, { siempre: true, fill: 'none' });
+      anima(btn.querySelector('path'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 'firme', 120, { duration: 340, siempre: true });
       advanceSession(currentAthlete);
       olvidarPaso();       // la sesion quedo cerrada: no hay nada que retomar
       olvidarFeedback();
@@ -10021,12 +10398,23 @@ async function confirmComplete() {
       setTimeout(() => {
         closeComplete();
         renderRestDay(getSessionState(currentAthlete));
-      }, 2500);
+        // El chulo de "¡Sesión completada!" entra y el confeti sale de él
+        const chk = document.querySelector('#content .done-check');
+        if (chk) {
+          anima(chk, [{ transform: 'scale(.4)', opacity: 0 }, { transform: 'none', opacity: 1 }], 'rebote');
+          const ic = chk.querySelector('.ic');
+          if (ic) anima(ic, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], 'firme', 260, { duration: 380 });
+          ondaEn(chk, 'var(--ok)');
+          setTimeout(() => estallidoDesde(chk), 280);
+        }
+      }, 1300);
     } else {
+      btn.removeAttribute('aria-label');
       btn.textContent = 'Error, inténtalo de nuevo';
       btn.disabled = false;
     }
   } catch {
+    btn.removeAttribute('aria-label');
     btn.textContent = 'Error de conexión';
     btn.disabled = false;
   }
