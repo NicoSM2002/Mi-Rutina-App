@@ -474,7 +474,7 @@ export function fuerzaRelativa(muscle, basico, cargas, perfil) {
 export function cargaParaElAtleta(ex, cargas, perfil) {
   if (!ex || ex.unit === 'corporal' || !ex.step) return { w1: '', origen: 'corporal' };
   const previa = cargas && cargas[ex.name];
-  if (previa && previa.w1 && !previa.estimado) return { w1: previa.w1, origen: 'su último peso', reps: previa.reps };
+  if (previa && previa.w1 && !previa.estimado) return { w1: previa.w1, origen: previa.viejo ? 'su peso de antes' : 'su último peso', reps: previa.reps };
   const f = fuerzaRelativa(ex.muscle, tipoDe(ex) === 'C', cargas, perfil);
   if (f === null) return null;
   let total = cargaIntermedia(ex, perfil) * f * 0.9;

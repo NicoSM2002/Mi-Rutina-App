@@ -1166,6 +1166,21 @@ async function actualizarFicha(env, clientId, { conIA = true } = {}) {
   const completions = [...(comps || []), ...(compsArch || [])];
   const progresion = [...(prog || []), ...(progArch || [])];
   const ficha = armarFicha({ atleta, rutina, completions, progresion, cargas: cargas || {}, previa });
+  // Lo que ya hizo y no está en su registro de cargas (de su época con
+  // entrenador, o de antes de que existiera el registro) entra: si ese
+  // ejercicio vuelve, vuelve con su peso, y cuenta para su fuerza. Si es de
+  // hace más de 8 semanas, se recalibra con la primera marca.
+  const registro = cargas || {};
+  let nuevas = 0;
+  for (const [nombre, e] of Object.entries(ficha.ejercicios)) {
+    if (registro[nombre] || !e.ultimoPeso || !e.ultimoPeso.w1) continue;
+    const viejo = Date.now() - Date.parse(e.ultimoPeso.fecha) > 56 * 86400000;
+    registro[nombre] = { muscle: e.musculo, unit: (PorNombre[nombre] || {}).unit || '', w1: e.ultimoPeso.w1,
+                         reps: e.ultimoPeso.reps, resp: null, estimado: false, viejo, fecha: e.ultimoPeso.fecha,
+                         fuente: 'historial', hist: [{ fecha: e.ultimoPeso.fecha, w1: e.ultimoPeso.w1, reps: e.ultimoPeso.reps, resp: null }] };
+    nuevas++;
+  }
+  if (nuevas) await env.DB.put(`cargas:${clientId}`, JSON.stringify(registro));
   if (conIA && env.ANTHROPIC_API_KEY) {
     try { await leerLoQueCuenta(env, ficha, completions, chatlog || []); }
     catch (e) { console.log(`[FICHA] ${clientId}: no pude leer sus notas: ${e.message}`); }

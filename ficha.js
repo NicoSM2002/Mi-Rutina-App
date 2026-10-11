@@ -45,23 +45,42 @@ function historiaPorEjercicio(completions, progresion) {
         if (!e || !e.name) continue;
         const f = fb.get(e.name);
         const cor = corregidoEn.find(x => x.name === e.name && (c.ts || 0) >= x.desde && (c.ts || 0) <= x.hasta);
-        const w1 = cor && cor.w1 ? cor.w1 : (e.w1 || '');
-        const reps = (cor && cor.reps) || parseInt(e.repNow) || parseInt(e.reps) || null;
+        // En un drop set o una pirámide la carga va en los escalones: cuenta el más pesado
+        const escalones = Array.isArray(e.steps1) ? e.steps1.filter(x => x && x.w) : [];
+        const top = escalones.length && (e.setType === 'dropset' || e.setType === 'piramidal' || !e.w1)
+          ? escalones.reduce((a, b) => (parseFloat(b.w) || 0) > (parseFloat(a.w) || 0) ? b : a) : null;
+        const w1 = cor && cor.w1 ? cor.w1 : top ? top.w : (e.w1 || '');
+        const reps = (cor && cor.reps) || (top && parseInt(top.reps)) || parseInt(e.repNow) || parseInt(e.reps) || null;
         (hist[e.name] = hist[e.name] || []).push({
           fecha: c.day, w1, reps, resp: (f && f.resp) || null, nota: String((f && f.nota) || '').trim(),
-          fuente: cor ? 'lo anotó' : f && f.resp ? 'marcado' : 'prescrito',
+          // Una sesión completada se hizo: lo que tenía puesto es lo que levantó
+          // (con su entrenador o con el plan), salvo que anotara otra cosa
+          fuente: cor ? 'lo anotó' : f && f.resp ? 'marcado' : 'hecho sin marca',
           e1rm: e1rm(e.name, w1, reps),
         });
       }
     }
   }
+  // Datos que no cuadran (un "4 lbs", un peso que dobla lo que hace hoy): se
+  // marcan como dudosos y no cuentan. Se comparan con lo último que marcó o
+  // anotó; si nunca marcó, con la mediana de lo demás.
+  for (const puntos of Object.values(hist)) {
+    const reales = puntos.filter(p => p.e1rm && p.fuente !== 'hecho sin marca');
+    const ref = reales.length ? reales[reales.length - 1].e1rm : (() => {
+      const xs = puntos.map(p => p.e1rm).filter(Boolean).sort((a, b) => a - b);
+      return xs.length >= 3 ? xs[xs.length >> 1] : null; })();
+    for (const p of puntos) {
+      if (!p.e1rm || !ref || p.fuente !== 'hecho sin marca') continue;
+      const r = p.e1rm / ref;
+      if (r > 1.8 || r < 0.5) p.dudoso = true;
+    }
+  }
   return hist;
 }
 
-/* Sólo con lo que hizo de verdad (marcado o anotado): lo prescrito por un
-   entrenador hace meses no dice cuánto levantaba. */
+/* Con todo lo que hizo (también con su entrenador), menos lo dudoso */
 function tendenciaDe(puntos) {
-  const con = puntos.filter(p => p.e1rm && p.fuente !== 'prescrito');
+  const con = puntos.filter(p => p.e1rm && !p.dudoso);
   if (con.length < 2) return 'sin datos suficientes';
   const ult = con[con.length - 1];
   const antes = [...con].reverse().find(p => Date.parse(ult.fecha) - Date.parse(p.fecha) >= 14 * DIA) || con[0];
@@ -93,8 +112,10 @@ export function armarFicha({ atleta, rutina, completions, progresion, cargas, pr
     const puntos = hist[nm] || [];
     const marcas = { facil: 0, justo: 0, fallo: 0 };
     for (const p of puntos) if (marcas[p.resp] !== undefined) marcas[p.resp]++;
-    const reales = puntos.filter(p => p.fuente !== 'prescrito');
-    const mejor = (reales.length ? reales : puntos).filter(p => p.e1rm).sort((a, b) => b.e1rm - a.e1rm)[0] || null;
+    const validos = puntos.filter(p => !p.dudoso);
+    const mejor = validos.filter(p => p.e1rm).sort((a, b) => b.e1rm - a.e1rm)[0] || null;
+    const ultimoPeso = [...validos].reverse().find(p => p.w1) || null;
+    const dudosos = puntos.filter(p => p.dudoso).map(p => ({ fecha: p.fecha, w1: p.w1, reps: p.reps }));
     const act = actuales.get(nm);
     const c = (cargas || {})[nm];
     ejercicios[nm] = {
@@ -111,6 +132,8 @@ export function armarFicha({ atleta, rutina, completions, progresion, cargas, pr
                   reps: puntos[puntos.length - 1].reps, resp: puntos[puntos.length - 1].resp },
       } : {}),
       ...(mejor ? { mejor: { fecha: mejor.fecha, w1: mejor.w1, reps: mejor.reps, e1rm: mejor.e1rm } } : {}),
+      ...(ultimoPeso ? { ultimoPeso: { fecha: ultimoPeso.fecha, w1: ultimoPeso.w1, reps: ultimoPeso.reps } } : {}),
+      ...(dudosos.length ? { dudosos } : {}),
       tendencia: tendenciaDe(puntos),
       marcas,
       notas: puntos.filter(p => p.nota).slice(-3).map(p => ({ fecha: p.fecha, nota: p.nota.slice(0, 200) })),
