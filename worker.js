@@ -3,6 +3,7 @@ import { armarRutina, fichasParaIA, validarEncuesta, explicacionDeRespaldo, resu
          filtroDelAtleta, ordenaDias, calentamientoDelDia, perfilDeCarga, techoDe, cargaTotal,
          cargaDesproporcionada, cargaSugerida, convierteCarga, cargaParaElAtleta, tipoDe,
          rangoDeRepsPara, ajustaAlRango } from './plan-ia.js';
+import { armarFicha, fichaParaPrompt } from './ficha.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
 // is missing or the trainer record has no email. Real routing uses
@@ -672,7 +673,7 @@ Responde SOLO un JSON array, vacío si no hay nada:
 /* El modelo elige, por sesión, cuál sale y qué entra; el código comprueba.
    Con `dadas` (propuestas ya revisadas) no se llama al modelo: sólo se
    validan, para aplicar exactamente lo que se aprobó. */
-async function proponerRotacion(env, rutina, sesiones, atleta, cargas, dadas) {
+async function proponerRotacion(env, rutina, sesiones, atleta, cargas, dadas, ficha) {
   if (!sesiones.length || (!dadas && !env.ANTHROPIC_API_KEY)) return [];
   const vale = filtroDelAtleta(atleta && atleta.encuesta);
   cargas = cargas || {};
@@ -703,8 +704,13 @@ async function proponerRotacion(env, rutina, sesiones, atleta, cargas, dadas) {
     })).filter(s => s.candidatos.length);
     if (!fichas.length) return [];
 
+    const loQueSabes = fichaParaPrompt(ficha);
     const prompt = `Eres un entrenador de fuerza. ${perfilTexto(atleta)}
-Su rutina rota de forma consciente: cada semana, en cada sesión, se cambia UN ejercicio para variar el
+${loQueSabes ? loQueSabes + `
+
+Ten en cuenta lo anterior: no propongas nada que choque con una molestia vigente, con lo que no le gusta
+o con equipo que no tiene; y no vuelvas a un ejercicio que ya hizo y le fue mal.
+` : ''}Su rutina rota de forma consciente: cada semana, en cada sesión, se cambia UN ejercicio para variar el
 estímulo sin perder la progresión. Los básicos se quedan varias semanas (en ellos progresa la carga);
 los accesorios rotan más seguido.
 
@@ -1108,7 +1114,8 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   const candidatos = candidatosDeRotacion(rutina, { hoy, inicio, estancados: ejerciciosEstancados(historial, 10), molestias });
   let rotaciones = [];
   if (candidatos.length) {
-    const propuestas = await proponerRotacion(env, rutina, candidatos, atleta, cargas);
+    const ficha = await env.DB.get(`ficha:${clientId}`, 'json');
+    const propuestas = await proponerRotacion(env, rutina, candidatos, atleta, cargas, null, ficha);
     rotaciones = aplicarRotacion(rutina, propuestas, perfil, cargas, hoy);
     console.log(`[ROTACION] ${clientId}: ${candidatos.length} sesiones con candidatos (${molestias.length} por molestia), ${rotaciones.length} cambiados`);
   }
@@ -1137,7 +1144,117 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial.slice(0, 60)));
 
   console.log(`[PROGRESION] ${clientId} semana=${semana} motivo=${motivo} cambios=${cambios.length} rotaciones=${rotaciones.length}`);
+  try { await actualizarFicha(env, clientId); }
+  catch (e) { console.log(`[FICHA] ${clientId} no se actualizó: ${e.message}`); }
   return { ok: true, semana, cambios, rotaciones, resumen };
+}
+
+/* ── Ficha del atleta ────────────────────────────────────────────────
+   Se rehace desde los datos crudos (ver ficha.js). Lo que sólo se entiende
+   leyendo — molestias, preferencias, equipo que no hay — lo saca el modelo
+   de sus notas y del chat nuevos desde la última vez, y se suma a lo que ya
+   sabía: nunca se pierde lo que contó hace meses aunque el chat se recorte. */
+async function actualizarFicha(env, clientId, { conIA = true } = {}) {
+  const [atleta, rutina, comps, compsArch, prog, progArch, cargas, chatlog, previa] = await Promise.all([
+    getAthlete(env, clientId), env.DB.get(`routine:${clientId}`, 'json'),
+    env.DB.get(`completions:${clientId}`, 'json'), env.DB.get(`completions:${clientId}-archivo`, 'json'),
+    env.DB.get(`progresion:${clientId}`, 'json'), env.DB.get(`progresion:${clientId}-archivo`, 'json'),
+    env.DB.get(`cargas:${clientId}`, 'json'), env.DB.get(`chatlog:${clientId}`, 'json'),
+    env.DB.get(`ficha:${clientId}`, 'json'),
+  ]);
+  if (!atleta) return null;
+  const completions = [...(comps || []), ...(compsArch || [])];
+  const progresion = [...(prog || []), ...(progArch || [])];
+  const ficha = armarFicha({ atleta, rutina, completions, progresion, cargas: cargas || {}, previa });
+  if (conIA && env.ANTHROPIC_API_KEY) {
+    try { await leerLoQueCuenta(env, ficha, completions, chatlog || []); }
+    catch (e) { console.log(`[FICHA] ${clientId}: no pude leer sus notas: ${e.message}`); }
+  }
+  await env.DB.put(`ficha:${clientId}`, JSON.stringify(ficha));
+  console.log(`[FICHA] ${clientId}: ${Object.keys(ficha.ejercicios).length} ejercicios, ${ficha.historia.sesionesTotales} sesiones`);
+  return ficha;
+}
+
+async function leerLoQueCuenta(env, ficha, completions, chatlog) {
+  const desde = ficha.leidoHasta || 0;
+  const textos = [];
+  let hasta = desde;
+  for (const c of [...completions].sort((a, b) => (a.ts || 0) - (b.ts || 0))) {
+    if ((c.ts || 0) <= desde) continue;
+    hasta = Math.max(hasta, c.ts || 0);
+    if (String(c.notes || '').trim()) textos.push(`(${c.day}, nota de la sesión) ${String(c.notes).trim().slice(0, 500)}`);
+    for (const f of (Array.isArray(c.feedback) ? c.feedback : [])) {
+      if (f && String(f.nota || '').trim()) textos.push(`(${c.day}, ${f.name}) ${String(f.nota).trim().slice(0, 300)}`);
+    }
+  }
+  for (const x of chatlog) {
+    if ((x.ts || 0) <= desde || !x.q) continue;
+    hasta = Math.max(hasta, x.ts || 0);
+    textos.push(`(${new Date(x.ts).toISOString().slice(0, 10)}, en el chat) ${String(x.q).slice(0, 400)}`);
+  }
+
+  // Lo que dicen los números, para el resumen
+  const ej = Object.entries(ficha.ejercicios);
+  const datos = {
+    persona: ficha.persona, historia: { ...ficha.historia, rotaciones: ficha.historia.rotaciones.length },
+    constancia: ficha.constancia,
+    suben: ej.filter(([, e]) => e.enRutina && e.tendencia === 'sube').map(([n]) => n),
+    estancados: ej.filter(([, e]) => e.enRutina && e.tendencia === 'estable').map(([n]) => n),
+    bajan: ej.filter(([, e]) => e.enRutina && e.tendencia === 'baja').map(([n]) => n),
+    musculos: Object.fromEntries(Object.entries(ficha.musculos).map(([m, v]) => [m, { series: v.seriesSemana, fuerzaBasicos: v.fuerzaBasicos, fuerzaAccesorios: v.fuerzaAccesorios }])),
+    molestiasDetectadas: ficha.molestiasDetectadas,
+  };
+
+  const prompt = `Llevas la ficha de una persona que entrena. Esto es lo que ya sabías de ella:
+${JSON.stringify(ficha.sabeDeTi, null, 1)}
+
+Lo que escribió desde la última vez (notas de sus sesiones y lo que preguntó en el chat):
+${textos.length ? textos.join('\n') : '(nada nuevo)'}
+
+Y lo que dicen sus números:
+${JSON.stringify(datos, null, 1)}
+
+Pon la ficha al día:
+- "molestias": dolor o molestia FÍSICA que haya contado: {"fecha","detalle","ejercicio" (si lo dice),"vigente": true|false}.
+  Si dice que ya pasó, márcala vigente false; no la borres. Cansancio o bajar peso para terminar no son molestias.
+- "preferencias": cómo le gusta o no le gusta entrenar (rangos de repeticiones, ejercicios que le gustan o
+  no, cómo quiere que se arme su rutina): {"fecha","texto"}.
+- "equipo": máquinas que no hay en su gimnasio o que suelen estar ocupadas: {"fecha","texto"}.
+- "otros": cualquier dato útil para entrenarle (horarios, objetivos que mencione, cómo duerme…): {"fecha","texto"}.
+Conserva TODO lo que ya sabías salvo que lo nuevo lo contradiga. No inventes: si no lo dijo, no va.
+- "resumen": de 5 a 8 viñetas cortas ("• ...") de lo más importante para entrenarle bien: constancia, en qué
+  está fuerte o flojo según sus números (fuerza 1 = un intermedio de su peso), qué progresa y qué no, molestias
+  vigentes y preferencias. Háblale de tú, en español de Colombia (nunca voseo), sin motivación de cartel.
+
+Responde SOLO un JSON: {"molestias":[],"preferencias":[],"equipo":[],"otros":[],"resumen":"• ...\n• ..."}`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+               'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 3000,
+                           // Respuesta corta en JSON: sin razonamiento extendido
+                           // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                           thinking: { type: 'between_tools' }, output_config: { effort: 'medium' },
+                           fallbacks: 'default',
+                           messages: [{ role: 'user', content: prompt }] })
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(`la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
+  const txt = textoDeRespuesta(data);
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('respuesta sin JSON: ' + txt.slice(0, 200));
+  const j = JSON.parse(m[0]);
+  const lista = (x, previa) => Array.isArray(x) ? x.filter(i => i && typeof i === 'object').slice(0, 40) : previa;
+  const antes = ficha.sabeDeTi || {};
+  ficha.sabeDeTi = {
+    molestias: lista(j.molestias, antes.molestias || []),
+    preferencias: lista(j.preferencias, antes.preferencias || []),
+    equipo: lista(j.equipo, antes.equipo || []),
+    otros: lista(j.otros, antes.otros || []),
+  };
+  if (typeof j.resumen === 'string' && j.resumen.trim()) ficha.resumen = j.resumen.trim().slice(0, 2000);
+  ficha.leidoHasta = hasta;
 }
 
 /* Pasa toda la rutina por ajustaAlRango y devuelve los cambios con la
@@ -1212,7 +1329,8 @@ async function rotarAhora(env, clientId, { simular = false, propuestas = null, r
   const inicio = inicioDelPlan(historial || [], hoy);
   const perfil = perfilDeCarga(atleta);
   const candidatos = candidatosDeRotacion(rutina, { hoy, inicio, forzar: true });
-  const validas = await proponerRotacion(env, rutina, candidatos, atleta, cargas, propuestas);
+  const validas = await proponerRotacion(env, rutina, candidatos, atleta, cargas, propuestas,
+    propuestas ? null : await env.DB.get(`ficha:${clientId}`, 'json'));
   const rotaciones = aplicarRotacion(rutina, validas, perfil, cargas, hoy);
   marcaAntiguedad(rutina, inicio);
   for (const k of Object.keys(rutina)) {
@@ -2053,6 +2171,27 @@ export default {
       return new Response(JSON.stringify(r), { headers: cors });
     }
 
+    if (body.action === 'ficha') {
+      if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      const ficha = body.rehacer ? await actualizarFicha(env, client, { conIA: body.conIA !== false })
+                                 : await env.DB.get(`ficha:${client}`, 'json');
+      return new Response(JSON.stringify({ ok: !!ficha, ficha }), { headers: cors });
+    }
+
+    if (body.action === 'respaldar') {
+      if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      await respaldoSemanal(env);
+      const lista = env.RESPALDOS ? await env.RESPALDOS.list({ limit: 200 }) : { objects: [] };
+      return new Response(JSON.stringify({ ok: !!env.RESPALDOS, archivos: lista.objects.map(o => ({ key: o.key, size: o.size })) }), { headers: cors });
+    }
+
+    if (body.action === 'get-ficha') {
+      const authErr = await authorizeReadForClient(env, body, client, cors);
+      if (authErr) return authErr;
+      const ficha = await env.DB.get(`ficha:${client}`, 'json');
+      return new Response(JSON.stringify({ ok: true, ficha }), { headers: cors });
+    }
+
     if (body.action === 'ajustar-rangos') {
       if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
       const r = await ajustarRangosAhora(env, client, { simular: !!body.simular, resumen: body.resumen || null });
@@ -2576,7 +2715,7 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
         // Hard delete secuencial: si alguno falla, loggeamos y seguimos los
         // otros (sin Promise.all para que un error no deje huérfanos los otros).
         const keys = [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `meals:${id}`, `payment:${id}`, `support-chat:${id}`, `progresion:${id}`, `chatlog:${id}`,
-                      `cargas:${id}`, `completions:${id}-archivo`, `meals:${id}-archivo`, `progresion:${id}-archivo`];
+                      `cargas:${id}`, `ficha:${id}`, `completions:${id}-archivo`, `meals:${id}-archivo`, `progresion:${id}-archivo`];
         try {
           const versiones = await env.DB.list({ prefix: `rutina-version:${id}:` });
           for (const v of (versiones.keys || [])) keys.push(v.name);
@@ -2990,6 +3129,15 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     // modelo: así no puede proponer algo que no exista.
     const sesionHoy = Array.isArray(body.sesionHoy) ? body.sesionHoy.slice(0, 20) : [];
     let sistema = body.context || '';
+    // Lo que se sabe de él, sólo si es él quien pregunta: la ficha no se le
+    // cuenta a cualquiera que escriba su usuario
+    if (client && body.selfToken && await verifySelfToken(env, client, body.selfToken)) {
+      try {
+        const ficha = await env.DB.get(`ficha:${client}`, 'json');
+        const txt = fichaParaPrompt(ficha, { ejercicios: false });
+        if (txt) sistema += `\n\n── SU FICHA ──\n${txt}\nÚsala para responder con conocimiento de causa; no se la recites.`;
+      } catch (e) { console.log('[CHAT] ficha: ' + e.message); }
+    }
 
     if (sesionHoy.length) {
       const yaEstan = new Set(sesionHoy.map(e => e.name));
@@ -3178,6 +3326,7 @@ ${JSON.stringify(fichas, null, 1)}`;
             console.log(`[CRON] progresión ${id}: ${r.ok ? r.cambios.length + ' cambios' : r.razon}`);
           } catch (e) { console.log(`[CRON] progresión ${id} falló: ${e.message}`); }
         }
+        try { await respaldoSemanal(env); } catch (e) { console.log('[CRON] respaldo falló: ' + e.message); }
       }
       console.log('[CRON] -> sendDailyMealReport');
       await sendDailyMealReport(env);
@@ -3186,6 +3335,28 @@ ${JSON.stringify(fichas, null, 1)}`;
     console.log('[CRON] -> no handler matched, skipping');
   }
 };
+
+/* Respaldo semanal de cada atleta, completo, en un bucket R2 PRIVADO
+   (binding RESPALDOS). Nunca en PHOTOS: ese bucket es público por r2.dev y
+   un respaldo con nombre adivinable quedaría a la vista. Sin el binding,
+   no hace nada. */
+async function respaldoSemanal(env) {
+  if (!env.RESPALDOS) { console.log('[RESPALDO] sin bucket privado configurado: no se respalda'); return; }
+  const fecha = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' })).toISOString().slice(0, 10);
+  const claves = id => [`athlete:${id}`, `routine:${id}`, `completions:${id}`, `completions:${id}-archivo`,
+    `progresion:${id}`, `progresion:${id}-archivo`, `cargas:${id}`, `ficha:${id}`, `chatlog:${id}`,
+    `meals:${id}`, `meals:${id}-archivo`, `payment:${id}`];
+  let n = 0;
+  for (const a of await listAthletes(env, { includeArchived: true })) {
+    try {
+      const datos = {};
+      for (const k of claves(a.clientId)) { const v = await env.DB.get(k, 'json'); if (v !== null) datos[k] = v; }
+      await env.RESPALDOS.put(`${fecha}/${a.clientId}.json`, JSON.stringify(datos), { httpMetadata: { contentType: 'application/json' } });
+      n++;
+    } catch (e) { console.log(`[RESPALDO] ${a.clientId}: ${e.message}`); }
+  }
+  console.log(`[RESPALDO] ${fecha}: ${n} atletas`);
+}
 
 // ── Daily meal report (10 PM Colombia) ──
 async function sendDailyMealReport(env) {

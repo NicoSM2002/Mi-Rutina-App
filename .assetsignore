@@ -2,6 +2,7 @@
 .wrangler
 fundacional
 worker.js
+ficha.js
 wrangler.toml
 node_modules
 package.json

@@ -15,8 +15,15 @@ id = "405c9c9064344dcd91cb82aac6d38994"
 binding = "PHOTOS"
 bucket_name = "mi-rutina-fotos"
 
+# Privado (sin r2.dev): respaldo semanal completo de cada atleta.
+# PHOTOS es público; los respaldos nunca van ahí.
+[[r2_buckets]]
+binding = "RESPALDOS"
+bucket_name = "mirutina-respaldos"
+
 # Crons:
 #  - 03:00 UTC daily  → 22:00 Colombia, reporte diario de comidas
+#                       (los lunes = domingo 22:00: ajuste semanal, ficha y respaldo)
 #  - 01:00 UTC domingo → 20:00 Colombia sábado, reporte semanal
 # (Removed: 18:00 UTC / 13:00 Colombia → recordatorio de entrenar)
 [triggers]
