@@ -901,7 +901,7 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   const atleta = await getAthlete(env, clientId);
   if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
 
-  const semana = claveSemana(Date.now());
+  const semana = claveSemana(Date.now() - 5 * 3600000);   // hora de Bogotá
   const historial = await env.DB.get(`progresion:${clientId}`, 'json') || [];
   if (!simular && historial.some(h => h.semana === semana)) {
     return { ok: false, razon: 'ya se corrió esta semana', semana };
@@ -984,7 +984,7 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
 /* ── Calibración ───────────────────────────────────────────────────────
    Los pesos de un plan nuevo son estimados. La primera vez que marca un
    ejercicio, si fue fácil o no llegó, el salto es doble y se aplica en el
-   momento: esperar al sábado con una carga mal puesta es perder una
+   momento: esperar al domingo con una carga mal puesta es perder una
    semana. "Justo" confirma la carga y desde ahí sigue la progresión
    normal. Muta la rutina y marca el feedback usado (`cal`) para que el
    ajuste semanal no lo cuente dos veces. */
@@ -1408,7 +1408,7 @@ export default {
       }
       // Cuenta con IA: los pesos estimados se calibran con la primera marca.
       // Va antes de guardar la sesión para que quede anotado qué marcas ya
-      // se usaron (f.cal) y el sábado no cuenten dos veces.
+      // se usaron (f.cal) y el domingo no cuenten dos veces.
       const ia = esIA(athleteRecord);
       let calibrados = [];
       if (ia && entry.feedback.length) {
@@ -1423,14 +1423,9 @@ export default {
       if (records.length > 200) records = records.slice(0, 200);
       await env.DB.put(kvKey, JSON.stringify(records));
 
-      // Rutina autogestionada: al cerrar la última sesión de la semana se
-      // recalcula la siguiente. Si esta semana no se llegó a la última, lo
-      // recoge el cron del sábado.
-      const ultimaSesion = 'sesion' + Object.keys(routine).filter(k => /^sesion\d+$/.test(k)).length;
-      if (ia && body.day === ultimaSesion) {
-        ctx.waitUntil(correrProgresion(env, client, 'ultima-sesion', records, calibrados.length ? routine : null).catch(e =>
-          console.log('[PROGRESION] falló al cerrar la semana: ' + e.message)));
-      }
+      // Rutina autogestionada: la semana siguiente se arma el domingo a las
+      // 10 de la noche (cron), no al cerrar la última sesión. Así, si un día
+      // no pudo ir y lo repone el fin de semana, esa sesión también cuenta.
       // Una cuenta con IA sin entrenador no le escribe a nadie
       if (sinEntrenador(athleteRecord)) {
         return new Response(JSON.stringify({ ok: true, calibrados }), { headers: cors });
@@ -2812,7 +2807,7 @@ ${JSON.stringify(fichas, null, 1)}`;
       // Si el cambio no se pudo aplicar, no se promete
       if (!accion) content += `
 
-(No pude dejar ese peso guardado. Si quieres cambiarlo, anótalo en la nota del ejercicio y se ajusta el sábado.)`;
+(No pude dejar ese peso guardado. Si quieres cambiarlo, anótalo en la nota del ejercicio y se ajusta el domingo.)`;
     }
 
     const m = !accion && content.match(/@@CAMBIAR:\s*(.+?)\s*>>\s*(.+?)\s*$/m);
@@ -2872,16 +2867,7 @@ ${JSON.stringify(fichas, null, 1)}`;
 
     // Weekly report: Sunday 01:00 UTC = Saturday 20:00 Colombia
     if (utcHour === 1 && utcDay === 0) {
-      console.log('[CRON] -> progresión semanal + sendWeeklyReport');
-      // Primero la rutina de la semana que viene: si el viernes ya la corrió,
-      // correrProgresion se sale sola al ver la semana en el historial.
-      const cuentasIA = (await listAthletes(env)).filter(esIA).map(a => a.clientId);
-      for (const id of cuentasIA) {
-        try {
-          const r = await correrProgresion(env, id, 'cron');
-          console.log(`[CRON] progresión ${id}: ${r.ok ? r.cambios.length + ' cambios' : r.razon}`);
-        } catch (e) { console.log(`[CRON] progresión ${id} falló: ${e.message}`); }
-      }
+      console.log('[CRON] -> sendWeeklyReport');
       await sendWeeklyReport(env);
       return;
     }
@@ -2893,6 +2879,20 @@ ${JSON.stringify(fichas, null, 1)}`;
     }
     // Daily meal report: 03:00 UTC = 22:00 Colombia (previous day)
     if (utcHour === 3) {
+      // El lunes a las 03:00 UTC es domingo a las 10 de la noche en Bogotá:
+      // la rutina de la semana que viene, con todo lo que hizo en esta
+      // (también lo que repuso el fin de semana). Va con el cron diario y
+      // no con uno propio: dos a la misma hora mandarían doble el reporte.
+      if (utcDay === 1) {
+        console.log('[CRON] -> progresión semanal');
+        const cuentasIA = (await listAthletes(env)).filter(esIA).map(a => a.clientId);
+        for (const id of cuentasIA) {
+          try {
+            const r = await correrProgresion(env, id, 'cron');
+            console.log(`[CRON] progresión ${id}: ${r.ok ? r.cambios.length + ' cambios' : r.razon}`);
+          } catch (e) { console.log(`[CRON] progresión ${id} falló: ${e.message}`); }
+        }
+      }
       console.log('[CRON] -> sendDailyMealReport');
       await sendDailyMealReport(env);
       return;

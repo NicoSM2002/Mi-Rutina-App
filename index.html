@@ -5303,6 +5303,7 @@ async function showRoutine() {
     const data = await res.json();
     serverCompletions = data.completions || [];
     completedToday = serverCompletions.some(c => c.day === todayISO) && !MODO_PRUEBA;
+    anotaSemanaHecha(currentAthlete, serverCompletions);
 
     // Sync localStorage sessionIdx with server completion count + offset
     const serverIdx = serverCompletions.length;
@@ -5339,15 +5340,20 @@ async function showRoutine() {
   render();
 }
 
-/* Para quien entrena por día de la semana, la próxima sesión es la del
-   siguiente día de entreno. Antes salía la de hoy. */
+/* Para quien se autogestiona, la próxima sesión es la primera que le
+   falta, el primer día en que le toque (o en que pueda reponerla). Si ya
+   hizo toda la semana, la primera de la semana que viene. */
 function proximaSesionFija() {
-  const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const hoy = fechaBogota();
+  if (MODO_PRUEBA) hoy.setDate(hoy.getDate() + 1);
   const dias = diasDeEntreno();
-  for (let k = 1; k <= 7; k++) {
-    const d = (hoy.getDay() + k) % 7;
-    const i = dias.indexOf(d);
-    if (i >= 0) return { num: i + 1, key: 'sesion' + (i + 1), esManana: k === 1, dia: NOMBRE_DIA[d] };
+  const { hechas, deHoy } = hechasAntesDe(currentAthlete, hoy);
+  if (deHoy) hechas.add(deHoy);
+  for (let k = 1; k <= 14; k++) {
+    const f = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + k);
+    if (f.getDay() === 1) hechas.clear();               // semana nueva
+    const t = turnoDelDia(f, hechas, dias);
+    if (t.num && !t.descanso) return { num: t.num, key: 'sesion' + t.num, esManana: k === 1, dia: NOMBRE_DIA[f.getDay()] };
   }
   return { num: 1, key: 'sesion1', esManana: true, dia: '' };
 }
@@ -5516,20 +5522,88 @@ function recuerdaModo(dyn) {
 
 const NOMBRE_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-/* La sesión de hoy es la del día que toca. Si hoy no entrena, se enseña
-   la del próximo día de entreno, por si quiere adelantarla. */
-function sesionPorDiaDeLaSemana(athlete) {
-  const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+/* La semana va de lunes a domingo y sus sesiones se hacen en orden: la
+   que toca es la primera que no ha hecho. Si un día no fue, al siguiente
+   le sigue esperando esa misma; no se la salta por cambiar de día. En un
+   día de descanso se enseña como descanso, salvo que vaya atrasado (hizo
+   menos sesiones que días de entreno pasaron): entonces es el día para
+   reponerla. La semana nueva arranca el lunes, después de que el domingo
+   a las 10 de la noche se ajusta la rutina. */
+function fechaBogota() {
+  const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+function isoDeFecha(f) {
+  return `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(f.getDate()).padStart(2,'0')}`;
+}
+function lunesDe(f) {
+  return new Date(f.getFullYear(), f.getMonth(), f.getDate() - ((f.getDay() + 6) % 7));
+}
+
+/* Lo hecho esta semana, guardado en el teléfono para pintar al instante:
+   { lunes: 'YYYY-MM-DD', hechas: { sesion1: 'YYYY-MM-DD', … } } */
+function leeSemanaHecha(athlete) {
+  try { return JSON.parse(localStorage.getItem('semanaHecha_' + (athlete || currentAthlete)) || 'null'); }
+  catch (e) { return null; }
+}
+/* Junta lo que dice el servidor con lo que ya hay en el teléfono. No se
+   reemplaza: justo después de terminar, el servidor puede tardar en
+   devolver la sesión recién guardada. */
+function anotaSemanaHecha(athlete, completions) {
+  const id = athlete || currentAthlete;
+  if (!id) return;
+  const lunes = isoDeFecha(lunesDe(fechaBogota()));
+  const previa = leeSemanaHecha(id);
+  const hechas = previa && previa.lunes === lunes ? { ...previa.hechas } : {};
+  for (const c of completions || []) {
+    if (!c || !c.day || !/^sesion\d+$/.test(c.sessionKey || '') || c.day < lunes) continue;
+    if (!hechas[c.sessionKey] || c.day < hechas[c.sessionKey]) hechas[c.sessionKey] = c.day;
+  }
+  try { localStorage.setItem('semanaHecha_' + id, JSON.stringify({ lunes, hechas })); } catch (e) {}
+}
+
+/* Qué toca un día dado lo ya hecho esa semana (números de sesión). */
+function turnoDelDia(fecha, hechas, dias) {
+  let pendiente = 0;
+  for (let k = 1; k <= dias.length; k++) if (!hechas.has(k)) { pendiente = k; break; }
+  if (!pendiente) return { num: 0 };                       // semana completa
+  if (dias.includes(fecha.getDay())) return { num: pendiente, descanso: false };
+  let debidas = 0;
+  for (const d = lunesDe(fecha); d < fecha; d.setDate(d.getDate() + 1)) if (dias.includes(d.getDay())) debidas++;
+  const hechasN = [...hechas].filter(n => n <= dias.length).length;
+  if (hechasN < debidas) return { num: pendiente, descanso: false, reposicion: true };
+  return { num: pendiente, descanso: true };
+}
+
+/* Lo hecho la semana de `fecha`, sin contar ese mismo día; y la de ese día */
+function hechasAntesDe(athlete, fecha) {
+  const sem = leeSemanaHecha(athlete);
+  const lunes = isoDeFecha(lunesDe(fecha)), dia = isoDeFecha(fecha);
+  const hechas = new Set();
+  let deHoy = 0;
+  if (sem && sem.lunes === lunes) {
+    for (const [k, d] of Object.entries(sem.hechas || {})) {
+      const n = parseInt(k.slice(6));
+      if (d === dia) deHoy = n; else if (d < dia) hechas.add(n);
+    }
+  }
+  return { hechas, deHoy };
+}
+
+function sesionPorAvance(athlete) {
+  const hoy = fechaBogota();
   if (MODO_PRUEBA) hoy.setDate(hoy.getDate() + 1);
   const d = hoy.getDay();                 // 0=domingo … 6=sábado
+  const esFinDeSemana = d === 0 || d === 6;
   const dias = diasDeEntreno(athlete);
-  const i = dias.indexOf(d);
-  if (i >= 0) return { num: i + 1, esFinDeSemana: d === 0 || d === 6, esDescanso: false };
-  for (let k = 1; k <= 7; k++) {
-    const j = dias.indexOf((d + k) % 7);
-    if (j >= 0) return { num: j + 1, esFinDeSemana: d === 0 || d === 6, esDescanso: true, diaDeLaSesion: (d + k) % 7 };
-  }
-  return { num: 1, esFinDeSemana: d === 0 || d === 6, esDescanso: false };
+  const { hechas, deHoy } = hechasAntesDe(athlete, hoy);
+  // Ya entrenó hoy: la de hoy es la que hizo
+  if (deHoy) return { num: deHoy, esFinDeSemana, esDescanso: false };
+  const t = turnoDelDia(hoy, hechas, dias);
+  if (!t.num) return { num: 1, esFinDeSemana, esDescanso: true, diaDeLaSesion: dias[0] };
+  let prox = d;
+  if (t.descanso) for (let k = 1; k <= 7; k++) if (dias.includes((d + k) % 7)) { prox = (d + k) % 7; break; }
+  return { num: t.num, esFinDeSemana, esDescanso: !!t.descanso, esReposicion: !!t.reposicion, diaDeLaSesion: prox };
 }
 
 function getSessionState(athlete) {
@@ -5556,9 +5630,9 @@ function getSessionState(athlete) {
              porDia: seAutogestiona(athlete), esFinDeSemana: false, esDescanso: false };
   }
   if (seAutogestiona(athlete) && total >= diasDeEntreno(athlete).length) {
-    const { num, esFinDeSemana, esDescanso, diaDeLaSesion } = sesionPorDiaDeLaSemana(athlete);
+    const { num, esFinDeSemana, esDescanso, esReposicion, diaDeLaSesion } = sesionPorAvance(athlete);
     return { idx: num - 1, total, week: 1, sessionNum: num,
-             sessionKey: 'sesion' + num, porDia: true, esFinDeSemana, esDescanso, diaDeLaSesion };
+             sessionKey: 'sesion' + num, porDia: true, esFinDeSemana, esDescanso, esReposicion, diaDeLaSesion };
   }
   const idx    = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   const offset = parseInt(localStorage.getItem('sessionOffset_' + athlete) || '0');
@@ -5579,7 +5653,11 @@ function advanceSession(athlete) {
   // Con rutina por día de la semana no hay contador que avanzar: mañana es
   // mañana. Pero sí hay que anotar que hoy ya entrenó — al saltarse esto
   // entero, la app no lo sabía hasta preguntarle al servidor.
-  if (seAutogestiona(athlete)) { marcaCompletadaHoy(athlete); return; }
+  if (seAutogestiona(athlete)) {
+    marcaCompletadaHoy(athlete);
+    if (/^sesion\d+$/.test(currentDay || '')) anotaSemanaHecha(athlete, [{ day: hoyISO(), sessionKey: currentDay }]);
+    return;
+  }
   const idx = parseInt(localStorage.getItem('sessionIdx_' + athlete) || '0');
   localStorage.setItem('sessionIdx_' + athlete, idx + 1);
   localStorage.setItem('lastCompleted_' + athlete, new Date().toDateString());
@@ -9741,7 +9819,7 @@ let _semanaFuerza = null;      // sesiones de la semana en curso, con sus marcas
 let _fuerzaDibujada = false;   // el anillo y las líneas se animan la primera vez
 
 /* La semana en curso: cuántas sesiones lleva y cómo marcó cada ejercicio.
-   Es lo que va a mover la rutina el sábado, así que va arriba. */
+   Es lo que va a mover la rutina el domingo, así que va arriba. */
 function bloqueEstaSemana() {
   const comps = (_semanaFuerza && _semanaFuerza.completions) || [];
   const meta = (currentAthleteRecord && parseInt(currentAthleteRecord.sessionsPerWeek)) || 5;
@@ -9769,7 +9847,7 @@ function bloqueEstaSemana() {
          ${cuenta.justo ? `<span class="fz-m justo"><b data-k="justo">${cuenta.justo}</b> justo</span>` : ''}
          ${cuenta.fallo ? `<span class="fz-m fallo"><b data-k="fallo">${cuenta.fallo}</b> no llegué</span>` : ''}
        </div>
-       <div class="fz-semana-s">${notas ? `Y ${notas} nota${notas === 1 ? '' : 's'}. ` : ''}Con esto se ajusta tu rutina el sábado por la noche.</div>`
+       <div class="fz-semana-s">${notas ? `Y ${notas} nota${notas === 1 ? '' : 's'}. ` : ''}Con esto se ajusta tu rutina el domingo por la noche.</div>`
     : comps.length
       ? `<div class="fz-semana-s">No marcaste ejercicios todavía. Sin marcas, el peso se queda igual.</div>`
       : `<div class="fz-semana-s">Cuando completes tu primera sesión, aquí verás cómo te fue.</div>`;
@@ -9905,7 +9983,7 @@ async function renderFuerza() {
       <div class="group fz-vacio">
         <div class="fz-vacio-t">Tu punto de partida</div>
         <div class="fz-vacio-s">Aquí vas a ver cuánto sube cada ejercicio. Aparece en cuanto
-          se ajuste tu primera semana, el sábado por la noche.</div>
+          se ajuste tu primera semana, el domingo por la noche.</div>
       </div>
       ${principales.length ? `<h2 class="h-sec sec-title">Con lo que arrancas</h2>
       ${principales.map(e => `<div class="group fz-lift">
@@ -13254,6 +13332,10 @@ async function loadTodayWeek() {
     const comps = d.completions || [];
     const n = comps.length;
     _diasHechos = new Set(comps.map(c => c.day));
+    // Lo hecho decide qué sesión toca: si cambió, se repinta la tarjeta
+    const antes = getSessionState(currentAthlete).sessionKey;
+    anotaSemanaHecha(currentAthlete, comps);
+    const cambio = getSessionState(currentAthlete).sessionKey !== antes;
     // El plural de "sesión" pierde la tilde: sesiones, no sesiónes
     const txt = `${n} ${n === 1 ? 'sesión' : 'sesiones'} completada${n === 1 ? '' : 's'}`;
     _semanaGuardada = { n: txt, rango: d.weekLabel || '' };   // para repintar sin volver a pedir
@@ -13261,10 +13343,9 @@ async function loadTodayWeek() {
     // Si el servidor sabe que hoy ya entrenó y el teléfono no (otro aparato,
     // datos borrados), se anota y la tarjeta de entrenamiento se corrige ya,
     // sin tener que pasar por Rutina.
-    if (comps.some(c => c.day === hoyISO()) && !completadaHoyLocal()) {
-      marcaCompletadaHoy();
-      if (document.getElementById('today')?.classList.contains('active')) renderToday();
-    }
+    const yaHoy = comps.some(c => c.day === hoyISO()) && !completadaHoyLocal();
+    if (yaHoy) marcaCompletadaHoy();
+    if ((yaHoy || cambio) && document.getElementById('today')?.classList.contains('active')) renderToday();
   } catch (e) {
     _semanaGuardada = { n: 'Sin datos esta semana', rango: '' };
   }
