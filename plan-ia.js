@@ -172,13 +172,15 @@ function estructura(enc) {
 }
 
 /* Rango de repeticiones por tipo de movimiento: el mismo criterio que la
-   rotación semanal, con la fuerza bajando el rango de los compuestos. */
+   rotación semanal, con la fuerza bajando el rango de los compuestos.
+   Siempre en pares (6, 8, 10, 12…) y sin rangos larguísimos: al llegar al
+   tope sube el peso, no se siguen sumando repeticiones. */
 export function rangoDeRepsPara(nombre, enc) {
   const n = sinTilde(nombre);
   let r = [8, 12];
-  if (/talones|crunch|plancha|abdomen|piernas/.test(n)) r = [12, 20];
-  else if (/press de banca|press inclinado|press militar|press de hombro|sentadilla|peso muerto|dominada|remo con barra|remo en barra|remo pendlay|hack|prensa|hip thrust|zancada/.test(n)) r = [6, 10];
-  else if (/curl|extension|elevacion|apertura|cruce|cable|pajaro|vuelo|face ?pull|peck deck|patada|encogimiento|skull|jm press|press frances|fondos/.test(n)) r = [10, 15];
+  if (/talones|crunch|plancha|abdomen|elevacion de piernas/.test(n)) r = [12, 16];
+  else if (/sissy|prensa|hack/.test(n)) r = [8, 12];
+  else if (/press de banca|press inclinado|press militar|press de hombro|sentadilla|peso muerto|dominada|remo con barra|remo en barra|remo pendlay|hip thrust|zancada/.test(n)) r = [6, 10];
   const cat = PorNombre[nombre];
   const basico = cat && cat.unit !== 'corporal' && tipoDe(cat) === 'C';
   if (enc && enc.objetivo === 'fuerza' && r[0] === 6 && basico) r = enc.nivel === 'principiante' ? [6, 8] : [4, 6];
@@ -328,7 +330,7 @@ export function cargaTotal(ex, w1) {
 }
 
 /* Lo contrario: un total escrito como se carga en ese aparato */
-function escribeCarga(ex, total) {
+export function escribeCarga(ex, total) {
   const paso = ex.step || 5, barra = pesoBarra(sinTilde(ex.name));
   if (ex.unit === 'lado') {
     const lado = (total - barra) / 2;
@@ -389,6 +391,58 @@ export function convierteCarga(de, w1, a, perfil) {
   const techo = techoDe(a, perfil);
   if (techo && total > techo * 0.6) total = techo * 0.6;
   return escribeCarga(a, total);
+}
+
+/* ── Repeticiones con lógica ─────────────────────────────────────────
+   Si puede 12 con un peso, puede 10 con uno más alto: la carga que equivale
+   a otras repeticiones sale de la fórmula de Epley (1RM = carga × (1 + reps/30)),
+   redondeada a lo que se puede cargar en ese aparato. Si se piden menos
+   repeticiones, el peso sube al menos un escalón; si más, baja al menos uno. */
+export function cargaEquivalente(ex, w1, repsDe, repsA) {
+  const cat = PorNombre[ex.name] || ex;
+  const t = cargaTotal(cat, w1);
+  if (!t || !repsDe || !repsA || repsDe === repsA || !cat.step) return null;
+  const meta = t * (1 + repsDe / 30) / (1 + repsA / 30);
+  let txt = escribeCarga(cat, meta);
+  const paso = (cat.unit === 'lado' ? 2 : 1) * cat.step;
+  const nuevo = cargaTotal(cat, txt) || 0;
+  if (repsA < repsDe && nuevo <= t) txt = escribeCarga(cat, t + paso);
+  if (repsA > repsDe && nuevo >= t) txt = escribeCarga(cat, Math.max(paso, t - paso));
+  return txt;
+}
+
+const PLANTILLAS = new Set(['4-6', '6-8', '6-10', '8-12', '10-15', '12-20']);
+const parArriba = n => n % 2 ? n + 1 : n;
+
+/* Deja el ejercicio con repeticiones en pares y dentro de su rango. Un rango
+   de plantilla pasa al de ahora; uno que pidió él (`rangoPropio`) se
+   respeta, en pares. Si quedó por encima del tope, sube el peso a lo que
+   equivale en el tope (y por debajo del mínimo, al revés). Devuelve el
+   cambio, o null si ya estaba bien. */
+export function ajustaAlRango(ex) {
+  if (!ex || !ex.name) return null;
+  if ((ex.setType === 'dropset' || ex.setType === 'piramidal') && Array.isArray(ex.steps1) && ex.steps1.length > 1) return null;
+  const estandar = rangoDeRepsPara(ex.name);
+  let lo = parseInt(ex.repMin) || estandar[0], hi = parseInt(ex.repMax) || estandar[1];
+  if (!ex.rangoPropio) {
+    if (PLANTILLAS.has(lo + '-' + hi)) [lo, hi] = estandar;
+    else ex.rangoPropio = true;
+  }
+  lo = parArriba(lo); hi = hi - (hi % 2); if (hi < lo) hi = lo;
+  const repsAntes = parseInt(ex.repNow) || parseInt(ex.reps) || lo;
+  const w1Antes = ex.w1 || '';
+  const corporal = ex.unit === 'corporal' || !ex.step;
+  let reps = parArriba(repsAntes), w1 = w1Antes;
+  if (!corporal && (reps > hi || reps < lo)) {
+    const objetivo = reps > hi ? hi : lo;
+    const w = cargaEquivalente(ex, w1Antes, repsAntes, objetivo);
+    if (w) w1 = w;
+    reps = objetivo;
+  } else if (reps < lo) reps = lo;
+  const cambio = reps !== repsAntes || w1 !== w1Antes || lo !== parseInt(ex.repMin) || hi !== parseInt(ex.repMax);
+  ex.repMin = lo; ex.repMax = hi; ex.repNow = reps; ex.reps = reps + ' reps'; ex.w1 = w1;
+  if (!cambio) return null;
+  return { w1Antes, w1, repsAntes, reps, rango: lo + '-' + hi };
 }
 
 /* Cuánto más (o menos) levanta esta persona que un intermedio de su peso,

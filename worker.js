@@ -1,7 +1,8 @@
 import { CATALOGO, PorMusculo, PorNombre } from './catalogo-ejercicios.js';
 import { armarRutina, fichasParaIA, validarEncuesta, explicacionDeRespaldo, resumenDelPlan,
          filtroDelAtleta, ordenaDias, calentamientoDelDia, perfilDeCarga, techoDe, cargaTotal,
-         cargaDesproporcionada, cargaSugerida, convierteCarga, cargaParaElAtleta, tipoDe } from './plan-ia.js';
+         cargaDesproporcionada, cargaSugerida, convierteCarga, cargaParaElAtleta, tipoDe,
+         rangoDeRepsPara, ajustaAlRango } from './plan-ia.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
 // is missing or the trainer record has no email. Real routing uses
@@ -291,10 +292,13 @@ function progresarEjercicio(ex, resp, perfil) {
     }
 
   } else if (resp === 'justo') {
-    // Justo nunca mueve el peso: una repetición más hasta el tope, y ahí se queda
+    // Justo: dos repeticiones más (siempre en pares: 8, 10, 12). Al llegar al
+    // tope no se siguen sumando: si puede 12 con un peso, puede 10 con uno
+    // más alto, así que sube el peso y bajan dos repeticiones.
     fallos = 0;
-    if (reps < hi)       { reps = reps + 1; motivo = 'subiendo dentro del rango'; }
-    else                 { motivo = 'en el tope del rango con esta carga'; }
+    if (reps + 2 <= hi)  { reps = reps + 2; motivo = 'subiendo dentro del rango'; }
+    else if (corporal)   { motivo = 'en el tope del rango'; }
+    else                 { peso = peso + paso; reps = Math.max(lo, reps - 2); motivo = 'llegaste al tope del rango: sube el peso y bajan 2 repeticiones'; }
 
   } else if (resp === 'fallo') {
     fallos = fallos + 1;
@@ -559,13 +563,7 @@ function candidatosDeRotacion(rutina, { hoy, inicio, estancados = [], molestias 
 
 /* Rango de repeticiones de un ejercicio nuevo, por tipo de movimiento */
 function rangoDeReps(nombre) {
-  const n = String(nombre || '').toLowerCase()
-    .replace(/[áà]/g,'a').replace(/[éè]/g,'e').replace(/[íì]/g,'i')
-    .replace(/[óò]/g,'o').replace(/[úùü]/g,'u');
-  if (/talones|crunch|plancha|abdomen|piernas/.test(n)) return [12, 20];
-  if (/press de banca|press inclinado|press militar|press de hombro|sentadilla|peso muerto|dominada|remo con barra|remo en barra|remo pendlay|hack|prensa|hip thrust|zancada/.test(n)) return [6, 10];
-  if (/curl|extension|elevacion|apertura|cruce|cable|pajaro|vuelo|face ?pull|peck deck|patada|encogimiento|skull|jm press|press frances|fondos/.test(n)) return [10, 15];
-  return [8, 12];
+  return rangoDeRepsPara(nombre);
 }
 
 /* Si un ejercicio cambió por lo que anotó y además por su marca, se cuenta
@@ -934,12 +932,12 @@ function aplicarDeclaraciones(rutina, declarados) {
         for (const ex of (c.exercises || [])) {
           if (ex.name !== d.nombre) continue;
           const antes = ex.w1, pesoAntes = numeroDePeso(ex.w1), repsAntes = parseInt(ex.repNow) || parseInt(ex.reps) || 0;
-          if (d.rango) { ex.repMin = d.rango[0]; ex.repMax = d.rango[1]; }
+          if (d.rango) { ex.repMin = d.rango[0]; ex.repMax = d.rango[1]; ex.rangoPropio = true; }
           if (d.reps) {
+            // Lo que hizo manda. Si se sale del rango, el rango NO se estira:
+            // ajustaAlRango lo pasa a la carga que equivale en el tope (si
+            // hizo 20 con un peso, va al tope con uno más alto).
             ex.repNow = d.reps;
-            // Lo que hace manda sobre el rango: si se sale, el rango lo sigue
-            if (!d.rango && ex.repMax && d.reps > ex.repMax) ex.repMax = d.reps;
-            if (!d.rango && ex.repMin && d.reps < ex.repMin) ex.repMin = d.reps;
           } else if (d.rango) {
             ex.repNow = Math.min(Math.max(repsAntes || d.rango[0], d.rango[0]), d.rango[1]);
           }
@@ -1013,8 +1011,9 @@ Si una nota suya cambió algo importante, dilo en media frase. Si reportó una m
 frase corta: que si sigue, lo revise alguien.
 Directo y concreto, sin motivación de cartel ni emojis. Bajar carga en algo es parte del plan.
 Habla SOLO de lo que está en las listas y en sus notas. No inventes razones ni cambios, y no hables
-del calentamiento. Las reglas son: Fácil sube el peso; Justo suma una repetición y NUNCA sube el
-peso; No llegué repite la carga.
+del calentamiento. Las reglas son: Fácil sube el peso; Justo suma dos repeticiones y, al llegar
+al tope del rango, sube el peso y bajan dos repeticiones; No llegué repite la carga. Las
+repeticiones van siempre en pares (6, 8, 10, 12).
 
 Español de Colombia, tuteando: "subes", "sumas", "llegaste". NUNCA voseo rioplatense — nada de
 "subís", "sumás", "tenés", "vos". No lo llames por su nombre, háblale directo.
@@ -1096,7 +1095,7 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   anotaCargas(cargas, rutina, marcas, hoy);
 
   const perfil = perfilDeCarga(atleta);
-  const cambios = unirCambios([...cambiosDeclarados, ...progresarRutina(rutina, marcas, perfil, fijados)]);
+  let cambios = unirCambios([...cambiosDeclarados, ...progresarRutina(rutina, marcas, perfil, fijados)]);
 
   // Lo que escribió esta semana puede pedir un cambio ya, sin esperar ciclo
   const notasYChat = [...notas, ...chat.filter(x => x.q).map(x => ({ dia: 'en el chat', texto: String(x.q).slice(0, 400) }))];
@@ -1114,6 +1113,8 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
     console.log(`[ROTACION] ${clientId}: ${candidatos.length} sesiones con candidatos (${molestias.length} por molestia), ${rotaciones.length} cambiados`);
   }
   marcaAntiguedad(rutina, inicio);
+  // Repeticiones en pares y dentro del rango; lo que pasó del tope, al peso
+  cambios = unirCambios([...cambios, ...ajustarRangos(rutina)]);
 
   // El calentamiento sale de los circuitos: si cambiaron, cambia con ellos
   for (const k of Object.keys(rutina)) {
@@ -1137,6 +1138,58 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
 
   console.log(`[PROGRESION] ${clientId} semana=${semana} motivo=${motivo} cambios=${cambios.length} rotaciones=${rotaciones.length}`);
   return { ok: true, semana, cambios, rotaciones, resumen };
+}
+
+/* Pasa toda la rutina por ajustaAlRango y devuelve los cambios con la
+   misma forma que los del ajuste semanal (para unirlos y mostrarlos). */
+function ajustarRangos(rutina) {
+  const out = [];
+  for (const k of Object.keys(rutina || {})) {
+    for (const c of ((rutina[k] && rutina[k].circuits) || [])) {
+      for (const ex of (c.exercises || [])) {
+        const a = ajustaAlRango(ex);
+        if (!a || (a.reps === a.repsAntes && a.w1 === a.w1Antes)) continue;
+        const pa = numeroDePeso(a.w1Antes), pd = numeroDePeso(a.w1);
+        out.push({ name: ex.name, resp: null, sesion: k, circuito: c.label || '',
+          motivo: a.reps < a.repsAntes ? 'pasabas del tope del rango: sube el peso' : 'repeticiones en pares',
+          pesoAntes: a.w1Antes, pesoDespues: a.w1, repsAntes: a.repsAntes, repsDespues: a.reps,
+          cambio: Math.round(pd) !== Math.round(pa) ? (pd > pa ? 'sube carga' : 'baja carga')
+                : a.reps !== a.repsAntes ? (a.reps > a.repsAntes ? 'sube reps' : 'baja reps') : 'sin cambio' });
+      }
+    }
+  }
+  return out;
+}
+
+/* Pasa la rutina de ahora a las repeticiones en pares, sin esperar al
+   domingo. Los cambios se suman al ajuste de la semana (con revisión, para
+   que la tarjeta vuelva a salir). */
+async function ajustarRangosAhora(env, clientId, { simular = false, resumen = null } = {}) {
+  const atleta = await getAthlete(env, clientId);
+  if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
+  const [rutina, historial] = await Promise.all([
+    env.DB.get(`routine:${clientId}`, 'json'), env.DB.get(`progresion:${clientId}`, 'json'),
+  ]);
+  if (!rutina) return { ok: false, razon: 'sin rutina' };
+  const antes = JSON.stringify(rutina);
+  const ajustes = ajustarRangos(rutina);
+  const ultima = (historial || [])[0] || null;
+  const cambios = ultima ? unirCambios([...(ultima.cambios || []), ...ajustes]) : ajustes;
+  if (!resumen && ultima && ajustes.length) {
+    resumen = await resumenSemana(env, cambios, ultima.rotaciones || [], [], [], ultima.corregidos || [], atleta, 5);
+  }
+  if (simular) return { ok: true, simulado: true, ajustes, resumen, rutina };
+  if (!ajustes.length) return { ok: true, ajustes: [] };
+  const hoy = fechaBogotaISO();
+  await guardaVersionRutina(env, clientId, antes, hoy + '-reps', 'antes de pasar las repeticiones a pares');
+  await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
+  if (ultima) {
+    ultima.cambios = cambios;
+    if (resumen) ultima.resumen = resumen;
+    ultima.rev = (ultima.rev || 0) + 1;
+    await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial));
+  }
+  return { ok: true, ajustes, resumen };
 }
 
 /* Rota ya, sin esperar al domingo, sobre la rutina de esta semana: un
@@ -1997,6 +2050,12 @@ export default {
     if (body.action === 'simular-progresion') {
       if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
       const r = await correrProgresion(env, client, 'simulacion', null, null, true);
+      return new Response(JSON.stringify(r), { headers: cors });
+    }
+
+    if (body.action === 'ajustar-rangos') {
+      if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      const r = await ajustarRangosAhora(env, client, { simular: !!body.simular, resumen: body.resumen || null });
       return new Response(JSON.stringify(r), { headers: cors });
     }
 
