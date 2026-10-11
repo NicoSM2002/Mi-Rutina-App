@@ -241,7 +241,8 @@ const PROPORCION = [
   [/press (de hombro sentado|arnold).*mancuerna/, 0.16],
   [/press de hombro en maquina/, 0.4],
   [/lateral.*mancuerna|vuelos|pajaros con mancuernas|frontal/, 0.06],
-  [/lateral en polea|remo al menton cable/, 0.1],
+  [/lateral en polea/, 0.1],
+  [/remo al menton/, 0.3],   // se carga como un remo, no como una elevación
   [/face pull/, 0.3],
   [/curl.*barra|curl predicador maquina discos|waiter/, 0.3],
   [/curl.*mancuerna|curl martillo|curl de concentracion|zottman/, 0.11],
@@ -404,7 +405,9 @@ export function fuerzaRelativa(muscle, basico, cargas, perfil) {
     if (!t || !ref) continue;
     datos.push({ muscle: ex.muscle, basico: tipoDe(ex) === 'C', r: t / ref });
   }
-  const mediana = xs => { const s = xs.map(d => d.r).sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+  // Con un número par de datos, el promedio de los dos del medio (no el de arriba)
+  const mediana = xs => { const s = xs.map(d => d.r).sort((a, b) => a - b), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
   const mismo = datos.filter(d => d.muscle === muscle && d.basico === basico);
   const musculo = datos.filter(d => d.muscle === muscle);
   const r = mismo.length ? mediana(mismo) : musculo.length ? mediana(musculo) : datos.length >= 3 ? mediana(datos) : null;
