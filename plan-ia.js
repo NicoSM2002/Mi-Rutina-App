@@ -390,6 +390,42 @@ export function convierteCarga(de, w1, a, perfil) {
   return escribeCarga(a, total);
 }
 
+/* Cuánto más (o menos) levanta esta persona que un intermedio de su peso,
+   sacado de sus propias cargas: por cada ejercicio con dato, carga real
+   entre carga de referencia. Se usa la mediana del mismo músculo y del
+   mismo tipo (básico o accesorio); si no hay, la del músculo; si tampoco,
+   la de todo lo que hace. `cargas` es { nombre: { w1, estimado } }. */
+export function fuerzaRelativa(muscle, basico, cargas, perfil) {
+  const datos = [];
+  for (const [nombre, c] of Object.entries(cargas || {})) {
+    const ex = PorNombre[nombre];
+    if (!ex || !c || c.estimado || ex.unit === 'corporal') continue;
+    const t = cargaTotal(ex, c.w1), ref = cargaIntermedia(ex, perfil);
+    if (!t || !ref) continue;
+    datos.push({ muscle: ex.muscle, basico: tipoDe(ex) === 'C', r: t / ref });
+  }
+  const mediana = xs => { const s = xs.map(d => d.r).sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+  const mismo = datos.filter(d => d.muscle === muscle && d.basico === basico);
+  const musculo = datos.filter(d => d.muscle === muscle);
+  const r = mismo.length ? mediana(mismo) : musculo.length ? mediana(musculo) : datos.length >= 3 ? mediana(datos) : null;
+  return r === null ? null : Math.min(2.5, Math.max(0.4, r));
+}
+
+/* La carga de arranque de un ejercicio nuevo para él: si ya lo hizo, la
+   última que usó; si no, la de un intermedio escalada por su fuerza en ese
+   músculo, un 10 % abajo porque la técnica es nueva. Nunca cerca del techo. */
+export function cargaParaElAtleta(ex, cargas, perfil) {
+  if (!ex || ex.unit === 'corporal' || !ex.step) return { w1: '', origen: 'corporal' };
+  const previa = cargas && cargas[ex.name];
+  if (previa && previa.w1 && !previa.estimado) return { w1: previa.w1, origen: 'su último peso', reps: previa.reps };
+  const f = fuerzaRelativa(ex.muscle, tipoDe(ex) === 'C', cargas, perfil);
+  if (f === null) return null;
+  let total = cargaIntermedia(ex, perfil) * f * 0.9;
+  const techo = techoDe(ex, perfil);
+  if (techo && total > techo * 0.75) total = techo * 0.75;
+  return { w1: escribeCarga(ex, total), origen: 'según tus cargas' };
+}
+
 /* Si dio pesos de referencia, cuánto se separa de lo estimado. Acotado:
    un dato raro no puede triplicar todo un grupo. */
 function factoresDeReferencia(enc) {

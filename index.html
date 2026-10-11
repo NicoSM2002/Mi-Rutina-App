@@ -1863,6 +1863,8 @@ button.ex-presc:active { background:var(--ac-soft2); }
 }
 .aj-cerrar:active { background:var(--b); }
 .aj-detalle { margin-top:14px; }
+.aj-entran { margin-top:14px; }
+.aj-entran-t { font-size:13px; font-weight:600; color:var(--t2); letter-spacing:-.1px; }
 .aj-ver {
   list-style:none; cursor:pointer; font-size:15px; font-weight:600;
   color:var(--ac-tx); padding:6px 0; letter-spacing:-.2px;
@@ -13277,8 +13279,10 @@ async function loadAjusteSemanal() {
     ultima = d.ultima;
   } catch (e) { return; }
   if (!ultima || !ultima.semana) return;
-  // Ya lo leyó y lo cerró
-  if (localStorage.getItem('ajusteVisto_' + currentAthlete) === ultima.semana) return;
+  // Ya lo leyó y lo cerró. Si después cambió (entraron ejercicios nuevos),
+  // vuelve a salir: la clave lleva la revisión.
+  const clave = ultima.semana + (ultima.rev ? '.' + ultima.rev : '');
+  if (localStorage.getItem('ajusteVisto_' + currentAthlete) === clave) return;
 
   const cambios = (ultima.cambios || []).filter(c => c.cambio && c.cambio !== 'sin cambio');
   const rots = ultima.rotaciones || [];
@@ -13289,9 +13293,11 @@ async function loadAjusteSemanal() {
       <span class="aj-dato ${AJUSTE_CLASE[c.cambio] || ''}">${textoDelCambio(c)}</span>
     </div>`).join('');
 
+  // Lo que entra va a la vista: es lo que cambia de verdad la semana. Las
+  // cargas y repeticiones, plegadas.
   const filasRot = rots.map(r => `<div class="aj-fila aj-fila-rot">
-      <span class="aj-nombre">${r.de}<br><span class="aj-flecha">↳ ${r.a}</span></span>
-      <span class="aj-dato aj-nuevo">${r.heredaPeso ? 'mismo peso' : 'ajusta el peso'}</span>
+      <span class="aj-nombre">${r.a}<br><span class="aj-flecha">en vez de ${r.de}</span></span>
+      <span class="aj-dato">${r.peso || ''}</span>
     </div>`).join('');
 
   const htmlAjuste = `<div class="today-card aj-card">
@@ -13300,13 +13306,17 @@ async function loadAjusteSemanal() {
           <div class="today-eyebrow">Tu rutina se actualizó</div>
           <div class="aj-resumen">${ultima.resumen || ''}</div>
         </div>
-        <button class="aj-cerrar" onclick="cerrarAjuste('${ultima.semana}')" aria-label="Entendido, no mostrar más">
+        <button class="aj-cerrar" onclick="cerrarAjuste('${clave}')" aria-label="Entendido, no mostrar más">
           <svg class="ic ic-sm"><use href="#i-check"/></svg>
         </button>
       </div>
-      ${(filas || filasRot) ? `<details class="aj-detalle" open>
-        <summary class="aj-ver">Ver qué cambió (${cambios.length + rots.length})</summary>
-        <div class="aj-lista">${filasRot}${filas}</div>
+      ${filasRot ? `<div class="aj-entran">
+        <div class="aj-entran-t">Entran esta semana</div>
+        <div class="aj-lista">${filasRot}</div>
+      </div>` : ''}
+      ${filas ? `<details class="aj-detalle">
+        <summary class="aj-ver">Ver cargas y repeticiones (${cambios.length})</summary>
+        <div class="aj-lista">${filas}</div>
       </details>` : ''}
     </div>`;
   _ajusteGuardado = htmlAjuste;
