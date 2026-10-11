@@ -1224,7 +1224,12 @@ Pon la ficha al día:
 Conserva TODO lo que ya sabías salvo que lo nuevo lo contradiga. No inventes: si no lo dijo, no va.
 - "resumen": de 5 a 8 viñetas cortas ("• ...") de lo más importante para entrenarle bien: constancia, en qué
   está fuerte o flojo según sus números (fuerza 1 = un intermedio de su peso), qué progresa y qué no, molestias
-  vigentes y preferencias. Háblale de tú, en español de Colombia (nunca voseo), sin motivación de cartel.
+  vigentes y preferencias. Háblale de tú ("entrenas", "prefieres"), en español de Colombia (nunca voseo),
+  sin motivación de cartel.
+  OJO con la constancia: son las sesiones REGISTRADAS en la app. Antes de su plan actual casi no registraba,
+  así que semanas con 0 o 1 sesión al principio no significan que no entrenara: no saques conclusiones de
+  eso, habla sólo de las semanas desde que registra de verdad. Una tendencia "sin datos suficientes" no es
+  estancamiento: no digas que algo está estancado o baja si no lo dice el dato.
 
 Responde SOLO un JSON: {"molestias":[],"preferencias":[],"equipo":[],"otros":[],"resumen":"• ...\n• ..."}`;
 

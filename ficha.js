@@ -58,8 +58,10 @@ function historiaPorEjercicio(completions, progresion) {
   return hist;
 }
 
+/* Sólo con lo que hizo de verdad (marcado o anotado): lo prescrito por un
+   entrenador hace meses no dice cuánto levantaba. */
 function tendenciaDe(puntos) {
-  const con = puntos.filter(p => p.e1rm);
+  const con = puntos.filter(p => p.e1rm && p.fuente !== 'prescrito');
   if (con.length < 2) return 'sin datos suficientes';
   const ult = con[con.length - 1];
   const antes = [...con].reverse().find(p => Date.parse(ult.fecha) - Date.parse(p.fecha) >= 14 * DIA) || con[0];
