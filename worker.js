@@ -2,7 +2,7 @@ import { CATALOGO, PorMusculo, PorNombre } from './catalogo-ejercicios.js';
 import { armarRutina, fichasParaIA, validarEncuesta, explicacionDeRespaldo, resumenDelPlan,
          filtroDelAtleta, ordenaDias, calentamientoDelDia, perfilDeCarga, techoDe, cargaTotal,
          cargaDesproporcionada, cargaSugerida, convierteCarga, cargaParaElAtleta, tipoDe,
-         rangoDeRepsPara, ajustaAlRango } from './plan-ia.js';
+         rangoDeRepsPara, ajustaAlRango, cargaEnKg, pasoEnKg, LB_A_KG } from './plan-ia.js';
 import { armarFicha, fichaParaPrompt } from './ficha.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
@@ -204,7 +204,7 @@ function perfilTexto(atleta) {
    catálogo; el sufijo es para que el número de la app sea el mismo que el
    atleta ve en el hierro. */
 const SUFIJO_CARGA = {
-  lado: ' lbs/lado', mancuerna: ' lbs c/u', placa: ' lbs', total: ' lbs', corporal: ''
+  lado: ' lbs/lado', mancuerna: ' lbs c/u', polea: ' lbs c/polea', placa: ' lbs', total: ' lbs', corporal: ''
 };
 
 function numeroDePeso(txt) {
@@ -798,7 +798,7 @@ function aplicarRotacion(rutina, propuestas, perfil, cargas, hoy) {
         const origen = est ? est.origen : 'por proporción';
         const repNow = est && est.reps ? Math.min(hi, Math.max(lo, est.reps)) : lo;
         // El drop set del final del día se queda si el que entra lo admite
-        const drop = anterior.dropFinal && ['placa', 'mancuerna'].includes(nuevo.unit) && tipoDe(nuevo) !== 'C'
+        const drop = anterior.dropFinal && ['placa', 'mancuerna', 'polea'].includes(nuevo.unit) && tipoDe(nuevo) !== 'C'
           ? { dropFinal: anterior.dropFinal } : {};
         exs[i] = {
           name: nuevo.name, muscle: nuevo.muscle, unit: nuevo.unit, step: nuevo.step,
@@ -868,6 +868,9 @@ Reglas:
 - Lo que hizo en el CALENTAMIENTO no cuenta: no es su carga de trabajo.
 - No confundas ejercicios parecidos: una extensión de tríceps con soga en polea no es un curl de
   bíceps en polea con cuerda. Si no estás seguro de a qué ejercicio de la lista se refiere, no lo incluyas.
+- Si lo dice en KILOS ("25 kilos a cada lado", "20 kg"), conviértelo a libras (× 2,2): 25 kg por lado
+  → 55 si el prescrito es lbs/lado. El número que devuelves va siempre en libras.
+- En los cruces de dos poleas la carga va por polea: "40 a cada lado" → 40.
 - No inventes: sensaciones, molestias o la máquina ocupada no son declaraciones.
 
 Devuelve SOLO un JSON array, vacío si no hay nada:
@@ -3148,7 +3151,12 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
     // ejercicio. Las alternativas salen del catálogo del worker, no del
     // modelo: así no puede proponer algo que no exista.
     const sesionHoy = Array.isArray(body.sesionHoy) ? body.sesionHoy.slice(0, 20) : [];
+    // Si entrena en un gimnasio en kilos, el chat le habla en kilos
+    const enKg = body.unidad === 'kg';
     let sistema = body.context || '';
+    if (enKg) sistema += `\n\nUNIDADES: este atleta entrena en un gimnasio en KILOS. Habla SIEMPRE en kg (nunca en libras)
+y redondea a lo que hay en un gimnasio: mancuernas de 2 en 2 kg, discos y poleas de 2,5 en 2,5. Si
+usas @@PESO, el número va en kg.`;
     // Lo que se sabe de él, sólo si es él quien pregunta: la ficha no se le
     // cuenta a cualquiera que escriba su usuario
     if (client && body.selfToken && await verifySelfToken(env, client, body.selfToken)) {
@@ -3170,11 +3178,12 @@ Si un campo no aparece claramente en el PDF, poné null. No inventes.`;
           .filter(x => !yaEstan.has(x.name) && valeChat(x))
           .slice(0, 14)
           .map(x => x.name);
-        const ficha = { actual: e.name, musculo: cat.muscle, carga: e.w1 || 'sin peso',
-                        saltoDelAparato: cat.step || null, alternativas: alt };
+        const ficha = { actual: e.name, musculo: cat.muscle,
+                        carga: (enKg ? cargaEnKg(e.w1, cat) : e.w1) || 'sin peso',
+                        saltoDelAparato: enKg ? pasoEnKg(cat.unit) : (cat.step || null), alternativas: alt };
         if (cargaDesproporcionada(cat, e.w1, perfilChat)) {
           ficha.cargaAlta = true;
-          ficha.cargaRazonable = cargaSugerida(cat, perfilChat);
+          ficha.cargaRazonable = enKg ? cargaEnKg(cargaSugerida(cat, perfilChat), cat) : cargaSugerida(cat, perfilChat);
         }
         return ficha;
       }).filter(Boolean);
@@ -3246,7 +3255,8 @@ ${JSON.stringify(fichas, null, 1)}`;
     if (mp) {
       content = content.replace(mp[0], '').trim();
       const nombre = mp[1].trim();
-      const peso = parseFloat(mp[2].replace(',', '.'));
+      // En kilos lo propone el modelo; se guarda en libras, como todo
+      const peso = parseFloat(mp[2].replace(',', '.')) / (enKg ? LB_A_KG : 1);
       const enHoy = sesionHoy.find(e => e.name === nombre);
       const actual = enHoy ? numeroDePeso(enHoy.w1) : null;
       if (!enHoy)                     console.log(`[CHAT] "${nombre}" no está en la sesión de hoy`);
@@ -3277,17 +3287,28 @@ ${JSON.stringify(fichas, null, 1)}`;
       else if (sesionHoy.some(e => e.name === a))
                         console.log(`[CHAT] "${a}" ya está en la sesión`);
       else {
-        // La carga se pasa por proporción: el mismo número en otro aparato
-        // puede ser un disparate
-        const w1 = convierteCarga(viejo, enHoy.w1 || '', nuevo, perfilDeCarga(athleteRecord));
+        // La carga del que entra sale de lo que él levanta (su registro de
+        // cargas: si ya lo hizo, su peso; si no, su fuerza en ese músculo).
+        // Heredar el número del que sale es lo que dejó un peck deck de 120
+        // convertido en un cruce de 120.
+        const perfilSus = perfilDeCarga(athleteRecord);
+        let cargasSus = {};
+        if (body.selfToken && await verifySelfToken(env, client, body.selfToken)) {
+          cargasSus = await env.DB.get(`cargas:${client}`, 'json') || {};
+        }
+        const est = cargaParaElAtleta(nuevo, cargasSus, perfilSus);
+        const w1 = est ? est.w1 : convierteCarga(viejo, enHoy.w1 || '', nuevo, perfilSus);
+        const [lo, hi] = rangoDeReps(nuevo.name);
+        const repsPrev = parseInt(enHoy.repNow) || lo;
+        const repNow = est && est.reps ? Math.min(hi, Math.max(lo, est.reps)) : Math.min(hi, Math.max(lo, repsPrev + (repsPrev % 2)));
         accion = {
           tipo: 'sustituir', ci: enHoy.ci, ei: enHoy.ei, de,
           nuevo: {
             name: nuevo.name, muscle: nuevo.muscle, unit: nuevo.unit, step: nuevo.step,
             img: nuevo.img, tip: nuevo.tip,
             w1,
-            reps: enHoy.reps || '', repMin: enHoy.repMin, repMax: enHoy.repMax,
-            repNow: enHoy.repNow, calibrar: nuevo.unit !== 'corporal',
+            reps: repNow + ' reps', repMin: lo, repMax: hi,
+            repNow, calibrar: nuevo.unit !== 'corporal',
           },
         };
         console.log(`[CHAT] sustitución de hoy: ${de} → ${a}`);

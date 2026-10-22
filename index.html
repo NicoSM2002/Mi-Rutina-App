@@ -3408,6 +3408,8 @@ body:has(.hoja-detras), #app-shell:has(.hoja-detras) { background:#000; }
 
 /* Selector de apariencia: segmentado del sistema */
 .apariencia { display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; padding:2px; background:var(--s2); border-radius:12px; }
+.apariencia.apariencia-2 { grid-template-columns:repeat(2, 1fr); }
+.unidad-nota { margin:8px 4px 0; font-size:13px; line-height:1.4; color:var(--t2); }
 .apar-op { border:none; background:transparent; color:var(--t1); border-radius:10px; padding:9px 4px; font-size:15px; font-weight:500; cursor:pointer; }
 .apar-op.on { background:var(--s1); font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,.14); }
 
@@ -4734,6 +4736,11 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
       <h2 class="h-sec sec-title">Apariencia</h2>
       <div class="apariencia" data-apariencia></div>
     </div>
+    <div>
+      <h2 class="h-sec sec-title">Unidad de peso</h2>
+      <div class="apariencia apariencia-2" data-unidad></div>
+      <p class="unidad-nota">En kilos, los pesos se redondean a lo que hay en el gimnasio: mancuernas de 2 en 2, discos y poleas de 2,5 en 2,5.</p>
+    </div>
     <button class="pg-salir" onclick="logoutAthlete()">
       <svg class="ic ic-sm"><use href="#i-logout"/></svg> Cerrar sesión
     </button>
@@ -5194,6 +5201,55 @@ function ponApariencia(v) {
   if (document.startViewTransition && !movReducido()) document.startViewTransition(cambia); else cambia();
 }
 document.addEventListener('DOMContentLoaded', pintaApariencia);
+
+/* ── Unidad de peso: libras o kilos ──
+   Las cargas se guardan siempre en libras (así progresa el motor). Quien
+   entrena en un gimnasio en kilos las ve convertidas a lo que de verdad hay
+   ahí, no a la cifra exacta: mancuernas de 1 en 1 hasta 10 kg y de 2 en 2
+   después; discos y poleas de 2,5 en 2,5. La misma regla que cargaEnKg en
+   plan-ia.js (el chat la usa del lado del worker). */
+const UNIDADES = [['lb', 'Libras (lb)'], ['kg', 'Kilos (kg)']];
+function unidadPeso() {
+  try { return localStorage.getItem('unidadPeso') === 'kg' ? 'kg' : 'lb'; } catch (e) { return 'lb'; }
+}
+const LB_A_KG = 0.45359237;
+function kgConSentido(lb, tipo) {
+  const kg = lb * LB_A_KG;
+  const paso = tipo === 'mancuerna' ? (kg < 10 ? 1 : 2) : (tipo === 'lado' && kg < 5) ? 1.25 : 2.5;
+  return Math.max(paso, Math.round(Math.round(kg / paso) * paso * 100) / 100);
+}
+/* "45 lbs c/u" → "20 kg c/u" si entrena en kilos; si no, tal cual. `ref` es
+   el ejercicio (o su nombre): de ahí sale si es mancuerna, disco o polea. */
+function pesoParaVer(w, ref) {
+  const s = String(w || '');
+  if (!s || unidadPeso() !== 'kg' || /kg|kilo/i.test(s) || !/\d/.test(s)) return s;
+  const nombre = typeof ref === 'string' ? ref : (ref && (ref.name || ref.text)) || '';
+  const cat = nombre ? infoCatalogo(nombre) : null;
+  const tipo = /\/\s*lado/i.test(s) ? 'lado' : /c\/u|cada/i.test(s) ? 'mancuerna' : /polea/i.test(s) ? 'polea'
+             : (cat && cat.unit) || (ref && typeof ref === 'object' && ref.unit) || (/mancuerna/i.test(nombre) ? 'mancuerna' : 'placa');
+  // Con coma decimal, como se escribe en español: 22,5 kg
+  let out = s.replace(/\d+(?:[.,]\d+)?/g, n => String(kgConSentido(parseFloat(n.replace(',', '.')), tipo)).replace('.', ','));
+  if (/lbs?\b|libras?/i.test(out)) out = out.replace(/\s*(lbs|lb|libras|libra)\b/gi, ' kg');
+  else out = out.replace(/(\d+(?:,\d+)?)(?!.*\d)/, '$1 kg');
+  return out;
+}
+function pintaUnidad() {
+  const actual = unidadPeso();
+  document.querySelectorAll('[data-unidad]').forEach(c => {
+    c.innerHTML = UNIDADES.map(([v, t]) =>
+      `<button type="button" class="apar-op${v === actual ? ' on' : ''}" aria-pressed="${v === actual}" onclick="ponUnidad('${v}')">${t}</button>`).join('');
+  });
+}
+function ponUnidad(v) {
+  try { if (v === 'kg') localStorage.setItem('unidadPeso', 'kg'); else localStorage.removeItem('unidadPeso'); } catch (e) {}
+  pintaUnidad();
+  // Todo lo que muestra pesos se vuelve a pintar en la unidad nueva
+  try { if (currentDay && data && data[currentDay]) { const c = document.getElementById('content'); if (c) c.__ultimo = ''; render(); } } catch (e) {}
+  try { renderToday(); } catch (e) {}
+  try { loadAjusteSemanal(); } catch (e) {}
+  try { if (progressTab === 'fuerza' && document.getElementById('resumen')?.classList.contains('active')) renderFuerza(); } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', pintaUnidad);
 
 /* ── navigation ── */
 /* Orden de las pestañas, para saber de qué lado entra la pantalla nueva */
@@ -6504,7 +6560,7 @@ function prevStep() {
 function renderWuItem(item, uid, num, isLast) {
   const text = typeof item === 'string' ? item : (item.text || item.name || '');
   const img  = typeof item === 'object' && item.img ? item.img : null;
-  const wv   = typeof item === 'object' ? (item.w || '') : '';
+  const wv   = typeof item === 'object' ? pesoParaVer(item.w || '', { name: text }) : '';
   const rv   = typeof item === 'object' ? (item.reps || '') : '';
   // "25 reps" → "25 repeticiones" (el mockup usa la palabra completa)
   const rvLong = rv ? String(rv).replace(/\breps?\b/i, m => m[0] === m[0].toUpperCase() ? 'Repeticiones' : 'repeticiones') : '';
@@ -6552,7 +6608,7 @@ function renderExCard(ex, ci, ei, w) {
   const currentTip  = ex.tip;
   const currentReps = ex.reps;
   const currentImg  = ex.img;
-  const wv = ex.w1;
+  const wv = pesoParaVer(ex.w1, ex);
   const uid = `${ci}_${ei}`;
   const pid = `photo_${uid}`;
   const imgArg = currentImg ? currentImg.replace(/'/g, "\'") : '';
@@ -6575,7 +6631,7 @@ function renderExCard(ex, ci, ei, w) {
     ? `<div class="ex-steps-view">${currentSteps.map(s => {
         const pr = parseReps(s.reps || '');
         const repsLabel = pr.num ? (pr.type === 'seg' ? `${pr.num}s` : pr.num) : '—';
-        return `<div class="ex-step-pill"><span class="sp-w">${s.w||'—'}</span><span class="sp-r">${repsLabel}</span></div>`;
+        return `<div class="ex-step-pill"><span class="sp-w">${pesoParaVer(s.w, ex)||'—'}</span><span class="sp-r">${repsLabel}</span></div>`;
       }).join('')}</div>` : '';
   // La nota del entrenador no se esconde detrás de la ⓘ: es él hablándote.
   const trainerNoteHtml = ex.trainerNote
@@ -6654,8 +6710,10 @@ function renderExCard(ex, ci, ei, w) {
   const drops = escalonesDrop(ex);
   const dropHtml = drops ? `<div class="ex-drop">
       <span class="ex-drop-et">Última serie · drop</span>
-      <span class="ex-drop-pasos">${drops.map(d =>
-        `<b>${d.peso}<small>${d.sufijo}</small>${d.reps ? ` · ${d.reps}` : ''}</b>`).join('<i>→</i>')}</span>
+      <span class="ex-drop-pasos">${drops.map(d => {
+        const t = pesoParaVer(`${d.peso} ${d.sufijo}`, ex), n = (t.match(/[\d.,]+/) || [''])[0];
+        return `<b>${n.replace('.', ',')}<small>${t.slice(t.indexOf(n) + n.length).trim()}</small>${d.reps ? ` · ${d.reps}` : ''}</b>`;
+      }).join('<i>→</i>')}</span>
     </div>` : '';
 
   const yaMarcado = !!feedbackSesion[ci + '|' + currentName];
@@ -7104,7 +7162,7 @@ const _enPantalla = r => r && r.width > 2 && r.bottom > 0 && r.top < innerHeight
 /* El peso que cambió desde la última vez que se vio: los dígitos ruedan */
 function revisaPesosCambiados() {
   if (!currentAthlete) return;
-  const clave = 'pesosVistos_' + currentAthlete;
+  const clave = 'pesosVistos_' + currentAthlete + (unidadPeso() === 'kg' ? '_kg' : '');
   let vistos = {};
   try { vistos = JSON.parse(localStorage.getItem(clave) || '{}') || {}; } catch (e) { vistos = {}; }
   let cambio = false;
@@ -9525,7 +9583,7 @@ function renderCompletionCard(c) {
       const name = obj.text || obj.name || '';
       return `<div class="rs-wu-row">
         <span class="rs-wu-name">${escHtmlText(name)}</span>
-        <span class="rs-wu-wr">${escHtmlText(obj.w || '—')} · ${escHtmlText(obj.reps || '—')}</span>
+        <span class="rs-wu-wr">${escHtmlText(pesoParaVer(obj.w, { name }) || '—')} · ${escHtmlText(obj.reps || '—')}</span>
       </div>`;
     }).join('');
     wuHtml = `<div class="rs-block">
@@ -9544,10 +9602,10 @@ function renderCompletionCard(c) {
       const st = ex.setType || 'normal';
       let wrHtml;
       if (st !== 'normal' && Array.isArray(ex.steps1) && ex.steps1.length) {
-        const stepsText = orderedSteps(ex.steps1, st).map(s => `${escHtmlText(s.w || '—')}·${escHtmlText(s.reps || '—')}`).join(' → ');
+        const stepsText = orderedSteps(ex.steps1, st).map(s => `${escHtmlText(pesoParaVer(s.w, ex) || '—')}·${escHtmlText(s.reps || '—')}`).join(' → ');
         wrHtml = `<div class="rs-ex-wr rs-ex-steps">${st.toUpperCase()}: ${stepsText}</div>`;
       } else {
-        wrHtml = `<div class="rs-ex-wr">${escHtmlText(ex.w1 || '—')} · ${escHtmlText(ex.reps || '—')}</div>`;
+        wrHtml = `<div class="rs-ex-wr">${escHtmlText(pesoParaVer(ex.w1, ex) || '—')} · ${escHtmlText(ex.reps || '—')}</div>`;
       }
       const muscleChip = ex.muscle ? `<span class="rs-ex-muscle">${escHtmlText(muscleNameLabel(ex.muscle))}</span>` : '';
       const note = ex.trainerNote ? `<div class="rs-ex-note"><svg class="ic ic-sm"><use href="#i-pin"/></svg><span>${escHtmlText(ex.trainerNote)}</span></div>` : '';
@@ -9886,9 +9944,10 @@ function ejerciciosDeHoy() {
     dia.circuits.forEach((c, ci) => {
       (c.exercises || []).forEach((e, ei) => {
         if (!e || !e.name || out.has(e.name)) return;
+        const w = pesoParaVer(e.w1 || '', e);
         out.set(e.name, {
-          name: e.name, w1: e.w1 || '', unit: e.unit || '',
-          actual: pesoNum(e.w1), principal: ci === 0 && ei === 0, sesion: k,
+          name: e.name, w1: w, unit: e.unit || '',
+          actual: pesoNum(w), principal: ci === 0 && ei === 0, sesion: k,
         });
       });
     });
@@ -9903,7 +9962,7 @@ function seriesDeFuerza(historial, hoy) {
   for (const h of viejoANuevo) {
     for (const c of (h.cambios || [])) {
       if (!c || !c.name || c.name === '(volumen)') continue;
-      const antes = pesoNum(c.pesoAntes), despues = pesoNum(c.pesoDespues);
+      const antes = pesoNum(pesoParaVer(c.pesoAntes, c.name)), despues = pesoNum(pesoParaVer(c.pesoDespues, c.name));
       if (antes === null && despues === null) continue;
       if (!serie.has(c.name)) serie.set(c.name, []);
       const l = serie.get(c.name);
@@ -10964,7 +11023,7 @@ function buildContext() {
       (day.circuits || []).forEach(c => {
         routineText += `${c.label}: `;
         routineText += c.exercises.map(e => {
-          let base = `${e.name} (${e.w1}×${e.reps})`;
+          let base = `${e.name} (${pesoParaVer(e.w1, e)}×${e.reps})`;
           if (e.trainerNote) base += ` [nota: ${e.trainerNote}]`;
           return base;
         }).join(', ') + '\n';
@@ -11043,7 +11102,7 @@ async function sendChat() {
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat(), client: currentAthlete, selfToken: getSelfToken() })
+      body: JSON.stringify({ messages: chatHistory, context: buildContext(), sesionHoy: sesionParaChat(), client: currentAthlete, selfToken: getSelfToken(), unidad: unidadPeso() })
     });
     const data = await res.json();
     if (data.content) {
@@ -11135,7 +11194,7 @@ async function aplicarPeso(acc) {
     if (d.ok) {
       ex.w1 = d.w1;
       render();
-      appendMsg('assistant', `Listo: ${acc.name} queda en ${d.w1}. De ahí sigue tu progresión.`, 'chat-cambio');
+      appendMsg('assistant', `Listo: ${acc.name} queda en ${pesoParaVer(d.w1, acc.name)}. De ahí sigue tu progresión.`, 'chat-cambio');
     } else {
       appendMsg('assistant', `Lo cambié en pantalla pero no se pudo guardar: ${d.error || 'error'}. Anótalo en la nota del ejercicio.`, 'chat-cambio');
     }
@@ -11305,7 +11364,7 @@ function ponNumero(str, v, sufijo) {
 function pasoPeso(name) { const c = infoCatalogo(name); return (c && c.step) || 5; }
 function sufijoPeso(name) {
   const c = infoCatalogo(name);
-  return c && c.unit === 'lado' ? 'lbs/lado' : c && c.unit === 'mancuerna' ? 'lbs c/u' : 'lbs';
+  return c && c.unit === 'lado' ? 'lbs/lado' : c && c.unit === 'mancuerna' ? 'lbs c/u' : c && c.unit === 'polea' ? 'lbs c/polea' : 'lbs';
 }
 /* Un paso más o menos, al múltiplo del aparato: con discos de 5, 12 → 15 */
 function siguientePeso(n, dir, paso) {
@@ -11525,7 +11584,7 @@ function sugiereCalentamiento() {
       return lado < paso ? (barra ? 'barra sola' : `${paso} lbs/lado`) : `${Math.round(lado / paso) * paso} lbs/lado`;
     }
     const v = Math.max(paso, Math.round(t / paso) * paso);
-    return c.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+    return c.unit === 'mancuerna' ? `${v} lbs c/u` : c.unit === 'polea' ? `${v} lbs c/polea` : `${v} lbs`;
   };
   const nuevos = [];
   for (const m of musculos) {
@@ -12597,7 +12656,7 @@ const EXERCISE_CATALOG = [
   { name: 'Press militar abiertas y cerradas', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press militar abiertas y cerradas/Press militar abiertas y cerradas.gif', tip: 'Barra al pecho, alterna agarre ancho y cerrado entre series. Presiona vertical. Evita arco lumbar excesivo.' },
   { name: 'Press militar con barra', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press militar con barra/Press militar con barra.gif', tip: 'Toma la barra un poco más ancho que hombros, aprieta el abdomen y presiona en línea vertical. Baja con control al frente sin compensar con la zona lumbar.' },
   { name: 'Press militar sentada barra', muscle: 'hombros', unit: 'lado', step: 5, img: './gifs/hombros/Press militar sentada barra/Press militar sentada barra.gif', tip: 'Sentado en banco con respaldo, barra a la clavícula. Presiona vertical sin arquear la espalda. Baja controlado al pecho alto.' },
-  { name: 'Pájaro en cables (pec deck inversa)', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Pájaro en cables (pec deck inversa)/Pájaro en cables (pec deck inversa).gif', tip: 'Poleas cruzadas altas, toma manija contraria. Abre los brazos como pájaro manteniendo leve flexión de codo. Aprieta deltoides posterior.' },
+  { name: 'Pájaro en cables (pec deck inversa)', muscle: 'hombros', unit: 'polea', step: 5, img: './gifs/hombros/Pájaro en cables (pec deck inversa)/Pájaro en cables (pec deck inversa).gif', tip: 'Poleas cruzadas altas, toma manija contraria. Abre los brazos como pájaro manteniendo leve flexión de codo. Aprieta deltoides posterior.' },
   { name: 'Pájaros con mancuernas inclinado', muscle: 'hombros', unit: 'mancuerna', step: 5, img: './gifs/hombros/Pájaros con mancuernas inclinado/Pájaros con mancuernas inclinado.gif', tip: 'Cruza los cables al frente y abre los brazos hacia atras con ligera flexion del codo. Mantén tension constante y evita mover el torso para aislar deltoide posterior y espalda alta.' },
   { name: 'Remo al mentón cable', muscle: 'hombros', unit: 'placa', step: 10, img: './gifs/hombros/Remo al mentón cable/Remo al mentón cable.gif', tip: 'Polea baja con barra corta. Jala hacia el mentón llevando los codos altos. Activa trapecio y deltoide lateral.' },
   { name: 'Remo al mentón con barra', muscle: 'hombros', unit: 'total', step: 5, img: './gifs/hombros/Remo al mentón con barra/Remo al mentón con barra.gif', tip: 'Usa agarre medio o ancho y eleva la barra guiando con los codos. Sube hasta donde no haya molestia en hombro y baja sin tirones.' },
@@ -12625,10 +12684,10 @@ const EXERCISE_CATALOG = [
   { name: 'Aperturas en máquina', muscle: 'pecho', unit: 'placa', step: 10, img: './gifs/pecho/Aperturas en máquina/Aperturas en máquina.gif', tip: 'Ajusta el asiento para que las manos queden a la altura media del pecho. Junta los brazos al frente apretando el pectoral y regresa lento.' },
   { name: 'Aperturas inclinadas con mancuernas', muscle: 'pecho', unit: 'mancuerna', step: 5, img: './gifs/pecho/Aperturas inclinadas con mancuernas/Aperturas inclinadas con mancuernas.gif', tip: 'Usa un banco con ligera inclinación y mantén codos apenas flexionados. Abre en arco con control y vuelve cerrando sin chocar las mancuernas.' },
   { name: 'Aperturas inclinadas en máquina', muscle: 'pecho', unit: 'placa', step: 10, img: './gifs/pecho/Aperturas inclinadas en máquina/Aperturas inclinadas en máquina.gif', tip: 'Ajusta el asiento para iniciar con el pecho alto y hombros atrás. Cierra los brazos en arco hacia delante y controla el retorno sin soltar tensión.' },
-  { name: 'Cable cruce alto (pectoral inferior)', muscle: 'pecho', unit: 'placa', step: 10, img: './gifs/pecho/Cable cruce alto (pectoral inferior)/Cable cruce alto (pectoral inferior).gif', tip: 'Poleas altas, un paso al frente. Cruza las manos hacia abajo y adelante en arco. Aprieta el pectoral inferior al centro.' },
-  { name: 'Cruce cable inclinado', muscle: 'pecho', unit: 'placa', step: 10, img: './gifs/pecho/Cruce cable inclinado/Cruce cable inclinado.gif', tip: 'Banco inclinado entre dos poleas bajas. Cruza las manos sobre el pecho en arco. Aprieta pectoral superior arriba.' },
-  { name: 'Cruce de cables bajo a alto', muscle: 'pecho', unit: 'placa', step: 10, img: './gifs/pecho/Cruce de cables bajo a alto/Cruce de cables bajo a alto.gif', tip: 'Poleas bajas, manos hacia arriba y al frente en arco ascendente. Aprieta pectoral superior al cruzar. Controla la bajada.' },
-  { name: 'Cruce de poleas', muscle: 'pecho', unit: 'placa', step: 10, img: './gifs/pecho/Cruce de poleas/Cruce de poleas.gif', tip: 'Inclina apenas el torso y lleva las manos al frente en trayectoria de abrazo. Aprieta el pecho al centro y regresa lento manteniendo tensión del cable.' },
+  { name: 'Cable cruce alto (pectoral inferior)', muscle: 'pecho', unit: 'polea', step: 5, img: './gifs/pecho/Cable cruce alto (pectoral inferior)/Cable cruce alto (pectoral inferior).gif', tip: 'Poleas altas, un paso al frente. Cruza las manos hacia abajo y adelante en arco. Aprieta el pectoral inferior al centro.' },
+  { name: 'Cruce cable inclinado', muscle: 'pecho', unit: 'polea', step: 5, img: './gifs/pecho/Cruce cable inclinado/Cruce cable inclinado.gif', tip: 'Banco inclinado entre dos poleas bajas. Cruza las manos sobre el pecho en arco. Aprieta pectoral superior arriba.' },
+  { name: 'Cruce de cables bajo a alto', muscle: 'pecho', unit: 'polea', step: 5, img: './gifs/pecho/Cruce de cables bajo a alto/Cruce de cables bajo a alto.gif', tip: 'Poleas bajas, manos hacia arriba y al frente en arco ascendente. Aprieta pectoral superior al cruzar. Controla la bajada.' },
+  { name: 'Cruce de poleas', muscle: 'pecho', unit: 'polea', step: 5, img: './gifs/pecho/Cruce de poleas/Cruce de poleas.gif', tip: 'Inclina apenas el torso y lleva las manos al frente en trayectoria de abrazo. Aprieta el pecho al centro y regresa lento manteniendo tensión del cable.' },
   { name: 'Flexión diamante', muscle: 'pecho', unit: 'corporal', step: 0, img: './gifs/pecho/Flexión diamante/Flexión diamante.gif', tip: 'Manos juntas formando un diamante bajo el pecho. Baja con codos pegados al cuerpo. Empuja sin separar las manos. Enfatiza tríceps.' },
   { name: 'Flexión estándar', muscle: 'pecho', unit: 'corporal', step: 0, img: './gifs/pecho/Flexión estándar/Flexión estándar.gif', tip: 'Cuerpo recto desde cabeza a talones, manos al ancho de hombros. Baja con codos a 45°. Empuja manteniendo core y glúteos activos.' },
   { name: 'Fondos en paralelas', muscle: 'pecho', unit: 'corporal', step: 0, img: './gifs/pecho/Fondos en paralelas/Fondos en paralelas.gif', tip: 'Paralelas con torso inclinado adelante. Baja flexionando codos hasta 90°. Empuja sin bloquear. Inclinación = pecho; vertical = tríceps.' },
@@ -13248,12 +13307,14 @@ function abreDesdeTarjeta(origen, destino) {
 function textoDelCambio(c) {
   if (c.cambio === 'baja series') return `de ${c.repsAntes} a ${c.repsDespues} series`;
   if (c.cambio === 'sube carga' || c.cambio === 'baja carga') {
-    const a = parseInt(c.pesoAntes), d = parseInt(c.pesoDespues);
+    const pa = pesoParaVer(c.pesoAntes, c.name), pd = pesoParaVer(c.pesoDespues, c.name);
+    const a = parseFloat(String(pa).replace(',', '.')), d = parseFloat(String(pd).replace(',', '.'));
     if (a && d) {
-      const unidad = String(c.pesoDespues).replace(/^\s*\d+\s*/, '');
-      return `<span class="aj-viejo">${a}</span> <span class="rueda" data-de="${a}">${d}</span> <small>${unidad}</small>`;
+      const unidad = String(pd).replace(/^\s*[\d.,]+\s*/, '');
+      const f = x => String(x).replace('.', ',');
+      return `<span class="aj-viejo">${f(a)}</span> <span class="rueda" data-de="${a}">${f(d)}</span> <small>${unidad}</small>`;
     }
-    return `${c.pesoAntes || '—'} → ${c.pesoDespues || '—'}`;
+    return `${pa || '—'} → ${pd || '—'}`;
   }
   if (c.cambio === 'sube reps' || c.cambio === 'baja reps')
     return `${c.repsAntes} → ${c.repsDespues} reps`;
@@ -13297,7 +13358,7 @@ async function loadAjusteSemanal() {
   // cargas y repeticiones, plegadas.
   const filasRot = rots.map(r => `<div class="aj-fila aj-fila-rot">
       <span class="aj-nombre">${r.a}<br><span class="aj-flecha">en vez de ${r.de}</span></span>
-      <span class="aj-dato">${r.peso || ''}</span>
+      <span class="aj-dato">${pesoParaVer(r.peso, r.a) || ''}</span>
     </div>`).join('');
 
   const htmlAjuste = `<div class="today-card aj-card">

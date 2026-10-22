@@ -971,8 +971,8 @@ export const CATALOGO = [
  {
   "name": "Pájaro en cables (pec deck inversa)",
   "muscle": "hombros",
-  "unit": "placa",
-  "step": 10,
+  "unit": "polea",
+  "step": 5,
   "img": "./gifs/hombros/Pájaro en cables (pec deck inversa)/Pájaro en cables (pec deck inversa).gif",
   "tip": "Poleas cruzadas altas, toma manija contraria. Abre los brazos como pájaro manteniendo leve flexión de codo. Aprieta deltoides posterior."
  },
@@ -1195,32 +1195,32 @@ export const CATALOGO = [
  {
   "name": "Cable cruce alto (pectoral inferior)",
   "muscle": "pecho",
-  "unit": "placa",
-  "step": 10,
+  "unit": "polea",
+  "step": 5,
   "img": "./gifs/pecho/Cable cruce alto (pectoral inferior)/Cable cruce alto (pectoral inferior).gif",
   "tip": "Poleas altas, un paso al frente. Cruza las manos hacia abajo y adelante en arco. Aprieta el pectoral inferior al centro."
  },
  {
   "name": "Cruce cable inclinado",
   "muscle": "pecho",
-  "unit": "placa",
-  "step": 10,
+  "unit": "polea",
+  "step": 5,
   "img": "./gifs/pecho/Cruce cable inclinado/Cruce cable inclinado.gif",
   "tip": "Banco inclinado entre dos poleas bajas. Cruza las manos sobre el pecho en arco. Aprieta pectoral superior arriba."
  },
  {
   "name": "Cruce de cables bajo a alto",
   "muscle": "pecho",
-  "unit": "placa",
-  "step": 10,
+  "unit": "polea",
+  "step": 5,
   "img": "./gifs/pecho/Cruce de cables bajo a alto/Cruce de cables bajo a alto.gif",
   "tip": "Poleas bajas, manos hacia arriba y al frente en arco ascendente. Aprieta pectoral superior al cruzar. Controla la bajada."
  },
  {
   "name": "Cruce de poleas",
   "muscle": "pecho",
-  "unit": "placa",
-  "step": 10,
+  "unit": "polea",
+  "step": 5,
   "img": "./gifs/pecho/Cruce de poleas/Cruce de poleas.gif",
   "tip": "Inclina apenas el torso y lleva las manos al frente en trayectoria de abrazo. Aprieta el pecho al centro y regresa lento manteniendo tensión del cable."
  },

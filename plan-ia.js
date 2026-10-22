@@ -218,8 +218,10 @@ const PROPORCION = [
   [/press (de banca|inclinado).*mancuerna/, 0.22],
   [/press (de pecho|inclinado) en maquina/, 0.55],
   [/apertura.*mancuerna/, 0.1],
-  [/peck deck invertido|pajaro en cables/, 0.3],
-  [/apertura|peck|cruce/, 0.3],
+  // Dos poleas: la carga va por polea, la mitad de lo que mueve el pecho
+  [/cruce|pajaro en cables/, 0.15],
+  [/peck deck invertido/, 0.3],
+  [/apertura|peck/, 0.3],
   [/sentadilla frontal/, 0.65],
   [/sentadilla (en multipower|trasera|sumo en multipower|con talones)|box squat|hack|pendulo|zancadas (con barra|en multipower)/, 0.85],
   [/prensa/, 1.6],
@@ -287,7 +289,7 @@ const BASE_REFERENCIA = {
 function proporcionDe(ex) {
   const n = sinTilde(ex.name);
   const regla = PROPORCION.find(([re]) => re.test(n));
-  return regla ? regla[1] : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'lado' ? 0.6 : 0.3;
+  return regla ? regla[1] : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'polea' ? 0.15 : ex.unit === 'lado' ? 0.6 : 0.3;
 }
 
 function cargaEstimada(ex, enc, factores) {
@@ -310,7 +312,7 @@ function cargaEstimada(ex, enc, factores) {
     return `${redondea(lado, ex.step)} lbs/lado`;
   }
   const v = Math.max(ex.step, redondea(total, ex.step));
-  return ex.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+  return ex.unit === 'mancuerna' ? `${v} lbs c/u` : ex.unit === 'polea' ? `${v} lbs c/polea` : `${v} lbs`;
 }
 
 /* ── Cargas con sentido ───────────────────────────────────────────────
@@ -338,7 +340,33 @@ export function escribeCarga(ex, total) {
     return `${redondea(lado, paso)} lbs/lado`;
   }
   const v = Math.max(paso, redondea(total, paso));
-  return ex.unit === 'mancuerna' ? `${v} lbs c/u` : `${v} lbs`;
+  return ex.unit === 'mancuerna' ? `${v} lbs c/u` : ex.unit === 'polea' ? `${v} lbs c/polea` : `${v} lbs`;
+}
+
+/* ── Kilos con sentido ───────────────────────────────────────────────
+   Las cargas se guardan en libras. Quien entrena en un gimnasio en kilos
+   las ve convertidas a lo que de verdad hay ahí, no a la cifra exacta:
+   mancuernas de 1 en 1 hasta 10 kg y de 2 en 2 después; discos y poleas de
+   2,5 en 2,5 (1,25 por lado si es muy poco). */
+export const LB_A_KG = 0.45359237;
+export function kgConSentido(lb, tipo) {
+  const kg = lb * LB_A_KG;
+  const paso = tipo === 'mancuerna' ? (kg < 10 ? 1 : 2) : (tipo === 'lado' && kg < 5) ? 1.25 : 2.5;
+  return Math.max(paso, Math.round(Math.round(kg / paso) * paso * 100) / 100);
+}
+export function pasoEnKg(tipo, lbPaso) {
+  return tipo === 'mancuerna' ? 2 : tipo === 'lado' ? 2.5 : 2.5;
+}
+/* "45 lbs c/u" → "20 kg c/u". Lo que ya está en kg o no tiene número, igual. */
+export function cargaEnKg(w, ex) {
+  const s = String(w || '');
+  if (!s || /kg|kilo/i.test(s) || !/\d/.test(s)) return s;
+  const tipo = /\/\s*lado/i.test(s) ? 'lado' : /c\/u|cada/i.test(s) ? 'mancuerna' : /polea/i.test(s) ? 'polea'
+             : (ex && ex.unit) || 'placa';
+  let out = s.replace(/\d+(?:[.,]\d+)?/g, n => String(kgConSentido(parseFloat(n.replace(',', '.')), tipo)));
+  if (/lbs?\b|libras?/i.test(out)) out = out.replace(/\s*(lbs|lb|libras|libra)\b/gi, ' kg');
+  else out = out.replace(/(\d+(?:\.\d+)?)(?!.*\d)/, '$1 kg');
+  return out;
 }
 
 /* Peso corporal y sexo de quien entrena: de la encuesta, del perfil o de su
@@ -516,7 +544,7 @@ export function huecosDelPlan(enc) {
   const orden = (a, b) => {
     if (novato) {
       // Primero lo guiado: máquina y mancuerna antes que barra libre
-      const u = e => e.unit === 'placa' ? 0 : e.unit === 'mancuerna' ? 1 : 2;
+      const u = e => e.unit === 'placa' || e.unit === 'polea' ? 0 : e.unit === 'mancuerna' ? 1 : 2;
       if (u(a) !== u(b)) return u(a) - u(b);
     }
     return rangoPref(a) - rangoPref(b);
@@ -644,7 +672,7 @@ export function armarRutina(enc, eleccionesIA) {
     if (enc.nivel === 'avanzado' && enc.objetivo !== 'fuerza' && circuits.length) {
       const ult = circuits[circuits.length - 1].exercises;
       const ex = ult[ult.length - 1];
-      if (ex && ['placa', 'mancuerna'].includes(ex.unit) && tipoDe(ex) !== 'C' && parseFloat(ex.w1)) {
+      if (ex && ['placa', 'mancuerna', 'polea'].includes(ex.unit) && tipoDe(ex) !== 'C' && parseFloat(ex.w1)) {
         ex.dropFinal = { pasos: 2, reps: [10, 8] };
       }
     }
