@@ -3393,6 +3393,11 @@ body:has(#registro.active) .modo-prueba { display:none; }
 .sc-sig-l { display:block; font-size:13px; color:var(--t2); }
 .sc-sig-n { display:block; font-family:var(--font-d); font-size:17px; font-weight:600; letter-spacing:-.3px; margin-top:2px; }
 #today-ajuste:not(:empty) { margin-top:14px; }
+.sc-cambiar { display:block; margin:10px auto 0; padding:8px 14px; background:none; border:none; cursor:pointer;
+  font-family:var(--font-b); font-size:15px; font-weight:600; letter-spacing:-.2px; color:var(--ac-tx); }
+.sc-otras { margin-top:2px; }
+.sc-otras .sc-otra { margin-top:8px; background:var(--s1); }
+.sc-otras .sc-otra:active { background:var(--press); }
 .today-sec { margin:28px 0 10px; font-size:22px; letter-spacing:-.6px; }
 
 /* El empuje: la pantalla de arriba, opaca y con una sombra en su borde */
@@ -5648,6 +5653,54 @@ function hechasAntesDe(athlete, fecha) {
   return { hechas, deHoy };
 }
 
+/* Hacer hoy otra sesión de la semana (la que quiera de las que le faltan).
+   Se guarda en el teléfono sólo para hoy; al terminarla cuenta como hecha y
+   el resto de la semana sigue su orden. */
+function sesionElegidaHoy(athlete) {
+  try {
+    const x = JSON.parse(localStorage.getItem('sesionElegida_' + (athlete || currentAthlete)) || 'null');
+    return x && x.fecha === hoyISO() ? parseInt(x.sesion) || 0 : 0;
+  } catch (e) { return 0; }
+}
+function sesionesQueFaltan(athlete) {
+  const dias = diasDeEntreno(athlete);
+  const total = Object.keys(data || {}).filter(k => /^sesion\d+$/.test(k)).length;
+  const n = Math.min(total, dias.length);
+  const { hechas, deHoy } = hechasAntesDe(athlete, fechaBogota());
+  const out = [];
+  for (let k = 1; k <= n; k++) if (!hechas.has(k) && k !== deHoy) out.push(k);
+  return out;
+}
+function cambioDeSesionHtml(state) {
+  if (!seAutogestiona() || !state) return '';
+  const otras = sesionesQueFaltan().filter(n => n !== state.sessionNum);
+  if (!otras.length) return '';
+  const filas = otras.map(n => {
+    const dia = data && data['sesion' + n];
+    const titulo = dia && typeof deriveSessionTitle === 'function' ? deriveSessionTitle(dia, n) : `Sesión ${n}`;
+    return `<button class="sc-sig sc-otra" onclick="eligeSesion(${n})">
+        <span><span class="sc-sig-l">Sesión ${n}</span><span class="sc-sig-n">${titulo}</span></span>
+        <svg class="ic ic-sm"><use href="#i-chevron-r"/></svg>
+      </button>`;
+  }).join('');
+  return `<button class="sc-cambiar" aria-expanded="false" onclick="abreCambioSesion(this)">Cambiar de sesión</button>
+    <div class="sc-otras" hidden>${filas}</div>`;
+}
+function abreCambioSesion(btn) {
+  const lista = btn.nextElementSibling;
+  if (!lista) return;
+  const abrir = lista.hidden;
+  lista.hidden = !abrir;
+  btn.setAttribute('aria-expanded', String(abrir));
+  btn.textContent = abrir ? 'Cancelar' : 'Cambiar de sesión';
+  if (abrir) anima(lista, [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], 'suave', 0, { fill: 'none' });
+}
+function eligeSesion(n) {
+  try { localStorage.setItem('sesionElegida_' + currentAthlete, JSON.stringify({ fecha: hoyISO(), sesion: n })); } catch (e) {}
+  currentDay = 'sesion' + n;
+  renderToday();
+}
+
 function sesionPorAvance(athlete) {
   const hoy = fechaBogota();
   if (MODO_PRUEBA) hoy.setDate(hoy.getDate() + 1);
@@ -5682,7 +5735,7 @@ function getSessionState(athlete) {
   // Se guarda como cualquier otra; sólo cambia cuál se muestra.
   const marca = data && data._sesionHoy;
   const delServidor = marca && marca.fecha === hoyISO() ? parseInt(marca.sesion) : 0;
-  const forzada = (() => { try { const n = parseInt(new URLSearchParams(location.search).get('sesion')) || delServidor; return n >= 1 && n <= total ? n : 0; } catch (e) { return 0; } })();
+  const forzada = (() => { try { const n = parseInt(new URLSearchParams(location.search).get('sesion')) || sesionElegidaHoy(athlete) || delServidor; return n >= 1 && n <= total ? n : 0; } catch (e) { return 0; } })();
   if (forzada) {
     return { idx: forzada - 1, total, week: 1, sessionNum: forzada, sessionKey: 'sesion' + forzada,
              porDia: seAutogestiona(athlete), esFinDeSemana: false, esDescanso: false };
@@ -13184,7 +13237,7 @@ function renderToday() {
         <button class="sc-btn sc-btn-suave" onclick="empezarDesdeHoy(this)">
           Entrenar igual <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
         </button>
-      </div>`;
+      </div>${cambioDeSesionHtml(state)}`;
   } else if (tieneContenido) {
     const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
     const nCirc = (day.circuits || []).length;
@@ -13205,7 +13258,7 @@ function renderToday() {
         <button class="sc-btn" onclick="empezarDesdeHoy(this)">
           ${enCurso ? 'Continuar' : 'Empezar'} <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
         </button>
-      </div>`;
+      </div>${enCurso ? '' : cambioDeSesionHtml(state)}`;
   } else if (!_rutinaCargada) {
     // Todavía no llegó la rutina: un esqueleto, nunca "Sin rutina cargada"
     entrenamiento = `<div class="sc sc-cargando" aria-label="Cargando tu entrenamiento"><i></i><i></i><i></i><i></i></div>`;
