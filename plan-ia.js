@@ -266,9 +266,11 @@ const PROPORCION = [
 const TREN_INFERIOR = new Set(['cuadriceps', 'isquio', 'gluteo', 'pantorrilla']);
 
 function pesoBarra(n) {
+  if (/barra t\b/.test(n)) return 0;   // barra T: sólo cuentan los discos
   if (/multipower|smith/.test(n)) return 20;
-  if (/barra|sentadilla trasera|sentadilla frontal|box squat|peso muerto|hip thrust con barra|puente de gluteos|buenos dias|pendlay|zancadas con barra/.test(n)) return 45;
-  return 0;   // prensa, hack, péndulo, barra T: sólo cuentan los discos
+  // El press cerrado y el militar abiertas/cerradas son con barra aunque el nombre no lo diga
+  if (/barra|sentadilla trasera|sentadilla frontal|box squat|peso muerto|hip thrust con barra|puente de gluteos|buenos dias|pendlay|zancadas con barra|agarre cerrado|abiertas y cerradas/.test(n)) return 45;
+  return 0;   // prensa, hack, péndulo: sólo cuentan los discos
 }
 
 function redondea(v, paso) {
@@ -289,6 +291,10 @@ const BASE_REFERENCIA = {
   jalon: 'Jalón al pecho agarre ancho',
 };
 
+function reglaDe(ex) {
+  const n = sinTilde(ex.name);
+  return PROPORCION.findIndex(([re]) => re.test(n));
+}
 function proporcionDe(ex) {
   const n = sinTilde(ex.name);
   const regla = PROPORCION.find(([re]) => re.test(n));
@@ -518,6 +524,20 @@ export function cargaParaElAtleta(ex, cargas, perfil) {
   let total = cargaIntermedia(ex, perfil) * f * 0.9;
   const techo = techoDe(ex, perfil);
   if (techo && total > techo * 0.75) total = techo * 0.75;
+  // Nunca por encima de lo que ya mueve en el ejercicio más parecido (misma
+  // proporción ±25 %, básico con básico): la fuerza de un músculo no puede
+  // dejar un press cerrado más pesado que su banca.
+  const pn = proporcionDe(ex), basico = tipoDe(ex) === 'C', regla = reglaDe(ex);
+  for (const [nombre, c] of Object.entries(cargas || {})) {
+    const e = PorNombre[nombre];
+    if (!e || !c || c.estimado || nombre === ex.name || e.unit === 'corporal' || (tipoDe(e) === 'C') !== basico) continue;
+    // Mismo patrón: la misma regla de proporción, o el mismo músculo con una parecida
+    if (!(regla >= 0 && reglaDe(e) === regla) && e.muscle !== ex.muscle) continue;
+    const r = pn / proporcionDe(e);
+    if (r < 0.8 || r > 1.25) continue;
+    const t = cargaTotal(e, c.w1);
+    if (t && total > t * r) total = t * r;
+  }
   return { w1: escribeCarga(ex, total), origen: 'según tus cargas' };
 }
 
