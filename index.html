@@ -28,7 +28,8 @@
 html { scroll-padding-block: 30vh; }
 /* When soft keyboard is visible, pin login content to top so the input isn't covered */
 body.kbd-open #athlete-login .tlogin-body,
-body.kbd-open #trainer-login .tlogin-body {
+body.kbd-open #trainer-login .tlogin-body,
+body.kbd-open #admin-login .tlogin-body {
   justify-content: flex-start;
   padding-top: calc(var(--sat) + 72px);
 }
@@ -1513,6 +1514,7 @@ button.ex-presc:active { background:var(--ac-soft2); }
   cursor:pointer; padding:10px;
 }
 .admin-secret-btn:active { color:var(--t1); }
+.admin-secret-btn[hidden] { display:none; }
 
 /* ── MEALS SCREEN ── */
 #meals {
@@ -2245,7 +2247,7 @@ button.ex-presc:active { background:var(--ac-soft2); }
 /* ══════════════════════════════
    TRAINER LOGIN
 ══════════════════════════════ */
-#trainer-login, #athlete-login {
+#trainer-login, #athlete-login, #admin-login {
   background:var(--bg);
   display:flex; flex-direction:column;
 }
@@ -3942,6 +3944,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .menu-op { display:block; width:100%; min-height:56px; border:none; background:none; color:var(--ac-tx); font-size:17px; cursor:pointer; }
 .menu-op + .menu-op { border-top:.5px solid var(--b); }
 .menu-op.peligro { color:var(--err); }
+.menu-titulo { padding:14px 16px; font-size:13px; line-height:1.4; color:var(--t2); text-align:center; white-space:pre-line; }
+.menu-titulo + .menu-op { border-top:.5px solid var(--b); }
 .menu-op.cancelar { font-weight:600; }
 .menu-op:active { background:var(--press); }
 
@@ -4187,7 +4191,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
     <span class="role-ia-txt"><b>¿Entrenas sin entrenador?</b> Crea tu plan con IA</span>
     <svg class="ic ic-sm role-ia-chev"><use href="#i-chevron-r"/></svg>
   </button>
-  <button class="admin-secret-btn" onclick="adminLogin()">Acceso administrador</button>
+  <button class="admin-secret-btn" onclick="show('admin-login')" hidden>Acceso administrador</button>
 </div>
 
 <!-- ══ ADMIN PANEL ══ -->
@@ -4316,6 +4320,23 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
       Entrar <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
     </button>
     <div class="tlogin-error" id="trainer-error"></div>
+  </div>
+</div>
+
+<div class="screen" id="admin-login">
+  <div class="tlogin-back"><button class="back-btn" onclick="show('role-select')"><svg class="ic"><use href="#i-chevron-l"/></svg>Volver</button></div>
+  <div class="tlogin-body">
+    <div class="tlogin-icon accent"><svg class="ic ic-lg"><use href="#i-doc"/></svg></div>
+    <div class="tlogin-title">Acceso administrador</div>
+    <div class="tlogin-sub">Ingresa la contraseña para continuar.</div>
+    <label class="tlogin-label" for="admin-password">Contraseña</label>
+    <input class="tlogin-input" id="admin-password" type="password"
+      placeholder="Contraseña" autocomplete="off" autocapitalize="none"
+      onkeydown="if(event.key==='Enter') adminLogin()">
+    <button class="tlogin-btn" onclick="adminLogin()">
+      Entrar <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
+    </button>
+    <div class="tlogin-error" id="admin-error"></div>
   </div>
 </div>
 
@@ -5291,7 +5312,7 @@ const NIVEL_PANTALLA = {
   'role-select': 0, 'athlete-login': 1, 'trainer-login': 1, 'registro': 2,
   'trainer-portal': 2, 'trainer-new-athlete': 3, 'trainer-own-profile': 3, 'trainer-client': 3,
   'trainer-edit-profile': 4,
-  'admin-support': 1, 'admin-create-trainer': 2, 'admin-trainer-detail': 2, 'admin-edit-trainer': 3,
+  'admin-login': 1, 'admin-support': 2, 'admin-create-trainer': 3, 'admin-trainer-detail': 3, 'admin-edit-trainer': 4,
 };
 
 function show(id) {
@@ -8847,7 +8868,7 @@ function forceLogoutByInactivity() {
   // Trainer
   if (typeof logoutTrainer === 'function') logoutTrainer();
   show('role-select');
-  setTimeout(() => { try { alert('Tu sesión expiró por inactividad. Inicia sesión de nuevo.'); } catch {} }, 50);
+  setTimeout(() => avisa('Tu sesión expiró por inactividad. Inicia sesión de nuevo.'), 50);
 }
 
 // Registrar cualquier interacción como "actividad" (throttled vía interval arriba).
@@ -8992,7 +9013,7 @@ async function trainerLogin() {
 /* ── TRAINER OWN PROFILE ── */
 let _topPhotoUrl = null;
 async function openTrainerOwnProfile() {
-  if (!currentTrainer) { alert('No estás logueado'); return; }
+  if (!currentTrainer) { avisa('Tu sesión se cerró. Entra de nuevo.'); return; }
   const errEl = document.getElementById('top-error'); errEl.textContent = '';
   try {
     const res = await fetch(WORKER_URL, {
@@ -9009,13 +9030,13 @@ async function openTrainerOwnProfile() {
       });
       const j2 = await r2.json();
       const t2 = (j2.trainers || []).find(x => x.username === currentTrainer);
-      if (!t2) { alert('No se encontró tu perfil'); return; }
+      if (!t2) { avisa('No se encontró tu perfil.'); return; }
       fillTrainerOwnProfile(t2);
     } else {
       fillTrainerOwnProfile(t);
     }
     show('trainer-own-profile');
-  } catch { alert('Error de red'); }
+  } catch { avisa('Sin conexión. Inténtalo de nuevo.'); }
 }
 
 function fillTrainerOwnProfile(t) {
@@ -9423,7 +9444,7 @@ async function openEditAthleteProfile() {
   if (!trainerClientId) return;
   const list = dynamicAthletesCache || await fetchDynamicAthletes();
   const a = (list || []).find(x => x.clientId === trainerClientId);
-  if (!a) { alert('No se encontró el atleta'); return; }
+  if (!a) { avisa('No se encontró el atleta.'); return; }
   _editingAthlete = a;
   const p = a.profile || {};
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
@@ -9515,8 +9536,8 @@ async function saveEditAthleteProfile() {
 async function deleteCurrentAthlete() {
   if (!trainerClientId) return;
   const name = _editingAthlete?.name || trainerClientId;
-  if (!confirm(`¿Eliminar a ${name} permanentemente? Se borrarán rutinas, sesiones completadas y todo el historial. No se puede deshacer.`)) return;
-  if (!confirm('Última confirmación: ¿seguro que quieres eliminar a ' + name + '?')) return;
+  if (!await confirma(`Se borrarán las rutinas, las sesiones completadas y todo el historial de ${name}. No se puede deshacer.`, `Eliminar a ${name}`)) return;
+  if (!await confirma(`Última confirmación: ¿seguro que quieres eliminar a ${name}?`, 'Sí, eliminar para siempre')) return;
   try {
     const res = await fetch(WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -9528,9 +9549,9 @@ async function deleteCurrentAthlete() {
       trainerClientId = null;
       show('trainer-portal');
     } else {
-      alert('Error: ' + (json.error || 'no se pudo eliminar'));
+      avisa('No se pudo eliminar: ' + (json.error || 'inténtalo de nuevo.'));
     }
-  } catch (e) { alert('Error de red'); }
+  } catch (e) { avisa('Sin conexión. Inténtalo de nuevo.'); }
 }
 
 async function openTrainerClient(clientId, clientName) {
@@ -10534,10 +10555,10 @@ async function handlePhotoSelected(slot, input) {
       previewEl.classList.add('show');
       removeEl.classList.add('show');
     } else {
-      alert('Error al subir la foto, inténtalo de nuevo.');
+      avisa('No se pudo subir la foto. Inténtalo de nuevo.');
     }
   } catch {
-    alert('Error de conexión al subir la foto.');
+    avisa('Sin conexión: la foto no se subió.');
   }
   uploadingEl.style.display = 'none';
   input.value = '';
@@ -10556,7 +10577,7 @@ async function sendMeal(slot) {
   const text = mealsData[slot] || '';
   const photo = photosData[slot] || '';
   if (!text.trim() && !photo) {
-    alert('Agregá texto o foto primero.');
+    avisa('Agrega texto o una foto primero.');
     return;
   }
 
@@ -10974,7 +10995,7 @@ async function savePaymentConfig() {
 }
 
 function platformPayAction() {
-  alert('Enlace de pago próximamente. Contacta al soporte para más información.');
+  avisa('El enlace de pago llega pronto. Escríbele a soporte para más información.');
 }
 
 /* ── keep focused input visible above soft keyboard (only on touch devices) ── */
@@ -11638,10 +11659,10 @@ function ponBloqueHombro(on) {
 }
 /* La misma regla que usa el plan con IA (calentamientoDelDia en plan-ia.js):
    un ejercicio por grupo, el mismo de la rutina, al 40 % y luego al 60 %. */
-function sugiereCalentamiento() {
+async function sugiereCalentamiento() {
   const d = editorData[editorDay];
   const exs = (d.circuits || []).flatMap(c => c.exercises || []).filter(e => e && e.name && e.name !== 'Nuevo ejercicio');
-  if (!exs.length) { alert('Primero arma los circuitos: el calentamiento sale de ellos.'); return; }
+  if (!exs.length) { avisa('Primero arma los circuitos: el calentamiento sale de ellos.'); return; }
   const INFERIOR = ['cuadriceps', 'isquio', 'isquiotibiales', 'gluteo', 'pantorrilla'];
   const musculos = [...new Set(exs.map(e => e.muscle))];
   const superior = musculos.some(m => !INFERIOR.includes(m) && m !== 'abdomen');
@@ -11686,7 +11707,7 @@ function sugiereCalentamiento() {
     nuevos.push(it);
   }
   const ya = Array.isArray(d.warmup) ? d.warmup.length : 0;
-  if (ya && !confirm(`¿Reemplazar los ${ya} ejercicio${ya === 1 ? '' : 's'} del día por la sugerencia?`)) return;
+  if (ya && !await confirma(`Los ${ya} ejercicio${ya === 1 ? '' : 's'} del calentamiento de hoy se cambian por la sugerencia.`, 'Reemplazar')) return;
   d.warmup = nuevos;
   if (superior && !(Array.isArray(d.warmupHombro) && d.warmupHombro.length)) d.warmupHombro = bloqueHombro();
   if (!d.warmupSeries) d.warmupSeries = 2;
@@ -11767,25 +11788,39 @@ function menuSesion() {
 }
 
 /* Menú de acciones de iOS: opciones arriba y Cancelar aparte */
-function abreMenu(ops) {
-  document.querySelector('.menu-fondo')?.remove();
+function abreMenu(ops, { titulo = '', cancelar = 'Cancelar', alCerrar = null } = {}) {
+  const previo = document.querySelector('.menu-fondo');
+  if (previo) { previo._alCerrar?.(); previo.remove(); }
   const fondo = document.createElement('div');
   fondo.className = 'menu-fondo';
   fondo.innerHTML = `<div class="menu" role="menu" tabindex="-1">
-      <div class="menu-grupo">${ops.map((o, i) => `<button class="menu-op${o.peligro ? ' peligro' : ''}" role="menuitem" data-i="${i}">${reEscAttr(o.t)}</button>`).join('')}</div>
-      <div class="menu-grupo"><button class="menu-op cancelar" data-i="-1">Cancelar</button></div>
+      <div class="menu-grupo">${titulo ? `<div class="menu-titulo">${reEscAttr(titulo)}</div>` : ''}${ops.map((o, i) => `<button class="menu-op${o.peligro ? ' peligro' : ''}" role="menuitem" data-i="${i}">${reEscAttr(o.t)}</button>`).join('')}</div>
+      <div class="menu-grupo"><button class="menu-op cancelar" data-i="-1">${reEscAttr(cancelar)}</button></div>
     </div>`;
-  const cierra = () => { fondo.classList.remove('ver'); setTimeout(() => fondo.remove(), 300); };
+  // Si se cierra sin elegir (Cancelar, fondo, Escape u otra hoja encima), avisa
+  fondo._alCerrar = alCerrar;
+  const cierra = o => {
+    fondo._alCerrar = null;
+    fondo.classList.remove('ver'); setTimeout(() => fondo.remove(), 300);
+    if (o) setTimeout(o.fn, 120); else if (alCerrar) alCerrar();
+  };
   fondo.addEventListener('keydown', e => { if (e.key === 'Escape') cierra(); });
   fondo.addEventListener('click', e => {
     const b = e.target.closest('.menu-op');
     if (!b && e.target !== fondo) return;
-    cierra();
-    const o = b && ops[+b.dataset.i];
-    if (o) setTimeout(o.fn, 120);
+    cierra(b && ops[+b.dataset.i]);
   });
   (document.getElementById('app-shell') || document.body).appendChild(fondo);
   requestAnimationFrame(() => { fondo.classList.add('ver'); fondo.querySelector('.menu')?.focus({ preventScroll: true }); });
+}
+
+/* Confirmar y avisar con esta misma hoja, no con los avisos del navegador.
+   confirma() responde true sólo si se toca la acción (en rojo). */
+function confirma(titulo, accion) {
+  return new Promise(res => abreMenu([{ t: accion, peligro: true, fn: () => res(true) }], { titulo, alCerrar: () => res(false) }));
+}
+function avisa(titulo) {
+  return new Promise(res => abreMenu([], { titulo, cancelar: 'Entendido', alCerrar: res }));
 }
 
 /* ── Reordenar arrastrando ≡ ── */
@@ -12089,11 +12124,11 @@ function cambiaEjDesdeHoja() {
   if (h.tipo === 'ej') openExercisePicker(h.ci, h.ei, 1);
   else openWarmupPicker(h.wi, h.lista);
 }
-function quitaDesdeHoja() {
+async function quitaDesdeHoja() {
   const h = _hojaEj, ex = objHoja();
   if (!h || !ex) return;
   const nombre = ex.name || ex.text || 'este ejercicio';
-  if (!confirm(`¿Quitar ${nombre}?`)) return;
+  if (!await confirma('', `Quitar ${nombre}`)) return;
   const d = editorData[editorDay];
   const quita = () => {
     if (h.tipo === 'ej') d.circuits[h.ci].exercises.splice(h.ei, 1);
@@ -12201,7 +12236,7 @@ function estadoGuardado(tipo, texto) {
   el.className = 're-estado ver' + (tipo === 'ok' ? ' ok' : tipo === 'error' ? ' error' : '');
   el.style.cursor = tipo === 'error' && _problemasGuardado.length ? 'pointer' : '';
   el.onclick = tipo === 'error' && _problemasGuardado.length
-    ? () => alert('Falta resolver:\n\n' + _problemasGuardado.slice(0, 6).join('\n')) : null;
+    ? () => avisa('Falta resolver:\n\n' + _problemasGuardado.slice(0, 6).join('\n')) : null;
   el.innerHTML = tipo === 'ok' ? CHULO_SVG + 'Guardado'
     : tipo === 'guardando' ? '<svg class="est-giro" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="34 60"/></svg>Guardando…'
     : reEscAttr(texto || '');
@@ -12279,8 +12314,8 @@ function updateEditorTrainerNote(day, ci, ei, value) {
   editorData[day].circuits[ci].exercises[ei].trainerNote = value;
 }
 
-function removeWarmup(day) {
-  if (!confirm('¿Quitar el calentamiento de esta sesión? El atleta arrancará directo en el primer circuito.')) return;
+async function removeWarmup(day) {
+  if (!await confirma('El atleta arrancará directo en el primer circuito.', 'Quitar el calentamiento')) return;
   editorData[day].warmup = null;
   editorData[day].warmupHombro = null;
   renderRoutineEditor();
@@ -12496,8 +12531,8 @@ function addSession() {
   renderRoutineEditor();
 }
 
-function removeSession(day) {
-  if (!confirm('¿Quitar esta sesión? Se perderá su contenido.')) return;
+async function removeSession(day) {
+  if (!await confirma('Se perderá su contenido.', 'Quitar esta sesión')) return;
   delete editorData[day];
   const rest = Object.keys(editorData).filter(k => /^sesion\d+$/.test(k))
     .sort((a,b) => parseInt(a.slice(6)) - parseInt(b.slice(6)));
@@ -12513,8 +12548,8 @@ function addCircuit(day) {
   openEditorBlock('circuit', circuits.length - 1);   // se abre para configurarlo
 }
 
-function removeCircuit(day, ci) {
-  if (!confirm('¿Quitar este circuito?')) return;
+async function removeCircuit(day, ci) {
+  if (!await confirma('', 'Quitar este circuito')) return;
   editorData[day].circuits.splice(ci, 1);
   if (editorBlock && editorBlock.kind === 'circuit') return closeEditorBlock();
   renderRoutineEditor();
@@ -12541,8 +12576,8 @@ function moveExercise(day, ci, ei, dir) {
   renderRoutineEditor();
 }
 
-function removeExercise(day, ci, ei) {
-  if (!confirm('¿Quitar este ejercicio?')) return;
+async function removeExercise(day, ci, ei) {
+  if (!await confirma('', 'Quitar este ejercicio')) return;
   editorData[day].circuits[ci].exercises.splice(ei, 1);
   renderRoutineEditor();
 }
@@ -13066,7 +13101,7 @@ function validateRoutineBeforeSave(routine) {
 async function saveRoutineFromEditor() {
   const problems = validateRoutineBeforeSave(editorData);
   if (problems.length) {
-    alert('No se puede guardar hasta resolver:\n\n' + problems.slice(0, 6).join('\n') + (problems.length > 6 ? `\n... y ${problems.length-6} más` : ''));
+    avisa('No se puede guardar hasta resolver:\n\n' + problems.slice(0, 6).join('\n') + (problems.length > 6 ? `\n… y ${problems.length-6} más` : ''));
     return;
   }
   await guardaYa(true);
@@ -13585,12 +13620,14 @@ let currentTrainerId = null;
 const ADMIN_PW = 'admin2026';
 
 function adminLogin() {
-  const pw = prompt('Contraseña admin:');
-  if (pw === ADMIN_PW) {
-    show('admin-support');
-    setAdminTab('support');
-  }
+  const campo = document.getElementById('admin-password'), err = document.getElementById('admin-error');
+  if (campo.value !== ADMIN_PW) { err.textContent = 'Contraseña incorrecta.'; return; }
+  campo.value = ''; err.textContent = '';
+  show('admin-support');
+  setAdminTab('support');
 }
+// El acceso de administrador sólo se ve al abrir la app con ?admin
+try { if (new URLSearchParams(location.search).has('admin')) document.querySelector('.admin-secret-btn')?.removeAttribute('hidden'); } catch (e) {}
 
 function setAdminTab(tab) {
   document.getElementById('admin-tab-support').classList.toggle('active', tab === 'support');
@@ -13689,7 +13726,7 @@ async function loadAdminTrainers() {
 }
 
 async function deleteTrainer(username, name) {
-  if (!confirm('¿Eliminar a ' + (name || username) + '? No se puede deshacer.')) return;
+  if (!await confirma('No se puede deshacer.', 'Eliminar a ' + (name || username))) return;
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -13697,8 +13734,8 @@ async function deleteTrainer(username, name) {
     });
     const json = await res.json();
     if (json.ok) loadAdminTrainers();
-    else alert('Error: ' + (json.error || 'no se pudo eliminar'));
-  } catch { alert('Error de red'); }
+    else avisa('No se pudo eliminar: ' + (json.error || 'inténtalo de nuevo.'));
+  } catch { avisa('Sin conexión. Inténtalo de nuevo.'); }
 }
 
 let _ctPhotoUrl = null;
