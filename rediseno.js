@@ -65,8 +65,8 @@ export function fichasParaRediseno({ rutina, cargas, marcas, estancados = [], ho
   return { sesiones, calentamientoHombro: CALENTAMIENTO_HOMBRO };
 }
 
-function ejercicioNuevo(cat, cargas, perfil, hoy) {
-  const [lo, hi] = rangoDeRepsPara(cat.name);
+function ejercicioNuevo(cat, cargas, perfil, hoy, prefs) {
+  const [lo, hi] = rangoDeRepsPara(cat.name, null, prefs);
   const est = cargaParaElAtleta(cat, cargas, perfil);
   const w1 = est ? est.w1 : (cat.unit === 'corporal' ? '' : cargaSugerida(cat, perfil));
   let repNow = est && est.reps ? Math.min(hi, Math.max(lo, est.reps)) : lo;
@@ -107,7 +107,8 @@ export function validarRediseno(propuesta, { rutina, cargas, atleta, hoy, contex
       if (error) return;
       const nombres = (Array.isArray(b && b.ejercicios) ? b.ejercicios : []).map(n => String(n || '').replace(/\s*\[.*\]\s*$/, '').trim());
       if (nombres.length < 1 || nombres.length > 4) { error = `bloque ${bi + 1} con ${nombres.length} ejercicios`; return; }
-      const series = Math.round(Number(b.series));
+      let series = Math.round(Number(b.series));
+      if (series === 1) series = 2;
       if (!(series >= 2 && series <= 5)) { error = `bloque ${bi + 1}: ${b.series} series`; return; }
       const descanso = Math.round(Number(b.descanso) || 60);
       const exs = [];
@@ -120,7 +121,7 @@ export function validarRediseno(propuesta, { rutina, cargas, atleta, hoy, contex
         vistos.add(n);
         const viejo = actuales.get(ctx.sesion + '|' + n) || enCualquiera.get(n);
         if (!viejo && !ctx.opciones[cat.muscle].some(o => o.startsWith(n + ' ['))) { error = `"${n}" salió hace poco`; return; }
-        exs.push(viejo ? JSON.parse(JSON.stringify(viejo)) : ejercicioNuevo(cat, cargas, perfil, hoy));
+        exs.push(viejo ? JSON.parse(JSON.stringify(viejo)) : ejercicioNuevo(cat, cargas, perfil, hoy, atleta && atleta.rangos));
       }
       const tipo = NOMBRE_BLOQUE[exs.length] || 'Circuito';
       const nota = String(b.nota || '').trim().slice(0, 140)

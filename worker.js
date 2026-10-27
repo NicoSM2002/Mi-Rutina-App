@@ -1136,7 +1136,7 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   }
   marcaAntiguedad(rutina, inicio);
   // Repeticiones en pares y dentro del rango; lo que pasó del tope, al peso
-  cambios = unirCambios([...cambios, ...ajustarRangos(rutina)]);
+  cambios = unirCambios([...cambios, ...ajustarRangos(rutina, atleta.rangos)]);
 
   // El calentamiento sale de los circuitos: si cambiaron, cambia con ellos
   for (const k of Object.keys(rutina)) {
@@ -1312,7 +1312,8 @@ Arma su semana que viene. No repitas la misma rutina: innova con criterio cient�
 - Cada sesión conserva sus grupos musculares (la división no se toca) y sus "anclas" (básicos que está progresando):
   inclúyelas. Lo que marcó "fácil" o progresa bien puede quedarse; lo estancado, cámbialo.
 - Volumen: las series totales de la sesión entre el 75 % y el 120 % de "seriesTotales" (series × ejercicios por
-  bloque). Entre 6 y 9 ejercicios por sesión; bloques de 1 a 4 ejercicios.
+  bloque). Entre 6 y 9 ejercicios por sesión (NUNCA más de 9); bloques de 1 a 4 ejercicios; cada bloque de 2 a 5
+  vueltas ("series").
 - Nada que choque con molestias, con lo que no le gusta o con equipo que no tiene.
 - Calentamiento de hombro (sólo días de tren superior): elige 2 o 3 de "calentamientoHombro", variándolos.
 
@@ -1364,7 +1365,7 @@ async function redisenarAhora(env, clientId, { simular = false, propuesta = null
   if (!red) return { ok: false, razon: 'el modelo no respondió' };
   for (const a of red.aceptadas) rutina[a.sesion] = red.rutina[a.sesion];
   marcaAntiguedad(rutina, inicio);
-  ajustarRangos(rutina);
+  ajustarRangos(rutina, atleta.rangos);
   for (const k of Object.keys(rutina)) {
     if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits, rutina[k].calentamientoPlan));
   }
@@ -1384,12 +1385,12 @@ async function redisenarAhora(env, clientId, { simular = false, propuesta = null
 
 /* Pasa toda la rutina por ajustaAlRango y devuelve los cambios con la
    misma forma que los del ajuste semanal (para unirlos y mostrarlos). */
-function ajustarRangos(rutina) {
+function ajustarRangos(rutina, prefs) {
   const out = [];
   for (const k of Object.keys(rutina || {})) {
     for (const c of ((rutina[k] && rutina[k].circuits) || [])) {
       for (const ex of (c.exercises || [])) {
-        const a = ajustaAlRango(ex);
+        const a = ajustaAlRango(ex, prefs);
         if (!a || (a.reps === a.repsAntes && a.w1 === a.w1Antes)) continue;
         const pa = numeroDePeso(a.w1Antes), pd = numeroDePeso(a.w1);
         out.push({ name: ex.name, resp: null, sesion: k, circuito: c.label || '',
@@ -1414,7 +1415,7 @@ async function ajustarRangosAhora(env, clientId, { simular = false, resumen = nu
   ]);
   if (!rutina) return { ok: false, razon: 'sin rutina' };
   const antes = JSON.stringify(rutina);
-  const ajustes = ajustarRangos(rutina);
+  const ajustes = ajustarRangos(rutina, atleta.rangos);
   const ultima = (historial || [])[0] || null;
   const cambios = ultima ? unirCambios([...(ultima.cambios || []), ...ajustes]) : ajustes;
   if (!resumen && ultima && ajustes.length) {

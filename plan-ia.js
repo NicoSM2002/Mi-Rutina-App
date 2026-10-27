@@ -175,7 +175,10 @@ function estructura(enc) {
    rotación semanal, con la fuerza bajando el rango de los compuestos.
    Siempre en pares (6, 8, 10, 12…) y sin rangos larguísimos: al llegar al
    tope sube el peso, no se siguen sumando repeticiones. */
-export function rangoDeRepsPara(nombre, enc) {
+export function rangoDeRepsPara(nombre, enc, prefs) {
+  // Un rango que pidió para ese músculo (p. ej. pantorrilla 16-20) manda
+  const catP = PorNombre[nombre];
+  if (prefs && catP && Array.isArray(prefs[catP.muscle]) && prefs[catP.muscle].length === 2) return prefs[catP.muscle].map(Number);
   const n = sinTilde(nombre);
   let r = [8, 12];
   if (/talones|crunch|plancha|abdomen|elevacion de piernas/.test(n)) r = [12, 16];
@@ -289,7 +292,12 @@ const BASE_REFERENCIA = {
 function proporcionDe(ex) {
   const n = sinTilde(ex.name);
   const regla = PROPORCION.find(([re]) => re.test(n));
-  return regla ? regla[1] : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'polea' ? 0.15 : ex.unit === 'lado' ? 0.6 : 0.3;
+  let p = regla ? regla[1] : ex.unit === 'mancuerna' ? 0.11 : ex.unit === 'polea' ? 0.15 : ex.unit === 'lado' ? 0.6 : 0.3;
+  // A una mano o una pierna se mueve la mitad, salvo que la regla ya sea la
+  // del unilateral (una mancuerna ya es por mano)
+  const sinUni = n.replace(/\bunilateral\b|a una (pierna|mano)|a un brazo|una pierna|un brazo/g, ' ').replace(/\s+/g, ' ');
+  if (ex.unit !== 'mancuerna' && sinUni !== n && (!regla || regla[0].test(sinUni))) p *= 0.5;
+  return p;
 }
 
 function cargaEstimada(ex, enc, factores) {
@@ -439,7 +447,7 @@ export function cargaEquivalente(ex, w1, repsDe, repsA) {
   return txt;
 }
 
-const PLANTILLAS = new Set(['4-6', '6-8', '6-10', '8-12', '10-15', '12-20']);
+const PLANTILLAS = new Set(['4-6', '6-8', '6-10', '8-12', '10-15', '12-16', '12-20']);
 const parArriba = n => n % 2 ? n + 1 : n;
 
 /* Deja el ejercicio con repeticiones en pares y dentro de su rango. Un rango
@@ -447,12 +455,14 @@ const parArriba = n => n % 2 ? n + 1 : n;
    respeta, en pares. Si quedó por encima del tope, sube el peso a lo que
    equivale en el tope (y por debajo del mínimo, al revés). Devuelve el
    cambio, o null si ya estaba bien. */
-export function ajustaAlRango(ex) {
+export function ajustaAlRango(ex, prefs) {
   if (!ex || !ex.name) return null;
   if ((ex.setType === 'dropset' || ex.setType === 'piramidal') && Array.isArray(ex.steps1) && ex.steps1.length > 1) return null;
-  const estandar = rangoDeRepsPara(ex.name);
+  const estandar = rangoDeRepsPara(ex.name, null, prefs);
   let lo = parseInt(ex.repMin) || estandar[0], hi = parseInt(ex.repMax) || estandar[1];
-  if (!ex.rangoPropio) {
+  const cat = PorNombre[ex.name] || ex;
+  if (prefs && Array.isArray(prefs[cat.muscle])) [lo, hi] = estandar;   // lo que pidió para ese músculo manda
+  else if (!ex.rangoPropio) {
     if (PLANTILLAS.has(lo + '-' + hi)) [lo, hi] = estandar;
     else ex.rangoPropio = true;
   }
