@@ -747,7 +747,7 @@ export function explicacionDeRespaldo(enc) {
   const obj = { hipertrofia: 'ganar músculo', fuerza: 'ganar fuerza', recomposicion: 'ganar músculo y perder grasa a la vez' }[enc.objetivo] || 'progresar';
   return `Tu plan es de ${n} días con ${division}, pensado para ${obj}. ` +
     `Los pesos son un punto de partida estimado: la primera semana marca cada ejercicio como fácil, justo o no llegué y ` +
-    `se corrige solo. Desde ahí, cada sábado se ajusta según cómo te fue.`;
+    `se corrige solo. Desde ahí, cada domingo por la noche se ajusta según cómo te fue.`;
 }
 
 /* Resumen corto para enseñar el plan recién hecho */

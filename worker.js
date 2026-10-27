@@ -1359,6 +1359,32 @@ dobles; si necesitas citar algo, usa comillas simples:
 
 /* Rearma ya la semana (sin esperar al domingo) sobre la rutina actual. Con
    `simular` no guarda; con `propuesta` (ya revisada) aplica exactamente esa. */
+/* El resumen de la tarjeta con lo que tiene ahora el ajuste de la semana:
+   sus cambios, todo lo que entró y las notas de esa semana. */
+async function resumenDelAjuste(env, clientId, ultima, atleta) {
+  const completions = await env.DB.get(`completions:${clientId}`, 'json');
+  const desde = Date.parse(ultima.fecha) - 7 * 86400000;
+  const enLaSemana = (completions || []).filter(c => (c.ts || 0) >= desde && (c.ts || 0) <= Date.parse(ultima.fecha));
+  return resumenSemana(env, ultima.cambios || [], ultima.rotaciones || [], notasDeLaSemana(enLaSemana, desde), [],
+    ultima.corregidos || [], atleta, enLaSemana.length);
+}
+
+/* Rehace sólo el texto del resumen del último ajuste (no toca la rutina). */
+async function rehacerResumen(env, clientId, { simular = false } = {}) {
+  const atleta = await getAthlete(env, clientId);
+  if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
+  const historial = await env.DB.get(`progresion:${clientId}`, 'json');
+  const ultima = (historial || [])[0];
+  if (!ultima) return { ok: false, razon: 'sin ajustes' };
+  const resumen = await resumenDelAjuste(env, clientId, ultima, atleta);
+  if (!resumen) return { ok: false, razon: 'el modelo no respondió' };
+  if (simular) return { ok: true, simulado: true, antes: ultima.resumen, resumen };
+  ultima.resumen = resumen;
+  ultima.rev = (ultima.rev || 0) + 1;
+  await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial));
+  return { ok: true, resumen };
+}
+
 async function redisenarAhora(env, clientId, { simular = false, propuesta = null } = {}) {
   const atleta = await getAthlete(env, clientId);
   if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
@@ -1385,12 +1411,18 @@ async function redisenarAhora(env, clientId, { simular = false, propuesta = null
   await guardaVersionRutina(env, clientId, antes, hoy + '-rediseno', 'antes del rediseño');
   await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
   const ultima = (historial || [])[0];
+  let resumen = null;
   if (ultima) {
     ultima.rotaciones = [...(ultima.rotaciones || []), ...rotaciones];
+    // El texto de la tarjeta tiene que hablar de lo que entra ahora
+    if (rotaciones.length) {
+      resumen = await resumenDelAjuste(env, clientId, ultima, atleta).catch(() => null);
+      if (resumen) ultima.resumen = resumen;
+    }
     ultima.rev = (ultima.rev || 0) + 1;
     await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial));
   }
-  return { ok: true, aceptadas: red.aceptadas, rechazadas: red.rechazadas, rotaciones };
+  return { ok: true, aceptadas: red.aceptadas, rechazadas: red.rechazadas, rotaciones, resumen };
 }
 
 /* Pasa toda la rutina por ajustaAlRango y devuelve los cambios con la
@@ -2310,6 +2342,12 @@ export default {
     if (body.action === 'redisenar-ahora') {
       if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
       const r = await redisenarAhora(env, client, { simular: !!body.simular, propuesta: body.propuesta || null });
+      return new Response(JSON.stringify(r), { headers: cors });
+    }
+
+    if (body.action === 'rehacer-resumen') {
+      if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      const r = await rehacerResumen(env, client, { simular: !!body.simular });
       return new Response(JSON.stringify(r), { headers: cors });
     }
 

@@ -4790,7 +4790,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
       </button>
       <span class="re-estado" id="re-estado" role="status" aria-live="polite"></span>
       <div class="tc-acciones" id="tc-acciones">
-        <button class="tc-circ" id="tc-chat" onclick="openSupportChat()" aria-label="Chat con el atleta"><svg class="ic"><use href="#i-chat"/></svg></button>
+        <button class="tc-circ" id="tc-chat" onclick="openSupportChat()" aria-label="Soporte de Mi Rutina"><svg class="ic"><use href="#i-chat-plain"/></svg></button>
         <button class="tc-circ" id="tc-datos" onclick="openEditAthleteProfile()" aria-label="Datos del atleta"><svg class="ic"><use href="#i-perfil"/></svg></button>
         <button class="tc-circ" id="tc-mas" hidden aria-label="Más opciones del circuito"><svg class="ic"><use href="#i-mas"/></svg></button>
       </div>
@@ -13948,9 +13948,8 @@ async function submitCreateTrainer() {
 
 function openSupportChat() {
   document.getElementById('support-overlay').classList.add('show');
-  // Update header with current client context
-  const clientName = document.getElementById('tclient-name').textContent;
-  document.querySelector('.support-sheet .chat-sub').textContent = 'Atleta: ' + clientName;
+  // Es el soporte de Mi Rutina (con el administrador), no un chat con el atleta
+  document.getElementById('support-sub').textContent = 'Mi Rutina';
   loadSupportMessages();
   supportPollId = setInterval(loadSupportMessages, 8000);
 }
