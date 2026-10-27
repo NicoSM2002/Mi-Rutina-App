@@ -5349,6 +5349,7 @@ function show(id) {
     else if (a != null && b != null && a !== b && origen && origen !== destino) empujaPantalla(origen, destino, Math.sign(b - a));
     else entrar(destino, 0);   // primera entrada: arranque → portada, acceso → Hoy
   }
+  if (!yaEstaba) anotaHistorial(id);
   _pantallaActual = id;
   if (id === 'trainer-portal' && typeof loadTrainerExtraClients === 'function') loadTrainerExtraClients();
   // Al llegar a una pantalla de acceso se despierta el backend: el worker se
@@ -5356,6 +5357,82 @@ function show(id) {
   // "Entrar". Haciéndolo ahora, mientras se escribe el usuario, ya está listo.
   if (id === 'athlete-login' || id === 'trainer-login' || id === 'role-select') warmUpBackend();
 }
+
+/* ── Atrás del navegador y del teléfono ────────────────────────────
+   Cada pantalla deja su entrada en el historial: ir más adentro empuja una,
+   cambiar de pestaña la reemplaza (salvo la primera salida desde Hoy) y un
+   "Volver" de la app retrocede. Al ir atrás se cierra primero lo que esté
+   abierto encima (hojas, chats, el bloque del editor); si no hay nada, se
+   vuelve a la pantalla anterior con su transición de siempre. Entrar a la
+   cuenta o salir de ella empieza el historial de cero (`_tanda`): el atrás
+   nunca devuelve al acceso ni a la cuenta anterior, ni saca de la app. */
+const PANTALLAS_ENTRADA = ['splash', 'role-select', 'athlete-login', 'trainer-login', 'admin-login', 'registro'];
+const RAICES = ['today', 'trainer-portal', 'admin-support'];
+let _pila = [], _tanda = 0, _desdeAtras = false, _ignoraPop = 0;
+function anotaHistorial(id) {
+  if (_desdeAtras) return;
+  try {
+    const tope = _pila[_pila.length - 1];
+    const entrada = PANTALLAS_ENTRADA.includes(id), topeEntrada = PANTALLAS_ENTRADA.includes(tope);
+    // Empieza de cero al arrancar, al entrar a la cuenta (lo primero que se
+    // muestra después del acceso, y otra vez al llegar a su inicio) y al salir
+    if (!_pila.length || entrada !== topeEntrada || (RAICES.includes(id) && !RAICES.includes(_pila[0]))) {
+      _tanda++; _pila = [id];
+      history.replaceState({ p: id, t: _tanda }, '');
+      return;
+    }
+    if (_pila.length >= 2 && _pila[_pila.length - 2] === id) {
+      _pila.pop(); _ignoraPop++; history.back();
+      return;
+    }
+    if (_pila.length >= 2 && POS_PANTALLA[tope] != null && POS_PANTALLA[id] != null) {
+      _pila[_pila.length - 1] = id;
+      history.replaceState({ p: id, t: _tanda }, '');
+      return;
+    }
+    _pila.push(id);
+    history.pushState({ p: id, t: _tanda }, '');
+  } catch (e) {}
+}
+function cierraLoDeEncima() {
+  const menu = document.querySelector('.menu-fondo');
+  if (menu) { menu.querySelector('.menu-op.cancelar')?.click(); return true; }
+  const ventanas = [['chat-overlay', 'closeChat'], ['support-overlay', 'closeSupportChat'], ['admin-chat-overlay', 'closeAdminChat'],
+    ['nutrition-overlay', 'closeNutrition'], ['expicker-overlay', 'closeExercisePicker'], ['complete-overlay', 'closeComplete'], ['timer-overlay', 'cancelTimer']];
+  for (const [id, fn] of ventanas) {
+    const el = document.getElementById(id);
+    if (el && el.classList.contains('show') && typeof window[fn] === 'function') { window[fn](); return true; }
+  }
+  if (typeof _hojaEj !== 'undefined' && _hojaEj) { cierraHojaEj(); return true; }
+  if (_pantallaActual === 'trainer-client' && typeof editorBlock !== 'undefined' && editorBlock) { closeEditorBlock(); return true; }
+  const lista = document.querySelector('.screen.active .sc-otras:not([hidden])');
+  if (lista && lista.previousElementSibling) { abreCambioSesion(lista.previousElementSibling); return true; }
+  return false;
+}
+function navegaA(id) {
+  if (_pantallaActual === 'trainer-client' && id === 'trainer-portal') return tcAtras();
+  const pestanas = {
+    today: () => { showToday(); activateNav('today'); }, routine: () => { showRoutine(); activateNav('routine'); },
+    meals: () => { showMeals(); activateNav('meals'); }, resumen: () => { showResumen(); activateNav('resumen'); },
+    profile: () => { showProfile(); activateNav('profile'); }, 'profile-generic': () => { showProfile(); activateNav('profile'); },
+    payments: () => { showPayments(); activateNav('payments'); },
+  };
+  if (pestanas[id]) pestanas[id](); else show(id);
+}
+window.addEventListener('popstate', e => {
+  if (_ignoraPop) { _ignoraPop--; return; }
+  const st = e.state || {};
+  const quedate = () => { try { history.pushState({ p: _pila[_pila.length - 1], t: _tanda }, ''); } catch (er) {} };
+  // Lo que esté abierto encima se cierra primero y la pantalla se queda
+  if (cierraLoDeEncima()) return quedate();
+  // Ya en la pantalla de inicio (lo de antes es el acceso u otra cuenta):
+  // el atrás no saca de la app.
+  if (!st.p || st.t !== _tanda) return quedate();
+  const k = _pila.lastIndexOf(st.p);
+  _pila = k >= 0 ? _pila.slice(0, k + 1) : [st.p];
+  _desdeAtras = true;
+  try { navegaA(st.p); } finally { _desdeAtras = false; }
+});
 
 /* Despierta el worker con una petición mínima (OPTIONS: responde las cabeceras
    CORS sin tocar la base). Una sola vez por sesión y sin bloquear nada. */
