@@ -10052,6 +10052,16 @@ function sufijoDe(w1) {
   const m = String(w1 || '').match(/[\d.,]+\s*(.*)$/);
   return m ? m[1].trim() : '';
 }
+/* La unidad de un ejercicio que ya salió de la rutina: la de su último
+   ajuste registrado (el historial va del más nuevo al más viejo). */
+// Decimales con coma, como en el resto de la app: 62,5
+const coma = x => String(x).replace('.', ',');
+function pesoDelHistorial(nombre) {
+  for (const h of _historialFuerza || [])
+    for (const c of (h.cambios || []))
+      if (c && c.name === nombre && (c.pesoDespues || c.pesoAntes)) return pesoParaVer(c.pesoDespues || c.pesoAntes, nombre);
+  return '';
+}
 
 /* Las barras: se escalan al rango del propio ejercicio, no a cero, porque
    de 40 a 55 lbs sobre una escala desde cero son seis barras casi iguales. */
@@ -10130,7 +10140,7 @@ async function renderFuerza() {
     const info = hoy.get(nombre) || {};
     const ini = vals[0], act = vals[vals.length - 1];
     return { nombre, vals, ini, act, delta: Math.round((act - ini) * 10) / 10,
-             sufijo: sufijoDe(info.w1), enRutina: hoy.has(nombre) };
+             sufijo: sufijoDe(info.w1) || sufijoDe(pesoDelHistorial(nombre)), enRutina: hoy.has(nombre) };
   }).sort((a, b) => b.delta - a.delta).slice(0, 12);
 
   const subieron = lifts.filter(l => l.delta > 0).length;
@@ -10140,25 +10150,25 @@ async function renderFuerza() {
   el.innerHTML = bloqueEstaSemana() + `
     <div class="group fz-hero">
       <div class="fz-hero-l">Lo que has sumado</div>
-      <div class="fz-hero-n">+${sumado}<span> lbs</span></div>
+      <div class="fz-hero-n">+${coma(sumado)}<span> ${unidadPeso() === 'kg' ? 'kg' : 'lbs'}</span></div>
       <div class="fz-hero-s">Sumando lo que subiste en ${subieron} de ${lifts.length}
         ejercicios, en ${semanas} semana${semanas === 1 ? '' : 's'}.</div>
     </div>
     <h2 class="h-sec sec-title">Tus levantamientos</h2>
     ${lifts.map(l => {
-      const chip = l.delta > 0 ? `<span class="fz-delta">↑ ${l.delta}</span>`
-                 : l.delta < 0 ? `<span class="fz-delta baja">↓ ${Math.abs(l.delta)}</span>`
+      const chip = l.delta > 0 ? `<span class="fz-delta">↑ ${coma(l.delta)}</span>`
+                 : l.delta < 0 ? `<span class="fz-delta baja">↓ ${coma(Math.abs(l.delta))}</span>`
                  : `<span class="fz-delta igual">= igual</span>`;
       const estancado = l.delta === 0 && l.vals.length >= 3;
       return `<div class="group fz-lift">
         <div class="fz-top">
           <span class="fz-nom">${l.nombre}</span>
-          <span class="fz-val">${l.act}<em>${l.sufijo}</em>${chip}</span>
+          <span class="fz-val">${coma(l.act)}<em>${l.sufijo}</em>${chip}</span>
         </div>
         ${lineaHtml(l.vals)}
         <div class="fz-pie">
-          <span>hace ${l.vals.length - 1} sem · ${l.ini}</span>
-          <span>hoy · ${l.act}</span>
+          <span>hace ${l.vals.length - 1} sem · ${coma(l.ini)}</span>
+          <span>hoy · ${coma(l.act)}</span>
         </div>
         ${estancado ? `<div class="fz-nota">Sin subir desde hace ${l.vals.length - 1} semanas · entra a rotación</div>` : ''}
       </div>`;
