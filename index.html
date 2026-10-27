@@ -13435,10 +13435,15 @@ async function loadAjusteSemanal() {
 
   // Lo que entra va a la vista: es lo que cambia de verdad la semana. Las
   // cargas y repeticiones, plegadas.
-  const filasRot = rots.map(r => `<div class="aj-fila aj-fila-rot">
+  // Si entran muchos (una semana rediseñada), se ven los primeros cinco y
+  // el resto queda en un plegable igual al de las cargas.
+  const filaRot = r => `<div class="aj-fila aj-fila-rot">
       <span class="aj-nombre">${r.a}<br><span class="aj-flecha">${r.de ? 'en vez de ' + r.de : 'nuevo esta semana'}</span></span>
       <span class="aj-dato">${pesoParaVer(r.peso, r.a) || ''}</span>
-    </div>`).join('');
+    </div>`;
+  const VISIBLES = rots.length > 6 ? 5 : rots.length;
+  const filasRot = rots.slice(0, VISIBLES).map(filaRot).join('');
+  const restoRot = rots.slice(VISIBLES).map(filaRot).join('');
 
   const htmlAjuste = `<div class="today-card aj-card">
       <div class="aj-top">
@@ -13453,6 +13458,10 @@ async function loadAjusteSemanal() {
       ${filasRot ? `<div class="aj-entran">
         <div class="aj-entran-t">Entran esta semana</div>
         <div class="aj-lista">${filasRot}</div>
+        ${restoRot ? `<details class="aj-detalle">
+          <summary class="aj-ver">Ver los ${rots.length - VISIBLES} más que entran</summary>
+          <div class="aj-lista">${restoRot}</div>
+        </details>` : ''}
       </div>` : ''}
       ${filas ? `<details class="aj-detalle">
         <summary class="aj-ver">Ver cargas y repeticiones (${cambios.length})</summary>
