@@ -1494,6 +1494,7 @@ button.ex-presc:active { background:var(--ac-soft2); }
 }
 .admin-tab.active { color:var(--t1); background:var(--s1); }
 .admin-tab.active::after { content:none; }
+.admin-trainer-card:active { background:var(--press); }
 .admin-trainer-card { background:var(--s1); border:none; border-radius:var(--r-group); padding:18px; display:flex; align-items:center; gap:15px; margin-bottom:12px; }
 .admin-trainer-avatar { width:56px; height:56px; border-radius:100px; background:var(--s2); color:var(--t2); display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:700; font-size:17px; flex-shrink:0; overflow:hidden; }
 .admin-trainer-avatar img { width:100%; height:100%; object-fit:cover; }
@@ -3401,7 +3402,7 @@ body:has(#registro.active) .modo-prueba { display:none; }
 .sc-otras { margin-top:2px; }
 .sc-otras .sc-otra { margin-top:8px; background:var(--s1); }
 .sc-otras .sc-otra:active { background:var(--press); }
-#routine-days-bar { flex-wrap:wrap; align-items:center; }
+#routine-days-bar { flex-wrap:wrap; align-items:center; overflow:visible; }
 .sc-cambiar.sc-cambiar-rutina { display:inline-block; margin:0; padding:6px 8px; }
 #routine-days-bar .sc-otras { flex-basis:100%; }
 .today-sec { margin:28px 0 10px; font-size:22px; letter-spacing:-.6px; }
@@ -3596,7 +3597,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .tportal-body form > .na-row > .na-field { margin:0; }
 .tportal-body form :is(.na-label) { font-size:13px; color:var(--t2); margin-bottom:4px; }
 .tportal-body form :is(.na-input):not(textarea) {
-  background:transparent; border:none; border-radius:0; padding:4px 0; min-height:30px;
+  background:transparent; border:none; border-radius:0; padding:11px 0; margin:-7px 0; min-height:44px;
+  position:relative; z-index:1;   /* su área de 44 queda encima de la ayuda de abajo */
 }
 .tportal-body form textarea.na-input { background:var(--bg); border:none; border-radius:10px; padding:10px 12px; }
 .tportal-body form select.na-input { background-position:right 2px center; padding-right:28px; }
@@ -3666,7 +3668,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .cli-cab-btn { width:44px; height:44px; }
 .cli-cab-btn.new-athlete-btn .ic { width:20px; height:20px; stroke-width:2.4; }
 .cli-search-wrap { margin-bottom:12px; }
-.cli-filters { margin-bottom:6px; }
+.cli-filters { margin-bottom:6px; flex-wrap:wrap; overflow:visible; row-gap:11px; }
 .cli-chip { border:none; background:var(--s1); padding:8px 14px; font-weight:400; }
 .cli-chip.active { background:var(--ac-str); color:#fff; font-weight:600; }
 .cli-chip-n { font-variant-numeric:tabular-nums; }
@@ -3726,7 +3728,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .tc-acciones { display:flex; gap:8px; flex:none; }
 .re-estado:not(.ver) + .tc-acciones { margin-left:auto; }
 .tc-circ {
-  width:40px; height:40px; border-radius:100px; border:none; background:var(--s2); color:var(--t1);
+  width:44px; height:44px; border-radius:100px; border:none; background:var(--s2); color:var(--t1);
   display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;
 }
 .tc-circ .ic { width:20px; height:20px; }
@@ -3920,6 +3922,24 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select 
 .pz-v input::placeholder { color:var(--ph); font-weight:500; }
 .pz-u { flex:none; border:none; background:none; padding:6px 0; font-size:13px; color:var(--t2); cursor:pointer; white-space:nowrap; }
 .pz-u.fijo { cursor:default; }
+/* Área tocable mínima de 44 px sin cambiar el dibujo: el botón se ve
+   igual y un ::after invisible agranda la zona del dedo hasta 44×44. */
+:is(.fb-btn, .vuelta-btn, .vd, .nota-btn, .circuit-rest, .sc-cambiar, .prog-tab, .aj-cerrar, .aj-ver, .hoy-avatar, .apar-op,
+    .ejh-cab-u, .pz-b, .ejh-quita, .ejh-cerrar, .ejh-cambiar, .seg-op, .ses-chip, .cli-chip, .paso-b, .admin-trainer-del, .na-pill, .pz-v) { position:relative; }
+:is(.fb-btn, .vuelta-btn, .vd, .nota-btn, .circuit-rest, .sc-cambiar, .prog-tab, .aj-cerrar, .aj-ver, .hoy-avatar, .apar-op,
+    .ejh-cab-u, .pz-b, .ejh-quita, .ejh-cerrar, .ejh-cambiar, .seg-op, .ses-chip, .cli-chip, .paso-b, .admin-trainer-del, .na-pill, .pz-v)::after { content:''; position:absolute; inset:min(0px, calc((100% - 44px) / 2)); }
+/* Los campos de peso y reps: todo el renglón del valor (44) enfoca el
+   número; el número y su unidad quedan encima de esa área. */
+.pz-v input { padding:12px 0; margin:-12px 0; }
+.pz-v :is(input, .pz-u) { position:relative; z-index:1; }
+/* Las tiras que se deslizan de lado recortan lo que sobresale: dejan 4 px
+   arriba y abajo para el área de 44 de sus botones de 36. */
+.ses-chips { padding-block:4px; margin-top:-2px; margin-bottom:12px; }
+/* Los puntos de vuelta, encima de la etiqueta de la sesión que les queda
+   pegada arriba, para que su área de 44 no quede debajo */
+.vd { z-index:1; }
+/* Las pestañas del panel admin recortan su texto (…): su alto llega a 44 */
+.admin-tab { min-height:44px; }
 .ejh-tabla.escalones .pz-u { display:none; }
 .ejh-tabla.escalones .pz-v input { text-align:center; }
 .ejh-tabla.escalones .pz-b { width:30px; }
@@ -11369,6 +11389,12 @@ function renderRoutineEditor() {
   // edición de un bloque concreto. Antes todo estaba desplegado a la vez.
   if (editorBlock) renderBlockEditor(el, days);
   else renderSessionBlocks(el, days);
+  // En la tira de sesiones, la activa siempre a la vista (y el "+" si cabe)
+  const tira = el.querySelector('.ses-chips'), on = tira && tira.querySelector('.ses-chip.on');
+  if (on) {
+    const t = tira.getBoundingClientRect(), c = on.getBoundingClientRect();
+    if (c.right > t.right - 16 || c.left < t.left) tira.scrollLeft += c.left - t.left - 16;
+  }
   pintaCabeceraCliente();
   if (_hojaEj) pintaHojaEj();
   programaGuardado();
@@ -11967,7 +11993,7 @@ function hojaDinamica(ex, esEj) {
     const args = `'${clave}',${si == null ? 'null' : si}`;
     return `<div class="pz" data-campo="${clave}|${si == null ? '' : si}">
         <button class="pz-b" onclick="pasoHoja(${args},-1)" aria-label="${esPeso ? 'Menos peso' : 'Menos repeticiones'}"><svg class="ic"><use href="#i-menos"/></svg></button>
-        <span class="pz-v"><input type="text" inputmode="${esPeso ? 'decimal' : 'numeric'}" value="${n == null ? '' : fmtNum(n)}" placeholder="${reEscAttr(texto || '0')}"
+        <span class="pz-v" onclick="if (event.target === this) this.querySelector('input').focus()"><input type="text" inputmode="${esPeso ? 'decimal' : 'numeric'}" value="${n == null ? '' : fmtNum(n)}" placeholder="${reEscAttr(texto || '0')}"
             aria-label="${esPeso ? 'Peso' : 'Repeticiones'}" oninput="escribeHoja(${args},this.value)">
           <button class="pz-u" onclick="unidadHoja(${args})" aria-label="Cambiar unidad">${reEscAttr(unidad || (esPeso ? sufP : 'reps'))}</button></span>
         <button class="pz-b" onclick="pasoHoja(${args},1)" aria-label="${esPeso ? 'Más peso' : 'Más repeticiones'}"><svg class="ic"><use href="#i-plus"/></svg></button>
@@ -13704,20 +13730,21 @@ async function loadAdminTrainers() {
     });
     const json = await res.json();
     const trainers = json.trainers || [];
-    if (!trainers.length) { list.innerHTML = '<div class="admin-chat-empty">No hay entrenadores.<br>Tocá "+" para crear el primero.</div>'; return; }
+    if (!trainers.length) { list.innerHTML = '<div class="admin-chat-empty">No hay entrenadores.<br>Toca "+" para crear el primero.</div>'; return; }
     list.innerHTML = trainers.map(t => {
       const initials = (t.name || t.username).split(/\s+/).map(s => s[0]).join('').slice(0,2).toUpperCase();
       const avatarInner = t.photoUrl
         ? `<img src="${t.photoUrl}" alt="${t.name}">`
         : initials;
       const meta = [t.email, t.phone].filter(Boolean).join(' · ') || `@${t.username}`;
-      return `<div class="admin-trainer-card">
+      return `<div class="admin-trainer-card" role="button" tabindex="0" style="cursor:pointer" onclick="openAdminTrainerDetail('${t.username}')">
         <div class="admin-trainer-avatar">${avatarInner}</div>
-        <div class="admin-trainer-info" style="cursor:pointer" onclick="openAdminTrainerDetail('${t.username}')">
+        <div class="admin-trainer-info">
           <div class="admin-trainer-name">${t.name}</div>
           <div class="admin-trainer-meta">@${t.username} · ${meta}</div>
         </div>
-        <button class="admin-trainer-del" onclick="event.stopPropagation();deleteTrainer('${t.username}','${(t.name||'').replace(/'/g,'&#39;')}')" title="Eliminar">×</button>
+        <button class="admin-trainer-del" onclick="event.stopPropagation();deleteTrainer('${t.username}','${(t.name||'').replace(/'/g,'&#39;')}')" title="Eliminar" aria-label="Eliminar">×</button>
+        <svg class="ic blk-chev"><use href="#i-chevron-r"/></svg>
       </div>`;
     }).join('');
   } catch (e) {
