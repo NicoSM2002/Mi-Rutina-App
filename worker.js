@@ -1319,28 +1319,38 @@ Arma su semana que viene. No repitas la misma rutina: innova con criterio cient�
 
 ${JSON.stringify(contexto, null, 1)}
 
-Responde SOLO un JSON array, una entrada por sesión:
+Responde SOLO un JSON array válido, una entrada por sesión. Dentro de los textos (porque, nota) no uses comillas
+dobles; si necesitas citar algo, usa comillas simples:
 [{"sesion":"sesion1","porque":"una frase: qué cambia y por qué (español de Colombia, tuteando, nunca voseo)",
   "calentamientoHombro":["…","…"],
   "bloques":[{"series":3,"descanso":90,"nota":"opcional, corta","ejercicios":["nombre EXACTO de opciones o de su sesión"]}]}]`;
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
-                   'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
-        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000,
-                               // Respuesta en JSON: sin razonamiento extendido
-                               // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
-                               thinking: { type: 'between_tools' }, output_config: { effort: 'high' },
-                               fallbacks: 'default',
-                               messages: [{ role: 'user', content: prompt }] })
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) { console.log(`[REDISENO] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`); return null; }
-      const txt = textoDeRespuesta(data);
-      const m = txt.match(/\[[\s\S]*\]/);
-      if (!m) { console.log('[REDISENO] respuesta sin JSON: ' + txt.slice(0, 200)); return null; }
-      propuesta = JSON.parse(m[0]);
+      const pide = async messages => {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                     'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+          body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000,
+                                 // Respuesta en JSON: sin razonamiento extendido
+                                 // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                                 thinking: { type: 'between_tools' }, output_config: { effort: 'high' },
+                                 fallbacks: 'default', messages })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(`la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+        return textoDeRespuesta(data);
+      };
+      const lee = txt => { const m = txt.match(/\[[\s\S]*\]/); if (!m) throw new Error('respuesta sin JSON: ' + txt.slice(0, 200)); return JSON.parse(m[0]); };
+      const txt = await pide([{ role: 'user', content: prompt }]);
+      try { propuesta = lee(txt); }
+      catch (e) {
+        // Un JSON roto (casi siempre comillas dentro de una nota) se le
+        // devuelve una vez con el error para que lo corrija
+        console.log('[REDISENO] JSON inválido, se pide corregirlo: ' + e.message);
+        const arreglado = await pide([{ role: 'user', content: prompt }, { role: 'assistant', content: txt.slice(0, 30000) },
+          { role: 'user', content: `Ese JSON no es válido (${e.message}). Devuélvelo corregido, completo, sólo el JSON y sin comillas dobles dentro de los textos.` }]);
+        propuesta = lee(arreglado);
+      }
     } catch (e) { console.log('[REDISENO] falló: ' + e.message); return null; }
   }
   const r = validarRediseno(propuesta, { rutina, cargas, atleta, hoy, contexto });
