@@ -3399,6 +3399,9 @@ body:has(#registro.active) .modo-prueba { display:none; }
 .sc-otras { margin-top:2px; }
 .sc-otras .sc-otra { margin-top:8px; background:var(--s1); }
 .sc-otras .sc-otra:active { background:var(--press); }
+#routine-days-bar { flex-wrap:wrap; align-items:center; }
+.sc-cambiar.sc-cambiar-rutina { display:inline-block; margin:0; padding:6px 8px; }
+#routine-days-bar .sc-otras { flex-basis:100%; }
 .today-sec { margin:28px 0 10px; font-size:22px; letter-spacing:-.6px; }
 
 /* El empuje: la pantalla de arriba, opaca y con una sombra en su borde */
@@ -5338,7 +5341,7 @@ async function showRoutine() {
       currentDay = st.sessionKey;
       currentWeek = st.week;
       document.getElementById('routine-days-bar').innerHTML =
-        `<div class="session-badge pill-session">Sesión ${st.sessionNum} <span class="session-of-total ps-of">de ${st.total}</span></div>`;
+        `<div class="session-badge pill-session">Sesión ${st.sessionNum} <span class="session-of-total ps-of">de ${st.total}</span></div>${cambioEnRutinaHtml(st)}`;
       const _g = leerPaso();
       routineStep = (_g && _g.dia === currentDay) ? _g.paso : 0;
       const _f = leerFeedback();
@@ -5385,7 +5388,7 @@ async function showRoutine() {
   const state = getSessionState(currentAthlete);
 
   document.getElementById('routine-days-bar').innerHTML =
-    `<div class="session-badge pill-session">Sesión ${state.sessionNum} <span class="session-of-total ps-of">de ${state.total}</span></div>`;
+    `<div class="session-badge pill-session">Sesión ${state.sessionNum} <span class="session-of-total ps-of">de ${state.total}</span></div>${completedToday ? '' : cambioEnRutinaHtml(state)}`;
 
   if (completedToday) {
     renderRestDay(state);
@@ -5703,7 +5706,13 @@ function abreCambioSesion(btn) {
 function eligeSesion(n) {
   try { localStorage.setItem('sesionElegida_' + currentAthlete, JSON.stringify({ fecha: hoyISO(), sesion: n })); } catch (e) {}
   currentDay = 'sesion' + n;
+  if (document.getElementById('routine')?.classList.contains('active')) { showRoutine(); return; }
   renderToday();
+}
+/* El mismo selector, en la cabecera de Rutina */
+function cambioEnRutinaHtml(st) {
+  const html = cambioDeSesionHtml(st);
+  return html ? html.replace('class="sc-cambiar"', 'class="sc-cambiar sc-cambiar-rutina"') : '';
 }
 
 function sesionPorAvance(athlete) {
@@ -13266,7 +13275,7 @@ function renderToday() {
         <button class="sc-btn" onclick="empezarDesdeHoy(this)">
           ${enCurso ? 'Continuar' : 'Empezar'} <svg class="ic ic-sm"><use href="#i-arrow-r"/></svg>
         </button>
-      </div>${enCurso ? '' : cambioDeSesionHtml(state)}`;
+      </div>${cambioDeSesionHtml(state)}`;
   } else if (!_rutinaCargada) {
     // Todavía no llegó la rutina: un esqueleto, nunca "Sin rutina cargada"
     entrenamiento = `<div class="sc sc-cargando" aria-label="Cargando tu entrenamiento"><i></i><i></i><i></i><i></i></div>`;
