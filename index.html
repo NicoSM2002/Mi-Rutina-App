@@ -13184,6 +13184,14 @@ function pintaSemanaGuardada() {
 async function showToday() {
   // Sin rutina en memoria (recién abierta la app), se usa la del teléfono
   if (!data || !Object.keys(data).length) { const g = leerRutinaGuardada(); if (g) data = g; }
+  // Hoy siempre arranca limpio: la lista de sesiones plegada y arriba del todo
+  const cuerpo = document.getElementById('today-body');
+  cuerpo.querySelectorAll('.sc-otras:not([hidden])').forEach(l => {
+    l.hidden = true;
+    const b = l.previousElementSibling;
+    if (b) { b.setAttribute('aria-expanded', 'false'); b.textContent = 'Cambiar de sesión'; }
+  });
+  cuerpo.scrollTop = 0;
   show('today');
   // Una sola vez por entrada, en paralelo con la rutina
   Promise.allSettled([loadTodayWeek(), loadAjusteSemanal()]);
