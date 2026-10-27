@@ -3,6 +3,7 @@
 fundacional
 worker.js
 ficha.js
+rediseno.js
 wrangler.toml
 node_modules
 package.json

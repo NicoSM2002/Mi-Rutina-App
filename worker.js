@@ -4,6 +4,7 @@ import { armarRutina, fichasParaIA, validarEncuesta, explicacionDeRespaldo, resu
          cargaDesproporcionada, cargaSugerida, convierteCarga, cargaParaElAtleta, tipoDe,
          rangoDeRepsPara, ajustaAlRango, cargaEnKg, pasoEnKg, LB_A_KG } from './plan-ia.js';
 import { armarFicha, fichaParaPrompt } from './ficha.js';
+import { fichasParaRediseno, validarRediseno, rotacionesDeRediseno } from './rediseno.js';
 // ── Shared constants ──
 // Fallback destination for trainer notifications when the athlete's trainerId
 // is missing or the trainer record has no email. Real routing uses
@@ -1006,7 +1007,7 @@ sistema hizo a su rutina para la semana que viene, a partir de cómo marcó cada
 
 ${sesiones ? `Esta semana completó ${sesiones} sesiones.` : ''}
 ${JSON.stringify(cambios.filter(c => c.cambio !== 'sin cambio').slice(0, 50).map(c => ({ ejercicio: c.name, marca: c.resp, peso: c.pesoAntes + ' → ' + c.pesoDespues, reps: c.repsAntes + ' → ' + c.repsDespues, cambio: c.cambio, porque: c.motivo })), null, 1)}
-${rotaciones && rotaciones.length ? 'Ejercicios que entran a la rutina (rotación de la semana):\n' + JSON.stringify(rotaciones.map(r => ({ sale: r.de, entra: r.a, porque: r.porque })), null, 1) : ''}
+${rotaciones && rotaciones.length ? 'Ejercicios que entran a la rutina (rotación y rediseño de la semana):\n' + JSON.stringify(rotaciones.map(r => ({ sale: r.de || '(nuevo)', entra: r.a, porque: r.porque })), null, 1) : ''}
 ${(notas || []).length ? 'Lo que escribió al terminar cada sesión:\n' + notas.map(x => `- ${x.dia}: ${x.texto}`).join('\n') : ''}
 ${(señalados || []).some(x => x.dolor) ? 'Reportó molestia física en: ' + señalados.filter(x => x.dolor).map(x => x.name).join(', ') : ''}
 ${(corregidos || []).length ? 'Anotó que usó otra carga, y se tomó la suya como punto de partida:\n' + corregidos.map(c => `- ${c.name}: ${c.de} → ${c.a}`).join('\n') : ''}
@@ -1112,15 +1113,26 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
   // Sólo una molestia física de verdad obliga a cambiar un ejercicio
   const molestias = señalados.filter(x => x.dolor);
 
-  // La rotación de la semana: uno por sesión (ver candidatosDeRotacion)
+  // La semana nueva: el entrenador (el modelo) rearma cada sesión — otros
+  // ejercicios y otra estructura —; el código valida. Las sesiones que no
+  // pasen se quedan con la rotación de antes (uno por sesión).
   const inicio = inicioDelPlan(historial, hoy);
-  const candidatos = candidatosDeRotacion(rutina, { hoy, inicio, estancados: ejerciciosEstancados(historial, 10), molestias });
+  const estancados = ejerciciosEstancados(historial, 10);
+  const ficha = await env.DB.get(`ficha:${clientId}`, 'json');
   let rotaciones = [];
+  const red = await redisenarSemana(env, { rutina, cargas, marcas, estancados, hoy, inicio, atleta, ficha, molestias });
+  const rediseñadas = new Set();
+  if (red && red.aceptadas.length) {
+    for (const a of red.aceptadas) { rutina[a.sesion] = red.rutina[a.sesion]; rediseñadas.add(a.sesion); }
+    rotaciones = rotacionesDeRediseno(red.aceptadas, rutina);
+    console.log(`[REDISENO] ${clientId}: ${red.aceptadas.length} sesiones rearmadas; rechazadas: ${JSON.stringify(red.rechazadas)}`);
+  }
+  const candidatos = candidatosDeRotacion(rutina, { hoy, inicio, estancados, molestias }).filter(s => !rediseñadas.has(s.sesion));
   if (candidatos.length) {
-    const ficha = await env.DB.get(`ficha:${clientId}`, 'json');
     const propuestas = await proponerRotacion(env, rutina, candidatos, atleta, cargas, null, ficha);
-    rotaciones = aplicarRotacion(rutina, propuestas, perfil, cargas, hoy);
-    console.log(`[ROTACION] ${clientId}: ${candidatos.length} sesiones con candidatos (${molestias.length} por molestia), ${rotaciones.length} cambiados`);
+    const rot = aplicarRotacion(rutina, propuestas, perfil, cargas, hoy);
+    rotaciones = [...rotaciones, ...rot];
+    console.log(`[ROTACION] ${clientId}: ${candidatos.length} sesiones con candidatos (${molestias.length} por molestia), ${rot.length} cambiados`);
   }
   marcaAntiguedad(rutina, inicio);
   // Repeticiones en pares y dentro del rango; lo que pasó del tope, al peso
@@ -1128,7 +1140,7 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
 
   // El calentamiento sale de los circuitos: si cambiaron, cambia con ellos
   for (const k of Object.keys(rutina)) {
-    if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits));
+    if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits, rutina[k].calentamientoPlan));
   }
   if (!simular) {
     await guardaVersionRutina(env, clientId, rutinaUsada, hoy, 'ajuste semanal');
@@ -1142,7 +1154,7 @@ async function correrProgresion(env, clientId, motivo, completionsEnMano, rutina
                     notas: notas.length, corregidos,
                     molestias: señalados.filter(x => x.dolor).map(x => x.name) };
   historial.unshift(entrada);
-  if (simular) return { ok: true, simulado: true, semana, declarados, cambios, candidatos, rotaciones, resumen, chat: chat.length, rutina, cargas };
+  if (simular) return { ok: true, simulado: true, semana, declarados, cambios, candidatos, rotaciones, rediseno: red, resumen, chat: chat.length, rutina, cargas };
   await archiva(env, `progresion:${clientId}`, historial.slice(60));
   await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial.slice(0, 60)));
 
@@ -1280,6 +1292,96 @@ Responde SOLO un JSON: {"molestias":[],"preferencias":[],"equipo":[],"otros":[],
   ficha.leidoHasta = hasta;
 }
 
+/* ── Rediseño semanal con el modelo (ver rediseno.js) ──────────────── */
+async function redisenarSemana(env, { rutina, cargas, marcas, estancados, hoy, inicio, atleta, ficha, molestias = [] }, dada) {
+  const contexto = fichasParaRediseno({ rutina, cargas, marcas, estancados, hoy, inicio, atleta, ficha });
+  if (!contexto.sesiones.length) return null;
+  let propuesta = dada;
+  if (!propuesta) {
+    if (!env.ANTHROPIC_API_KEY) return null;
+    const loQueSabes = fichaParaPrompt(ficha);
+    const prompt = `Eres su entrenador personal de hipertrofia y fuerza, y decides tú. ${perfilTexto(atleta)}
+${loQueSabes ? '\n' + loQueSabes + '\n' : ''}${molestias.length ? '\nMolestias de esta semana: ' + molestias.map(m => m.name + (m.detalle ? ' (' + m.detalle + ')' : '')).join('; ') + '\n' : ''}
+Arma su semana que viene. No repitas la misma rutina: innova con criterio científico.
+- Cambia de verdad: en cada sesión entra entre la tercera parte y la mitad de ejercicios nuevos (otros ángulos,
+  agarres, máquinas, poleas, mancuernas), eligiendo de "opciones". Busca cubrir las zonas del músculo que hoy no
+  trabaja (p. ej. cabeza larga del tríceps, pecho superior, deltoides posterior, isquios en cadera y en rodilla).
+- Cambia la ESTRUCTURA cuando tenga sentido, no siempre igual: superseries agonista/antagonista (bíceps con tríceps,
+  pecho con espalda) o del mismo músculo, triseries, bloques de un solo ejercicio. 3 vueltas en lo pesado, 4 en
+  accesorios; descanso 90-120 s en básicos pesados, 45-75 s en superseries de aislamiento.
+- Cada sesión conserva sus grupos musculares (la división no se toca) y sus "anclas" (básicos que está progresando):
+  inclúyelas. Lo que marcó "fácil" o progresa bien puede quedarse; lo estancado, cámbialo.
+- Volumen: las series totales de la sesión entre el 75 % y el 120 % de "seriesTotales" (series × ejercicios por
+  bloque). Entre 6 y 9 ejercicios por sesión; bloques de 1 a 4 ejercicios.
+- Nada que choque con molestias, con lo que no le gusta o con equipo que no tiene.
+- Calentamiento de hombro (sólo días de tren superior): elige 2 o 3 de "calentamientoHombro", variándolos.
+
+${JSON.stringify(contexto, null, 1)}
+
+Responde SOLO un JSON array, una entrada por sesión:
+[{"sesion":"sesion1","porque":"una frase: qué cambia y por qué (español de Colombia, tuteando, nunca voseo)",
+  "calentamientoHombro":["…","…"],
+  "bloques":[{"series":3,"descanso":90,"nota":"opcional, corta","ejercicios":["nombre EXACTO de opciones o de su sesión"]}]}]`;
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY,
+                   'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000,
+                               // Respuesta en JSON: sin razonamiento extendido
+                               // (en Sonnet 5.5 'disabled' es un 400; el modo es between_tools)
+                               thinking: { type: 'between_tools' }, output_config: { effort: 'high' },
+                               fallbacks: 'default',
+                               messages: [{ role: 'user', content: prompt }] })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { console.log(`[REDISENO] la API respondió ${res.status}: ${JSON.stringify(data).slice(0, 300)}`); return null; }
+      const txt = textoDeRespuesta(data);
+      const m = txt.match(/\[[\s\S]*\]/);
+      if (!m) { console.log('[REDISENO] respuesta sin JSON: ' + txt.slice(0, 200)); return null; }
+      propuesta = JSON.parse(m[0]);
+    } catch (e) { console.log('[REDISENO] falló: ' + e.message); return null; }
+  }
+  const r = validarRediseno(propuesta, { rutina, cargas, atleta, hoy, contexto });
+  return { ...r, propuesta };
+}
+
+/* Rearma ya la semana (sin esperar al domingo) sobre la rutina actual. Con
+   `simular` no guarda; con `propuesta` (ya revisada) aplica exactamente esa. */
+async function redisenarAhora(env, clientId, { simular = false, propuesta = null } = {}) {
+  const atleta = await getAthlete(env, clientId);
+  if (!esIA(atleta)) return { ok: false, razon: 'no tiene rutina autogestionada' };
+  const [rutina, historial, cargasLeidas, ficha] = await Promise.all([
+    env.DB.get(`routine:${clientId}`, 'json'), env.DB.get(`progresion:${clientId}`, 'json'),
+    env.DB.get(`cargas:${clientId}`, 'json'), env.DB.get(`ficha:${clientId}`, 'json'),
+  ]);
+  if (!rutina) return { ok: false, razon: 'sin rutina' };
+  const hoy = fechaBogotaISO();
+  const inicio = inicioDelPlan(historial || [], hoy);
+  const antes = JSON.stringify(rutina);
+  const red = await redisenarSemana(env, { rutina, cargas: cargasLeidas || {}, marcas: {}, estancados: ejerciciosEstancados(historial || [], 10),
+                                           hoy, inicio, atleta, ficha }, propuesta);
+  if (!red) return { ok: false, razon: 'el modelo no respondió' };
+  for (const a of red.aceptadas) rutina[a.sesion] = red.rutina[a.sesion];
+  marcaAntiguedad(rutina, inicio);
+  ajustarRangos(rutina);
+  for (const k of Object.keys(rutina)) {
+    if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits, rutina[k].calentamientoPlan));
+  }
+  const rotaciones = rotacionesDeRediseno(red.aceptadas, rutina);
+  if (simular) return { ok: true, simulado: true, aceptadas: red.aceptadas, rechazadas: red.rechazadas, propuesta: red.propuesta, rotaciones, rutina };
+  if (!red.aceptadas.length) return { ok: false, razon: 'ninguna sesión pasó la validación', rechazadas: red.rechazadas };
+  await guardaVersionRutina(env, clientId, antes, hoy + '-rediseno', 'antes del rediseño');
+  await env.DB.put(`routine:${clientId}`, JSON.stringify(rutina));
+  const ultima = (historial || [])[0];
+  if (ultima) {
+    ultima.rotaciones = [...(ultima.rotaciones || []), ...rotaciones];
+    ultima.rev = (ultima.rev || 0) + 1;
+    await env.DB.put(`progresion:${clientId}`, JSON.stringify(historial));
+  }
+  return { ok: true, aceptadas: red.aceptadas, rechazadas: red.rechazadas, rotaciones };
+}
+
 /* Pasa toda la rutina por ajustaAlRango y devuelve los cambios con la
    misma forma que los del ajuste semanal (para unirlos y mostrarlos). */
 function ajustarRangos(rutina) {
@@ -1357,7 +1459,7 @@ async function rotarAhora(env, clientId, { simular = false, propuestas = null, r
   const rotaciones = aplicarRotacion(rutina, validas, perfil, cargas, hoy);
   marcaAntiguedad(rutina, inicio);
   for (const k of Object.keys(rutina)) {
-    if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits));
+    if (rutina[k] && Array.isArray(rutina[k].circuits)) Object.assign(rutina[k], calentamientoDelDia(rutina[k].circuits, rutina[k].calentamientoPlan));
   }
   const ultima = (historial || [])[0] || null;
   if (!resumen && ultima && rotaciones.length) {
@@ -2191,6 +2293,12 @@ export default {
     if (body.action === 'simular-progresion') {
       if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
       const r = await correrProgresion(env, client, 'simulacion', null, null, true);
+      return new Response(JSON.stringify(r), { headers: cors });
+    }
+
+    if (body.action === 'redisenar-ahora') {
+      if (body.admin !== 'admin2026') return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { headers: cors, status: 401 });
+      const r = await redisenarAhora(env, client, { simular: !!body.simular, propuesta: body.propuesta || null });
       return new Response(JSON.stringify(r), { headers: cors });
     }
 

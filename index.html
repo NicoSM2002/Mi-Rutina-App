@@ -1970,6 +1970,7 @@ button.ex-presc:active { background:var(--ac-soft2); }
   font-size:15px; color:var(--t2); letter-spacing:-.2px; line-height:1.45;
   margin:-4px 2px 14px;
 }
+.circ-nota { font-size:15px; color:var(--t2); letter-spacing:-.2px; line-height:1.45; margin:-6px 2px 12px; }
 .fb-row {
   display:flex; gap:7px; margin-top:14px; padding-top:13px;
   border-top:1px solid var(--b2);
@@ -5673,13 +5674,17 @@ function sesionesQueFaltan(athlete) {
 }
 function cambioDeSesionHtml(state) {
   if (!seAutogestiona() || !state) return '';
-  const otras = sesionesQueFaltan().filter(n => n !== state.sessionNum);
+  // Primero las que le faltan; después las que ya hizo, por si quiere repetir
+  const faltan = sesionesQueFaltan();
+  const todas = Object.keys(data || {}).filter(k => /^sesion\d+$/.test(k)).map(k => parseInt(k.slice(6))).sort((a, b) => a - b);
+  const otras = [...faltan, ...todas.filter(n => !faltan.includes(n))].filter(n => n !== state.sessionNum);
   if (!otras.length) return '';
   const filas = otras.map(n => {
     const dia = data && data['sesion' + n];
     const titulo = dia && typeof deriveSessionTitle === 'function' ? deriveSessionTitle(dia, n) : `Sesión ${n}`;
+    const hecha = !faltan.includes(n);
     return `<button class="sc-sig sc-otra" onclick="eligeSesion(${n})">
-        <span><span class="sc-sig-l">Sesión ${n}</span><span class="sc-sig-n">${titulo}</span></span>
+        <span><span class="sc-sig-l">Sesión ${n}${hecha ? ' · ya la hiciste esta semana' : ''}</span><span class="sc-sig-n">${titulo}</span></span>
         <svg class="ic ic-sm"><use href="#i-chevron-r"/></svg>
       </button>`;
   }).join('');
@@ -6890,11 +6895,12 @@ function render() {
     const nSeries = parseInt(c.series) || 4;
     const restS = parseInt(c.rest) || 60;
     html += `<div class="sec-head">
-        <h2 class="sec-head-title">Circuito ${ci+1}</h2>
+        <h2 class="sec-head-title">${escHtmlText(c.label || `Circuito ${ci+1}`)}</h2>
         <button class="pill-neutral circuit-rest" onclick="startTimer(${restS})">
           <svg class="ic ic-sm"><use href="#i-clock"/></svg> ${restS} s de descanso
         </button>
       </div>
+      ${c.nota ? `<p class="circ-nota">${escHtmlText(c.nota)}</p>` : ''}
       ${vueltasHTML(ci, nSeries, restS)}
       <div class="ex-cards">`;
     html += `<div class="fb-aviso" id="fb-aviso">${(vueltasHoy[ci] || 0) >= nSeries
@@ -13242,11 +13248,13 @@ function renderToday() {
     const nWu = Array.isArray(day.warmup) ? day.warmup.length : 0;
     const nCirc = (day.circuits || []).length;
     const nEx = (day.circuits || []).reduce((t, c) => t + (c.exercises || []).length, 0);
-    const series = parseInt((day.circuits || [])[0]?.series) || 0;
+    const vueltas = [...new Set((day.circuits || []).map(c => parseInt(c.series) || 4))].sort((a, b) => a - b);
+    const series = vueltas.length > 1 ? `${vueltas[0]}–${vueltas[vueltas.length - 1]}` : (vueltas[0] || 0);
+    const soloCircuitos = (day.circuits || []).every(c => !c.label || /^Circuito/.test(c.label));
     const totalPasos = (nWu ? 1 : 0) + nCirc + (day.cardio ? 1 : 0);
     const g = leerPaso();
     const enCurso = (g && g.dia === key && g.paso > 0) ? g : null;
-    const detalle = [nEx ? `${nEx} ejercicio${nEx === 1 ? '' : 's'}` : '', nCirc ? `${nCirc} circuito${nCirc === 1 ? '' : 's'}` : '',
+    const detalle = [nEx ? `${nEx} ejercicio${nEx === 1 ? '' : 's'}` : '', nCirc ? `${nCirc} ${soloCircuitos ? 'circuito' : 'bloque'}${nCirc === 1 ? '' : 's'}` : '',
                      series ? `${series} series` : ''].filter(Boolean).join(' · ');
     entrenamiento = `<div class="sc sc-hoy" id="today-sesion">
         <div class="sc-top">
@@ -13410,7 +13418,7 @@ async function loadAjusteSemanal() {
   // Lo que entra va a la vista: es lo que cambia de verdad la semana. Las
   // cargas y repeticiones, plegadas.
   const filasRot = rots.map(r => `<div class="aj-fila aj-fila-rot">
-      <span class="aj-nombre">${r.a}<br><span class="aj-flecha">en vez de ${r.de}</span></span>
+      <span class="aj-nombre">${r.a}<br><span class="aj-flecha">${r.de ? 'en vez de ' + r.de : 'nuevo esta semana'}</span></span>
       <span class="aj-dato">${pesoParaVer(r.peso, r.a) || ''}</span>
     </div>`).join('');
 

@@ -609,15 +609,24 @@ function pasoDeCalentamiento(ex) {
   return { ...paso, w: v1 === v2 ? v1 : `${v1} → ${v2}` };
 }
 
-export function calentamientoDelDia(circuits) {
+/* `plan.hombro`: los ejercicios de hombro de esta semana (el rediseño los
+   varía); sin plan, los tres de siempre. Lo fijo: tren superior → hombro,
+   y siempre el grupo que se trabaja. */
+export function calentamientoDelDia(circuits, plan) {
   const exs = (circuits || []).flatMap(c => c.exercises || []).filter(e => e && e.name);
   const musculos = [...new Set(exs.map(e => e.muscle))];
   const superior = musculos.some(m => !TREN_INFERIOR.has(m) && m !== 'abdomen');
-  const warmupHombro = superior ? [
+  const elegidos = plan && Array.isArray(plan.hombro) ? plan.hombro.filter(n => PorNombre[n]) : [];
+  const warmupHombro = !superior ? [] : elegidos.length >= 2
+    ? elegidos.slice(0, 3).map(n => {
+        const c = PorNombre[n];
+        return { text: n, w: c.unit === 'mancuerna' ? '5 lbs' : 'muy ligero', reps: '15 reps', ...(c.img ? { img: c.img } : {}) };
+      })
+    : [
     { text: 'Elevaciones laterales', w: '5 lbs', reps: '15 reps', img: img('Elevaciones laterales con mancuernas') },
     { text: 'Elevaciones frontales', w: '5 lbs', reps: '15 reps', img: img('Elevaciones frontales alternas con mancuernas') },
     { text: 'Press de hombro con mancuernas, de pie', w: '5 lbs', reps: '15 reps', img: img('Press de hombro de pie con mancuernas') },
-  ].map(p => { if (!p.img) delete p.img; return p; }) : [];
+  ].map(p => { if (!p.img) delete p.img; return p; });
   // Lo que el bloque de hombro ya calienta, y el abdomen, no llevan paso propio
   const cubiertos = new Set(['abdomen', ...(superior ? ['hombros', 'trapecio'] : [])]);
   const warmup = [];
