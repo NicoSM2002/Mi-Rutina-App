@@ -5490,6 +5490,7 @@ async function showRoutine() {
     const data = await res.json();
     serverCompletions = data.completions || [];
     completedToday = serverCompletions.some(c => c.day === todayISO) && !MODO_PRUEBA;
+    if (!completedToday) corrigeCompletadaHoy(serverCompletions);
     anotaSemanaHecha(currentAthlete, serverCompletions);
 
     // Sync localStorage sessionIdx with server completion count + offset
@@ -5891,7 +5892,21 @@ function completadaHoyLocal(athlete) {
   catch (e) { return false; }
 }
 function marcaCompletadaHoy(athlete) {
-  try { localStorage.setItem('lastCompleted_' + (athlete || currentAthlete), new Date().toDateString()); } catch (e) {}
+  try {
+    localStorage.setItem('lastCompleted_' + (athlete || currentAthlete), new Date().toDateString());
+    localStorage.setItem('lastCompletedTs_' + (athlete || currentAthlete), String(Date.now()));
+  } catch (e) {}
+}
+/* El servidor manda: si allá no hay sesión de hoy (por ejemplo, se movió a
+   ayer porque se envió pasada la medianoche) y el teléfono cree que sí, el
+   teléfono lo olvida. Con 5 min de margen después de completar, por si la
+   lectura todavía no trae lo recién guardado. */
+function corrigeCompletadaHoy(compsServidor) {
+  if (!completadaHoyLocal() || (compsServidor || []).some(c => c.day === hoyISO())) return false;
+  const ts = parseInt(localStorage.getItem('lastCompletedTs_' + currentAthlete) || '0');
+  if (ts && Date.now() - ts < 5 * 60 * 1000) return false;
+  try { localStorage.removeItem('lastCompleted_' + currentAthlete); localStorage.removeItem('lastCompletedTs_' + currentAthlete); } catch (e) {}
+  return true;
 }
 
 function advanceSession(athlete) {
@@ -13652,7 +13667,8 @@ async function loadTodayWeek() {
     // sin tener que pasar por Rutina.
     const yaHoy = comps.some(c => c.day === hoyISO()) && !completadaHoyLocal();
     if (yaHoy) marcaCompletadaHoy();
-    if ((yaHoy || cambio) && document.getElementById('today')?.classList.contains('active')) renderToday();
+    const corregida = corrigeCompletadaHoy(comps);
+    if ((yaHoy || cambio || corregida) && document.getElementById('today')?.classList.contains('active')) renderToday();
   } catch (e) {
     _semanaGuardada = { n: 'Sin datos esta semana', rango: '' };
   }
